@@ -1,0 +1,43 @@
+[ todos ]
+
+. relay node board
+-> select latch relay, update farnell command
+ -> simpler to have 2 coils
+-> think with microduino footprint in mind
+-> battery led indicator
+-> mechanical format must feet
+
+. temperature node board
+-> select a temperature sensor
+-> think with microduino footprint in mind
+-> battery led indicator
+-> lcd ?
+
+. bano protocol
+-> set, get keyval
+-> the possible keys should be thought in terms of the node.
+thus, first design the nodes, and see what they need. there
+are some common keys: addressing info, encryption scheme,
+protocol version ... then, for instance, we know a sensor
+will require an update frequency ...
+
+-> the base has a node description downloaded by the user
+over the http interface
+ . each node could have a DID (description id) used to look
+ the node description file. the file is then used to exploit
+ node informations. for instance, the client could use it to
+ render the information graphically.
+ . file.nodesc
+  -> type of node ...
+
+. implement node stack on arduino
+
+. implement base stack on beagle board
+
+. client
+list all nodes
+-> connectivity
+-> addresses
+-> ping command
+
+. clima protocol

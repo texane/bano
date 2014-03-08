@@ -1,0 +1,32 @@
+the core platform is based on an atmega328p mcu. any feature not
+required during on field operation, or that could be implemented
+by the carrier board, is removed to reduce power consumption. The
+only exception is a voltage regulator, which can be bypass it not
+required for operation.
+
+[ power saving ]
+http://www.gammon.com.au/forum/?id=11497
+http://forum.arduino.cc/index.php?topic=141759.0
+
+[ candidates ]
+http://www.microduino.cc
+http://wiki.microduino.cc
+http://www.kickstarter.com/projects/microduino/microduino-arduino-in-your-pocket-small-stackable
+
+[ sub ghz module ]
+http://blog.zakkemble.co.uk/nrf905-avrarduino-librarydriver/
+https://github.com/zkemble/nRF905
+http://www.nordicsemi.com/eng/Products/Sub-1-GHz-RF/nRF905
+kl-nrf905 or ptr8000 module on ebay
+www.ti.com/lit/ds/symlink/cc1101.pdf
+
+[ 2.4 GHz module ]
+http://www.nordicsemi.com/eng/Products/2.4GHz-RF/nRF24L01P
+
+[ TODO ]
+. bano_node should have its own repository
+. features should be statically disablable, via BANO_CONFIG_xxx
+. nrf905 support, ie. move transport layer into nrf_xxx wrappers
+. node should be able to disable features in its own handlers.
+for instance, the alarm may want to wait for 1 message (one for
+the key), and THEN no longer listen at all

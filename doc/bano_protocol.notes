@@ -1,0 +1,93 @@
+[ general ]
+
+bano (base node) protocol
+
+the nodes must be kept as simple as possible, to allow cheap.
+think about a simple relay activation node
+the master is considered resourceful. any feature that can be
+implemented on the master to decrease the node resources
+requirments should be.
+
+[ transport layer ]
+
+bano aims at being independent from the physical layer and
+limits the constraints put on the physical layer and its
+protocol. bano requires:
+. a packet based transport layer
+. if provided by hardware, addressing must be at least 4
+bytes. otherwise, addressing is implement in software and
+the payload size must be increased by 4 bytes.
+. crc must be at least 2 bytes. can be implemented in sw.
+. data payload size must be at least 8 bytes
+
+the physical layer can work in all the commonly used wireless
+ranges (433, 868, 915 MHz and 2.4 GHz).
+
+2 chipsets are considered:
+. NRF905
+. NRF24L01P
+
+in the above chipsets, the main differences are the addressing
+scheme length (4 bytes max for NRF905, 5 bytes for NRF24L01P).
+
+[ integrity ]
+
+the integrity is handled by hardware via a 2 bytes checksum.
+
+
+[ security ]
+
+. security token
+-> the whole message is readable, a secret key based seed is
+used to validate the security
+-> less computing required to decrypt the message
+
+. security seed broadcast
+-> the master (node?) broadcasts a seed at regular interval
+his security seed is used in the encryption token scheme
+-> if the node broadcast, it must be able to generate it, which
+means random number generation caps
+-> if the master broadcast it, the node has to store it
+
+=> any failed attempt to check the security token should
+renegotiate the node security context
+
+
+[ addressing ]
+
+the base has a fixed address
+
+when a node joins a network, a node has a default BANO_ADDR_ANY
+address. it sends the base a request:
+BANO_OP_GET, BANO_KEY_ADDR, random_id[4]
+the base allocates a new address, and reply with:
+BANO_OP_SET, BANO_KEY_ADDR, random_id[4], addr
+
+to enumerate the nodes, a base
+
+
+[ messaging ]
+
+in RX mode, a node receive logic consumes power. to reduce power
+consumption and avoid being, a node can poll the requests by
+sending a request:
+BANO_OP_GET, BANO_KEY_REQ, node_addr
+the base must then send requests for this node in a short time
+lapse, and the node will then return to reduced power mode at
+completion.
+also, note the polling scheme prevents a malicious sender to
+keep transmitting to a node in order to reduce its battery life.
+
+[ keys ]
+
+system capabilities
+. security scheme
+
+connectivity testing
+. ping the master
+
+alert reporting
+
+[ api ]
+
+refer to bano.h
