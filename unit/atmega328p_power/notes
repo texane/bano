@@ -1,0 +1,3 @@
+uno and nano tests:
+remove the blue power led (7mA)
+with everything disable, still consuming 13mA due to ftdi
