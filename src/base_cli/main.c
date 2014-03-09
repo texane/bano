@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include "bano_base.h"
 #include "bano_perror.h"
 
@@ -24,10 +25,18 @@ static void cap_loop(void)
   struct timeval tm_cap;
   struct timeval tm_now;
   struct timeval tm_dif;
+  char cmd[256];
+  char py_cmd[1024];
+  char im_path[256];
+  size_t i;
 
   gettimeofday(&tm_now, NULL);
   timersub(&tm_now, &cap_tm_start, &tm_dif);
-  if (tm_dif.tv_sec < (20 * 60)) return ;
+  if (tm_dif.tv_sec < (20 * 60))
+  {
+    printf("cap not yet enabled\n");
+    return ;
+  }
 
   printf("start capturing\n");
 
@@ -38,9 +47,32 @@ static void cap_loop(void)
     gettimeofday(&tm_now, NULL);
     timersub(&tm_now, &tm_cap, &tm_dif);
     if (tm_dif.tv_sec > (20 * 60)) break ;
-    system("/home/texane/repo/eyed/build/eyed /tmp/cap.bmp");
-    system("./py/main.py /tmp/cap.bmp");
+
+    printf("sending images\n");
+
+    strcpy(py_cmd, "./py/main.py");
+    for (i = 0; i != 2; ++i)
+    {
+      usleep(750000);
+      system("beep");
+
+      sprintf(im_path, "/tmp/%02x.bmp", i);
+
+      sprintf(cmd, "rm %s", im_path);
+      system(cmd);
+
+      sprintf(cmd, "/home/texane/repo/eyed/build/eyed %s", im_path);
+      system(cmd);
+
+      strcat(py_cmd, " ");
+      strcat(py_cmd, im_path);
+    }
+
+    printf("%s\n", py_cmd);
+    system(py_cmd);
   }
+
+  printf("done capturing\n");
 }
 
 
@@ -67,6 +99,8 @@ static int on_set(void* p, bano_node_t* node, bano_io_t* io)
 
   printf("%s(0x%04x, 0x%08x)\n", __FUNCTION__, key, val);
   bano_set_io_error(io, BANO_IO_ERR_UNIMPL);
+
+  cap_loop();
 
   return 0;
 }
@@ -239,6 +273,8 @@ int main(int ac, char** av)
   bano_base_info_t binfo;
   bano_loop_info_t linfo;
   int err = -1;
+
+  seteuid(0);
 
   if (bano_init())
   {

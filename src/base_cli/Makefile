@@ -1,18 +1,19 @@
 CC := gcc
 CFLAGS := -Wall -O2
 
+REPO_DIR ?= $(HOME)/repo
+
 SRCS := \
 main.c \
-../base/bano_base.c \
-../base/bano_list.c \
-../base/bano_socket_snrf.c
+$(REPO_DIR)/bano/src/base/bano_base.c \
+$(REPO_DIR)/bano/src/base/bano_list.c \
+$(REPO_DIR)/bano/src/base/bano_socket_snrf.c
 
 OBJS := $(SRCS:.c=.o)
 
-CFLAGS += -I../common -I../base -I.
+CFLAGS += -I$(REPO_DIR)/bano/src/common -I$(REPO_DIR)/bano/src/base -I.
 CFLAGS += -DBANO_CONFIG_PERROR
 
-REPO_DIR ?= $(HOME)/repo
 SNRF_DIR := $(REPO_DIR)/nrf/snrf
 CFLAGS += -I$(REPO_DIR)/nrf/snrf/src/host
 CFLAGS += -I$(REPO_DIR)/nrf/snrf/src/common
@@ -26,6 +27,8 @@ $(SNRF_DIR)/src/host/libsnrf.a:
 
 a.out:	$(SNRF_DIR)/src/host/libsnrf.a $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $(OBJS) $(LFLAGS) $(LIBS)
+	sudo chown root a.out
+	sudo chmod 4755 a.out
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
