@@ -59,6 +59,7 @@ static bano_node_t* alloc_node(void)
 static void free_node(bano_node_t* node)
 {
   bano_list_fini(&node->posted_ios, free_io_item, NULL);
+  bano_list_fini(&node->pending_ios, free_io_item, NULL);
   free(node);
 }
 
@@ -179,15 +180,69 @@ typedef struct prw_msg_data
   fd_set* fds;
 } prw_msg_data_t;
 
+static int cmp_io_keys(bano_list_item_t* li, void* p)
+{
+  const bano_io_t* const get_io = li->data;
+  const uint16_t set_key = (const uint16_t)((uintptr_t*)p)[0];
+
+  if (get_io->msg.u.get.key != set_key) return 0;
+
+  /* key found */
+  ((uintptr_t*)p)[1] = (uintptr_t)li;
+  return -1;
+}
+
+static bano_io_t* find_get_io(bano_node_t* node, const bano_msg_set_t* set_msg)
+{
+  uintptr_t data[2];
+  bano_list_item_t* li;
+  bano_io_t* get_io;
+
+  data[0] = (uintptr_t)set_msg->key;
+  data[1] = (uintptr_t)NULL;
+  bano_list_foreach(&node->pending_ios, cmp_io_keys, data);
+
+  li = (bano_list_item_t*)data[1];
+
+  /* not found */
+  if (li == NULL) return NULL;
+
+  /* free list item */
+  get_io = li->data;
+
+  bano_list_del(&node->pending_ios, li);
+
+  return get_io;
+}
+
 static int handle_set_msg
 (prw_msg_data_t* prwmd, const bano_msg_set_t* msg, bano_node_t* node)
 {
-  bano_io_t io;
+  bano_io_t* get_io;
 
-  io.msg.u.set.key = msg->key;
-  io.msg.u.set.val = msg->val;
+  get_io = find_get_io(node, msg);
+  if (get_io != NULL)
+  {
+    /* reply to previous get message */
 
-  prwmd->linfo->set_fn(prwmd->linfo->user_data, node, &io);
+    if (get_io->compl_fn != NULL)
+    {
+      get_io->compl_err = 0;
+      get_io->compl_val = msg->val;
+      get_io->compl_fn(get_io, get_io->compl_data);
+    }
+
+    free_io(get_io);
+  }
+  else
+  {
+    /* standard set message */
+
+    bano_io_t io;
+    io.msg.u.set.key = msg->key;
+    io.msg.u.set.val = msg->val;
+    prwmd->linfo->set_fn(prwmd->linfo->user_data, node, &io);
+  }
 
   return 0;
 }
@@ -248,6 +303,7 @@ static int handle_msg
     node->id = saddr;
     node->socket = socket;
     bano_list_init(&node->posted_ios);
+    bano_list_init(&node->pending_ios);
 
     if (bano_list_add_tail(&prwmd->base->nodes, node))
     {
@@ -361,7 +417,18 @@ static int post_io(bano_list_item_t* li, void* p)
     return 0;
   }
 
-  free_io(io);
+  if (io->msg.hdr.op == BANO_OP_GET)
+  {
+    /* move in pending io list */
+    bano_list_add_tail(&pid->node->pending_ios, io);
+  }
+  else
+  {
+    /* destroy the io */
+    free_io(io);
+  }
+
+  /* destroy list item */
   bano_list_del(&pid->node->posted_ios, li);
 
   return 0;

@@ -71,6 +71,9 @@ typedef struct bano_io
 #define BANO_IO_ERR_UNIMPL 3
   unsigned int compl_err;
 
+  /* completion value */
+  uint32_t compl_val;
+
   /* completion function and user data */
   bano_compl_fn_t compl_fn;
   void* compl_data;
@@ -87,6 +90,7 @@ typedef struct bano_node
   uint16_t id;
   struct bano_socket* socket;
   bano_list_t posted_ios;
+  bano_list_t pending_ios;
 } bano_node_t;
 
 

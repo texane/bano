@@ -56,7 +56,7 @@ static void cap_loop(void)
       usleep(750000);
       system("beep");
 
-      sprintf(im_path, "/tmp/%02x.bmp", i);
+      sprintf(im_path, "/tmp/%02x.bmp", (uint8_t)i);
 
       sprintf(cmd, "rm %s", im_path);
       system(cmd);
@@ -132,11 +132,12 @@ struct node_get_data
 
 static int on_get_compl(bano_io_t* io, void* p)
 {
-  /* TODO */
-
+  struct node_get_data* const ngd = p;
+  const uint16_t nid = ngd->nid;
   const uint16_t key = io->msg.u.get.key;
+  const uint32_t val = io->compl_val;
 
-  printf("%s(0x%04x)\n", __FUNCTION__, key);
+  printf("%s: node{0x%04x, 0x%04x} == 0x%08x\n", __FUNCTION__, nid, key, val);
 
   return 0;
 }
