@@ -3,6 +3,7 @@
 . make the alarm node PCB
 
 . make the NRF USB dongle PCB
+-> should be at the same time a USB dongle, and a SPI cape
 
 . implement a led based client for tests
 
