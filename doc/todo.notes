@@ -1,5 +1,11 @@
 [ todos ]
 
+. make the alarm node PCB
+
+. make the NRF USB dongle PCB
+
+. implement a led based client for tests
+
 . implement base to client GET operation
 
 . implement default keys ?
