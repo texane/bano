@@ -44,4 +44,5 @@ msg.attach(MIMEText('text content'))
 for new_im_name in new_im_names:
  msg.attach(MIMEImage(file(new_im_name).read()))
 
-sendemail(msg, 'flm.null', 'pasdesoucis')
+# TODO: set account info
+sendemail(msg, 'login', 'password')
