@@ -116,15 +116,12 @@ int bano_fini(void);
 int bano_open(bano_base_t*, const bano_base_info_t*);
 int bano_close(bano_base_t*);
 int bano_add_socket(bano_base_t*, const struct bano_socket_info*);
+int bano_add_node(bano_base_t*, uint32_t);
 int bano_start_loop(bano_base_t*, const bano_loop_info_t*);
 bano_io_t* bano_alloc_get_io(uint16_t, bano_compl_fn_t, void*);
 bano_io_t* bano_alloc_set_io(uint16_t, uint32_t, bano_compl_fn_t, void*);
 void bano_free_io(bano_io_t*);
 int bano_post_io(bano_base_t*, bano_node_t*, bano_io_t*);
-
-/* TOREMOVE */
-int bano_add_node_xxx(bano_base_t*, uint32_t);
-/* TOREMOVE */
 
 
 /* static inlined */

@@ -230,14 +230,12 @@ int main(int ac, char** av)
   sinfo.type = BANO_SOCKET_TYPE_SNRF;
   sinfo.u.snrf.dev_path = "/dev/ttyUSB0";
   sinfo.u.snrf.addr_width = 4;
-  sinfo.u.snrf.addr_val = 0x6a6a6a6a;
+  sinfo.u.snrf.addr_val = BANO_BASE_ADDR;
   if (bano_add_socket(&base, &sinfo))
   {
     BANO_PERROR();
     goto on_error_2;
   }
-
-  bano_add_node_xxx(&base, 0xa6a6a6a6);
 
   bano_init_loop_info(&linfo);
 
@@ -259,6 +257,12 @@ int main(int ac, char** av)
 
     linfo.node_fn = on_node_set;
     linfo.user_data = &nsd;
+
+    if (bano_add_node(&base, nsd.naddr))
+    {
+      BANO_PERROR();
+      goto on_error_2;
+    }
   }
   else if (strcmp(op, "get") == 0)
   {
@@ -272,6 +276,12 @@ int main(int ac, char** av)
 
     linfo.node_fn = on_node_get;
     linfo.user_data = &ngd;
+
+    if (bano_add_node(&base, ngd.naddr))
+    {
+      BANO_PERROR();
+      goto on_error_2;
+    }
   }
   else if (strcmp(op, "listen") == 0)
   {

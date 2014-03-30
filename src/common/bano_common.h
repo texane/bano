@@ -48,7 +48,10 @@ typedef struct bano_msg
 #define BANO_KEY_NEXT_MSG BANO_KEY_RESERVED(3)
 
 /* broadcast address */
-#define BANO_ADDR_ANY ((uint16_t)-1)
+#define BANO_ANY_ADDR ((uint16_t)-1)
+
+/* default base address */
+#define BANO_BASE_ADDR ((uint32_t)0x5a5a5a5a)
 
 
 #endif /* BANO_COMMON_H_INCLUDED */

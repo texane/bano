@@ -172,13 +172,14 @@ static uint32_t bano_node_addr = 0;
 
 uint8_t bano_init(const bano_info_t* info)
 {
-  /* base address */
-  uint8_t addr[4] = { 0x6a, 0x6a, 0x6a, 0x6a };
+  uint8_t addr[4];
 
   /* nrf setup and default state */
   nrf_setup();
   nrf_set_payload_width(BANO_MSG_SIZE);
   nrf_set_addr_width(4);
+
+  uint32_to_le_buf(BANO_BASE_ADDR, addr);
   nrf_set_tx_addr(addr);
 
   uint32_to_le_buf(info->node_addr, addr);

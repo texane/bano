@@ -177,6 +177,42 @@ int bano_add_socket(bano_base_t* base, const bano_socket_info_t* si)
   return -1;
 }
 
+int bano_add_node(bano_base_t* base, uint32_t addr)
+{
+  /* NOTE: node is added to the first socket */
+
+  bano_node_t* node;
+
+  if (base->sockets.head == NULL)
+  {
+    BANO_PERROR();
+    goto on_error_0;
+  }
+
+  node = alloc_node();
+  if (node == NULL)
+  {
+    BANO_PERROR();
+    goto on_error_0;
+  }
+
+  node->addr = addr;
+  node->socket = base->sockets.head->data;
+
+  if (bano_list_add_tail(&base->nodes, node))
+  {
+    BANO_PERROR();
+    goto on_error_1;
+  }
+
+  return 0;
+
+ on_error_1:
+  free_node(node);
+ on_error_0:
+  return -1;
+}
+
 int bano_post_io(bano_base_t* base, bano_node_t* node, bano_io_t* io)
 {
   if (bano_list_add_tail(&node->posted_ios, io))
@@ -694,30 +730,3 @@ void bano_free_io(bano_io_t* io)
 {
   free_io(io);
 }
-
-
-/* TOREMOVE */
-int bano_add_node_xxx(bano_base_t* base, uint32_t addr)
-{
-  bano_node_t* node;
-
-  node = alloc_node();
-  if (node == NULL)
-  {
-    BANO_PERROR();
-    return -1;
-  }
-
-  node->addr = addr;
-  node->socket = base->sockets.head->data;
-
-  if (bano_list_add_tail(&base->nodes, node))
-  {
-    BANO_PERROR();
-    free_node(node);
-    return -1;
-  }
-
-  return 0;
-}
-/* TOREMOVE */
