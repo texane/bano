@@ -32,10 +32,6 @@ typedef int (*bano_node_fn_t)(void*, struct bano_node*, unsigned int);
 typedef struct
 {
   /* loop flags */
-#define BANO_LOOP_FLAG_SET (1 << 0)
-#define BANO_LOOP_FLAG_GET (1 << 1)
-#define BANO_LOOP_FLAG_TIMER (1 << 2)
-#define BANO_LOOP_FLAG_NODE (1 << 3)
   unsigned int flags;
 
   /* event handler fns */
@@ -126,6 +122,10 @@ bano_io_t* bano_alloc_set_io(uint16_t, uint32_t, bano_compl_fn_t, void*);
 void bano_free_io(bano_io_t*);
 int bano_post_io(bano_base_t*, bano_node_t*, bano_io_t*);
 
+/* TOREMOVE */
+int bano_add_node_xxx(bano_base_t*, uint32_t);
+/* TOREMOVE */
+
 
 /* static inlined */
 
@@ -141,6 +141,11 @@ static inline void bano_init_base_info(bano_base_info_t* i)
 static inline void bano_init_loop_info(bano_loop_info_t* i)
 {
   i->flags = 0;
+
+  i->set_fn = NULL;
+  i->get_fn = NULL;
+  i->node_fn = NULL;
+  i->timer_fn = NULL;
 }
 
 static inline void bano_init_socket_info(bano_socket_info_t* i)

@@ -30,13 +30,12 @@ int bano_list_fini(bano_list_t* l, bano_list_fn_t f, void* p)
 int bano_list_foreach(bano_list_t* l, bano_list_fn_t f, void* p)
 {
   bano_list_item_t* pos;
+  bano_list_item_t* next;
 
-  pos = l->head;
-  while (pos)
+  for (pos = l->head; pos != NULL; pos = next)
   {
-    bano_list_item_t* const tmp = pos;
-    pos = pos->next;
-    if (f(tmp, p)) break ;
+    next = pos->next;
+    if (f(pos, p)) break ;
   }
 
   return 0;

@@ -68,7 +68,7 @@ static int on_get_compl(bano_io_t* io, void* p)
   const uint16_t key = io->msg.u.get.key;
   const uint32_t val = io->compl_val;
 
-  printf("%s: node{0x%04x, 0x%04x} == 0x%08x\n", __FUNCTION__, naddr, key, val);
+  printf("%s: node{0x%08x, 0x%04x} == 0x%08x\n", __FUNCTION__, naddr, key, val);
 
   return 0;
 }
@@ -86,7 +86,11 @@ static int on_node_get(void* p, bano_node_t* node, unsigned int reason)
 
   printf("%s\n", __FUNCTION__);
 
-  if (bano_get_node_addr(node) != naddr) return 0;
+  if (bano_get_node_addr(node) != naddr)
+  {
+    BANO_PERROR();
+    return 0;
+  }
 
   if (reason != BANO_NODE_REASON_NEW)
   {
@@ -226,24 +230,25 @@ int main(int ac, char** av)
   sinfo.type = BANO_SOCKET_TYPE_SNRF;
   sinfo.u.snrf.dev_path = "/dev/ttyUSB0";
   sinfo.u.snrf.addr_width = 4;
-  sinfo.u.snrf.addr_val = 0x5a5a5a5a;
+  sinfo.u.snrf.addr_val = 0x6a6a6a6a;
   if (bano_add_socket(&base, &sinfo))
   {
     BANO_PERROR();
     goto on_error_2;
   }
 
+  bano_add_node_xxx(&base, 0xa6a6a6a6);
+
   bano_init_loop_info(&linfo);
 
   if (strcmp(op, "list") == 0)
   {
-    linfo.flags |= BANO_LOOP_FLAG_NODE;
     linfo.node_fn = on_node_print;
     linfo.user_data = NULL;
   }
   else if (strcmp(op, "set") == 0)
   {
-    /* set node_id key val */
+    /* set node_addr key val */
 
     static struct node_set_data nsd;
 
@@ -252,13 +257,12 @@ int main(int ac, char** av)
     nsd.key = str_to_uint32(av[3]);
     nsd.val = str_to_uint32(av[4]);
 
-    linfo.flags |= BANO_LOOP_FLAG_NODE;
     linfo.node_fn = on_node_set;
     linfo.user_data = &nsd;
   }
   else if (strcmp(op, "get") == 0)
   {
-    /* get node_id key */
+    /* get node_addr key */
 
     static struct node_get_data ngd;
 
@@ -266,17 +270,13 @@ int main(int ac, char** av)
     ngd.naddr = str_to_uint32(av[2]);
     ngd.key = str_to_uint32(av[3]);
 
-    linfo.flags |= BANO_LOOP_FLAG_NODE;
     linfo.node_fn = on_node_get;
     linfo.user_data = &ngd;
   }
   else if (strcmp(op, "listen") == 0)
   {
-    linfo.flags |= BANO_LOOP_FLAG_GET;
     linfo.get_fn = on_get;
-    linfo.flags |= BANO_LOOP_FLAG_SET;
     linfo.set_fn = on_set;
-    linfo.flags |= BANO_LOOP_FLAG_NODE;
     linfo.node_fn = on_node_print;
     linfo.user_data = NULL;
   }
