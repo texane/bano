@@ -1,0 +1,8 @@
+[ low voltage detection ]
+
+http://www.eevblog.com/forum/projects/%28-low-voltage-detection-circuit-%29/
+use the MCU internal bandgap voltage reference and comparator
+
+analog comparator, ch 22.
+
+use analog comparator interrupt to wake the MCU

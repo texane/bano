@@ -30,28 +30,6 @@ ranges (433, 868, 915 MHz and 2.4 GHz).
 in the above chipsets, the main differences are the addressing
 scheme length (4 bytes max for NRF905, 5 bytes for NRF24L01P).
 
-[ integrity ]
-
-the integrity is handled by hardware via a 2 bytes checksum.
-
-
-[ security ]
-
-. security token
--> the whole message is readable, a secret key based seed is
-used to validate the security
--> less computing required to decrypt the message
-
-. security seed broadcast
--> the master (node?) broadcasts a seed at regular interval
-his security seed is used in the encryption token scheme
--> if the node broadcast, it must be able to generate it, which
-means random number generation caps
--> if the master broadcast it, the node has to store it
-
-=> any failed attempt to check the security token should
-renegotiate the node security context
-
 
 [ addressing ]
 
@@ -78,6 +56,11 @@ completion.
 also, note the polling scheme prevents a malicious sender to
 keep transmitting to a node in order to reduce its battery life.
 
+[[ integrity ]]
+
+the integrity is handled by hardware via a 2 bytes checksum.
+
+
 [ keys ]
 
 system capabilities
@@ -88,6 +71,68 @@ connectivity testing
 
 alert reporting
 
+
 [ api ]
 
 refer to bano.h
+
+
+[ on the assumption base is always present before nodes ]
+
+A scenario where the user powers a node before powering the
+base is largely possible. Handshaking .
+
+Also, the base could be powered
+
+Also, completely passive nodes (ie. alarm) does not anounce
+themselves when powered up.
+
+Thus, the base is not assumed to be present when a node is
+added to the network.
+
+(or base cannot assume base was present at the time
+they do). Thus, there must be a mechanism to convey every
+required information in one message.
+
+Designing the protocol this way will increase
+
+
+
+[ on message identification ]
+
+
+[ on message forwarding ]
+
+
+[ on security ]
+
+. security token
+-> the whole message is readable, a secret key based seed is
+used to validate the security
+-> less computing required to decrypt the message
+
+. security seed broadcast
+-> the master (node?) broadcasts a seed at regular interval
+his security seed is used in the encryption token scheme
+-> if the node broadcast, it must be able to generate it, which
+means random number generation caps
+-> if the master broadcast it, the node has to store it
+
+=> any failed attempt to check the security token should
+renegotiate the node security context
+
+flooding
+detection
+replay
+encryption
+
+
+[ frame layout ]
+op:2
+flags:6
+saddr:16
+key:16
+val:32
+
+
+[ TODO: review existing protocols ]
