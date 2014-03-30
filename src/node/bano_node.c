@@ -31,6 +31,14 @@ static inline uint32_t uint32_to_le(uint32_t x)
   return x;
 }
 
+static inline void uint32_to_le_buf(uint32_t x, uint8_t b[4])
+{
+  b[0] = ((uint8_t*)&x)[0];
+  b[1] = ((uint8_t*)&x)[1];
+  b[2] = ((uint8_t*)&x)[2];
+  b[3] = ((uint8_t*)&x)[3];
+}
+
 static inline uint32_t le_to_uint32(uint32_t x)
 {
   return x;
@@ -157,21 +165,26 @@ static inline void pcint_setup(uint8_t m0, uint8_t m1, uint8_t m2)
 static uint8_t bano_wake_mask = 0;
 static uint16_t bano_timer_counter = 0;
 static uint16_t bano_timer_500ms = 0;
+static uint32_t bano_node_addr = 0;
 
 
 /* constructors */
 
 uint8_t bano_init(const bano_info_t* info)
 {
-  uint8_t rx_addr[4] = { 0xa5, 0xa5, 0xa5, 0xa5 };
-  uint8_t tx_addr[4] = { 0x5a, 0x5a, 0x5a, 0x5a };
+  /* base address */
+  uint8_t addr[4] = { 0x5a, 0x5a, 0x5a, 0x5a };
 
   /* nrf setup and default state */
   nrf_setup();
   nrf_set_payload_width(BANO_MSG_SIZE);
   nrf_set_addr_width(4);
-  nrf_set_tx_addr(tx_addr);
-  nrf_set_rx_addr(rx_addr);
+  nrf_set_tx_addr(addr);
+
+  uint32_to_le_buf(info->node_addr, addr);
+  nrf_set_rx_addr(addr);
+  bano_node_addr = info->node_addr;
+
   nrf_set_powerdown_mode();
 
   /* capture wake mask */
@@ -266,7 +279,7 @@ static inline void make_set_msg(bano_msg_t* msg, uint16_t key, uint32_t val)
 {
   msg->hdr.op = BANO_OP_SET;
   msg->hdr.flags = 0;
-  msg->hdr.saddr = 0;
+  msg->hdr.saddr = uint32_to_le(bano_node_addr);
   msg->u.set.key = uint16_to_le(key);
   msg->u.set.val = uint32_to_le(val);
 }
@@ -275,7 +288,7 @@ static inline void make_get_msg(bano_msg_t* msg, uint16_t key)
 {
   msg->hdr.op = BANO_OP_GET;
   msg->hdr.flags = 0;
-  msg->hdr.saddr = 0;
+  msg->hdr.saddr = uint32_to_le(bano_node_addr);
   msg->u.get.key = uint16_to_le(key);
 }
 

@@ -14,7 +14,7 @@ typedef struct bano_msg_hdr
 {
   uint8_t op: 2;
   uint8_t flags: 6;
-  uint16_t saddr: 16;
+  uint32_t saddr: 32;
 } __attribute__((packed)) bano_msg_hdr_t;
 
 typedef struct bano_msg_get

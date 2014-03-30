@@ -35,6 +35,9 @@ typedef struct
 
   uint32_t pcint_mask;
 
+  /* address */
+  uint32_t node_addr;
+
   /* nodle identifier */
   uint32_t nodl_id;
 

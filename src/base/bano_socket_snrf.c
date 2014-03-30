@@ -55,17 +55,40 @@ static int do_peek(void* p, struct bano_msg* bano_msg)
   return -1;
 }
 
-static int do_write(void* p, const struct bano_msg* m)
+static int do_write(void* p, uint32_t addr, const bano_msg_t* m)
 {
   snrf_handle_t* const snrf = p;
+  int err = -1;
+
+  if (snrf_set_keyval(snrf, SNRF_KEY_STATE, SNRF_STATE_CONF))
+  {
+    BANO_PERROR();
+    goto on_error;
+  }
+
+  if (snrf_set_keyval(snrf, SNRF_KEY_TX_ADDR, addr))
+  {
+    BANO_PERROR();
+    goto on_error;
+  }
+
+  if (snrf_set_keyval(snrf, SNRF_KEY_STATE, SNRF_STATE_TXRX))
+  {
+    BANO_PERROR();
+    goto on_error;
+  }
 
   if (snrf_write_payload(snrf, (const uint8_t*)m, sizeof(bano_msg_t)))
   {
     BANO_PERROR();
-    return -1;
+    goto on_error;
   }
 
-  return 0;
+  /* success */
+  err = 0;
+
+ on_error:
+  return err;
 }
 
 static int do_ctl(void* p, unsigned int k, unsigned int v)
@@ -97,11 +120,8 @@ static int do_get_fd(void* p)
 
 /* exported */
 
-int bano_socket_snrf_open(bano_socket_t* socket, const char* path)
+int bano_socket_snrf_open(bano_socket_t* socket, const bano_snrf_info_t* si)
 {
-  static const uint32_t rx_addr = 0x5a5a5a5a;
-  static const uint32_t tx_addr = 0xa5a5a5a5;
-
   snrf_handle_t* snrf;
 
   snrf = malloc(sizeof(snrf_handle_t));
@@ -111,7 +131,7 @@ int bano_socket_snrf_open(bano_socket_t* socket, const char* path)
     goto on_error_0;
   }
 
-  if (snrf_open_with_path(snrf, path))
+  if (snrf_open_with_path(snrf, si->dev_path))
   {
     BANO_PERROR();
     goto on_error_1;
@@ -135,19 +155,13 @@ int bano_socket_snrf_open(bano_socket_t* socket, const char* path)
     goto on_error_2;
   }
 
-  if (snrf_set_keyval(snrf, SNRF_KEY_ADDR_WIDTH, 4))
+  if (snrf_set_keyval(snrf, SNRF_KEY_ADDR_WIDTH, (uint32_t)si->addr_width))
   {
     BANO_PERROR();
     goto on_error_2;
   }
 
-  if (snrf_set_keyval(snrf, SNRF_KEY_RX_ADDR, rx_addr))
-  {
-    BANO_PERROR();
-    goto on_error_2;
-  }
-
-  if (snrf_set_keyval(snrf, SNRF_KEY_TX_ADDR, tx_addr))
+  if (snrf_set_keyval(snrf, SNRF_KEY_RX_ADDR, si->addr_val))
   {
     BANO_PERROR();
     goto on_error_2;

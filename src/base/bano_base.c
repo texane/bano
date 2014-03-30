@@ -72,7 +72,7 @@ static int free_node_item(bano_list_item_t* li, void* p)
 
 /* socket related routines */
 
-static bano_socket_t* alloc_snrf_socket(const char* snrf_path)
+static bano_socket_t* alloc_socket(const bano_socket_info_t* si)
 {
   bano_socket_t* const s = malloc(sizeof(bano_socket_t));
 
@@ -80,11 +80,23 @@ static bano_socket_t* alloc_snrf_socket(const char* snrf_path)
 
   bano_socket_init(s);
 
-  if (bano_socket_snrf_open(s, snrf_path))
+  switch (si->type)
   {
-    BANO_PERROR();
-    free(s);
-    return NULL;
+  case BANO_SOCKET_TYPE_SNRF:
+    {
+      if (bano_socket_snrf_open(s, &si->u.snrf))
+	goto on_error;
+      break ;
+    }
+
+  default:
+    {
+    on_error:
+      BANO_PERROR();
+      free(s);
+      return NULL;
+      break ;
+    }
   }
 
   return s;
@@ -124,19 +136,32 @@ int bano_fini(void)
 
 int bano_open(bano_base_t* base, const bano_base_info_t* info)
 {
-  bano_socket_t* snrf_socket;
+  bano_list_init(&base->nodes);
+  bano_list_init(&base->sockets);
+  return 0;
+}
 
-  snrf_socket = alloc_snrf_socket("/dev/ttyUSB0");
-  if (snrf_socket == NULL)
+int bano_close(bano_base_t* base)
+{
+  bano_list_fini(&base->nodes, free_node_item, NULL);
+  bano_list_fini(&base->sockets, free_socket_item, base);
+  return 0;
+}
+
+int bano_add_socket(bano_base_t* base, const bano_socket_info_t* si)
+{
+  bano_socket_t* s;
+
+  s = alloc_socket(si);
+  if (s == NULL)
   {
     BANO_PERROR();
     goto on_error_0;
   }
 
-  bano_list_init(&base->nodes);
-  bano_list_init(&base->sockets);
+  /* setup the socket with sinfo */
 
-  if (bano_list_add_tail(&base->sockets, snrf_socket))
+  if (bano_list_add_tail(&base->sockets, s))
   {
     BANO_PERROR();
     goto on_error_1;
@@ -145,18 +170,9 @@ int bano_open(bano_base_t* base, const bano_base_info_t* info)
   return 0;
 
  on_error_1:
-  free_socket(snrf_socket, base);
-  bano_list_fini(&base->nodes, free_node_item, NULL);
-  bano_list_fini(&base->sockets, free_socket_item, base);
+  free_socket(s, base);
  on_error_0:
   return -1;
-}
-
-int bano_close(bano_base_t* base)
-{
-  bano_list_fini(&base->nodes, free_node_item, NULL);
-  bano_list_fini(&base->sockets, free_socket_item, base);
-  return 0;
 }
 
 int bano_post_io(bano_base_t* base, bano_node_t* node, bano_io_t* io)
@@ -263,14 +279,14 @@ static int cmp_node_addr(bano_list_item_t* li, void* p)
   const bano_node_t* const node = li->data;
   const uint32_t addr = (uint32_t)((uintptr_t*)p)[0];
 
-  if (node->id != addr) return 0;
+  if (node->addr != addr) return 0;
 
   /* node found */
   ((uintptr_t*)p)[1] = (uintptr_t)node;
   return -1;
 }
 
-static bano_node_t* find_node_by_addr(bano_list_t* nodes, uint16_t addr)
+static bano_node_t* find_node_by_addr(bano_list_t* nodes, uint32_t addr)
 {
   uintptr_t data[2];
 
@@ -285,7 +301,7 @@ static int handle_msg
 (prw_msg_data_t* prwmd, bano_socket_t* socket, const bano_msg_t* msg)
 {
   const bano_loop_info_t* const linfo = prwmd->linfo;
-  const uint16_t saddr = le_to_uint16(msg->hdr.saddr);
+  const uint32_t saddr = le_to_uint32(msg->hdr.saddr);
   bano_node_t* node;
   int err = 0;
 
@@ -300,7 +316,7 @@ static int handle_msg
       return -1;
     }
 
-    node->id = saddr;
+    node->addr = saddr;
     node->socket = socket;
     bano_list_init(&node->posted_ios);
     bano_list_init(&node->pending_ios);
@@ -409,7 +425,7 @@ static int post_io(bano_list_item_t* li, void* p)
   bano_io_t* const io = li->data;
   struct post_io_data* const pid = p;
 
-  if (bano_socket_write(pid->node->socket, &io->msg))
+  if (bano_socket_write(pid->node->socket, pid->node->addr, &io->msg))
   {
     BANO_PERROR();
     free_socket(pid->node->socket, pid->base);

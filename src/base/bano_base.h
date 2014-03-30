@@ -4,6 +4,7 @@
 
 #include <stdint.h>
 #include "bano_list.h"
+#include "bano_socket.h"
 #include "../common/bano_common.h"
 
 
@@ -12,6 +13,7 @@
 struct bano_node;
 struct bano_io;
 struct bano_socket;
+struct bano_socket_info;
 
 
 /* functions pointer defs */
@@ -87,7 +89,7 @@ typedef struct bano_io
 
 typedef struct bano_node
 {
-  uint16_t id;
+  uint32_t addr;
   struct bano_socket* socket;
   bano_list_t posted_ios;
   bano_list_t pending_ios;
@@ -107,7 +109,7 @@ typedef struct
 
 typedef struct
 {
-  const char* nrf_dev_path;
+  unsigned int dummy;
 } bano_base_info_t;
 
 
@@ -117,6 +119,7 @@ int bano_init(void);
 int bano_fini(void);
 int bano_open(bano_base_t*, const bano_base_info_t*);
 int bano_close(bano_base_t*);
+int bano_add_socket(bano_base_t*, const struct bano_socket_info*);
 int bano_start_loop(bano_base_t*, const bano_loop_info_t*);
 bano_io_t* bano_alloc_get_io(uint16_t, bano_compl_fn_t, void*);
 bano_io_t* bano_alloc_set_io(uint16_t, uint32_t, bano_compl_fn_t, void*);
@@ -126,19 +129,23 @@ int bano_post_io(bano_base_t*, bano_node_t*, bano_io_t*);
 
 /* static inlined */
 
-static inline uint16_t bano_get_node_id(bano_node_t* node)
+static inline uint32_t bano_get_node_addr(bano_node_t* node)
 {
-  return node->id;
+  return node->addr;
 }
 
 static inline void bano_init_base_info(bano_base_info_t* i)
 {
-  i->nrf_dev_path = "/dev/ttyUSB0";
 }
 
 static inline void bano_init_loop_info(bano_loop_info_t* i)
 {
   i->flags = 0;
+}
+
+static inline void bano_init_socket_info(bano_socket_info_t* i)
+{
+  i->type = BANO_SOCKET_TYPE_INVALID;
 }
 
 static inline void bano_set_io_timer(bano_io_t* io, unsigned int ms)
