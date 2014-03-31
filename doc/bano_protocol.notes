@@ -1,12 +1,3 @@
-[ TODO ]
-encryption on a per message basis not possible since key
-will be encrtyped too
- -> switch encryption mode: must include the seed
- -> replay attack: should be done in 2 message
-  (original then copy)
- -> use 2 messages
-
-
 [ general ]
 
 bano (base node) protocol
@@ -17,7 +8,11 @@ the master is considered resourceful. any feature that can be
 implemented on the master to decrease the node resources
 requirments should be.
 
+
 [ transport layer ]
+
+TODO: no ordering
+TODO: optionnal integrity via 2 bytes checksuming
 
 bano aims at being independent from the physical layer and
 limits the constraints put on the physical layer and its
@@ -45,15 +40,25 @@ scheme length (4 bytes max for NRF905, 5 bytes for NRF24L01P).
 
 [ addressing ]
 
-the base has a fixed address
+[[ base default address ]]
 
-when a node joins a network, a node has a default BANO_ADDR_ANY
+the base has a fixed address BANO_BASE_ADDR.
+
+
+[[ dynamic addressing ]]
+
+when a node joins a network, a node has a default BANO_ANY_ADDR.
 address. it sends the base a request:
 BANO_OP_GET, BANO_KEY_ADDR, random_id[4]
 the base allocates a new address, and reply with:
 BANO_OP_SET, BANO_KEY_ADDR, random_id[4], addr
 
 to enumerate the nodes, a base
+
+
+[[ static addressing ]]
+
+a node can be programmed to use a fixed address
 
 
 [ messaging ]
@@ -119,14 +124,16 @@ Designing the protocol this way will increase
 
 [ on message forwarding ]
 
+Some physical setup may require the use of repeater.
+
 
 [ on security ]
 
-Implementing security adds complexity not required by the common
-case, and goes against some other BANO protocol design choices
-(stateless, common case, short message size). However, it is
-undeniable that there are node messages that require some or all
-of the following security features:
+Implementing security adds complexity not required in all cases and
+goes against some other BANO protocol design choices (stateless,
+common case, short message size). However, it is undeniable that there
+are node messages that require some or all of the following security
+features:
 . hiding message contents
 . preventing replay attack
 . preventing brute force
@@ -134,15 +141,28 @@ of the following security features:
 . detecting flood
 . node DOS
 
+
 [[ message contents hiding ]]
-Per symetric block ciphers can be used to hide message contents.
-The ciphers rely on a shared secret key. Proposed ciphers:
-. AES 128 bits
+
+Symetric block ciphers can be used to hide message contents. The cipher
+block size should comply with the BANO message size, ie. 16 bytes. Thus,
+a 128 bits cipher is chosen (AES 128). Also, encryption is enabled for
+all the messages of a given node. If this is a limitation, a node key
+can allow the node to switch switch the encryption mode. In this case,
+and because of statelessness, the encryption mode toggling should be
+sent in 2 encrypted and clear versions.
+
+Ciphers rely on a secret key shared between the base and the node. There
+is no support for sharing the key built in the protocol. In a typical
+situation, the node is programmed with a random key that is made known
+to the base using the configuration interface.
+
 
 [[ preventing replay attack ]]
-The usual way to prevent replay attack is for the node to
-convey a seed. This seed must not be known by the attacker
-at the time the message is generated.
+
+The usual way to prevent replay attack is for the node message to convey
+a seed. This seed must not be known by the attacker at the time the message
+is generated.
 
 example: shutting down an alarm
 An attacker may replay a previously capture message used to
@@ -158,36 +178,36 @@ the node.
 
 [[ preventing tampering attacks (mim ...) ]]
 
+a hash of the message payload is included in the message. the message
+is then encrypted. Thus, a modification
+
+
 [[ detecting node flood ]]
 flood can be used or to prevent a node from speaking with
 the base.
 
 
-. security token
--> the whole message is readable, a secret key based seed is
-used to validate the security
--> less computing required to decrypt the message
-
 . security seed broadcast
--> the master (node?) broadcasts a seed at regular interval
-his security seed is used in the encryption token scheme
--> if the node broadcast, it must be able to generate it, which
-means random number generation caps
+-> the master (node?) broadcasts a seed at regular interval his security
+seed is used in the encryption token scheme
+-> if the node broadcast, it must be able to generate it, which means random
+number generation caps
 -> if the master broadcast it, the node has to store it
 
-=> any failed attempt to check the security token should
-renegotiate the node security context
-
-flooding
-detection
-replay
-encryption
+=> any failed attempt to check the security token should renegotiate the
+node security context
 
 
 [ frame layout ]
+
+16 bytes
+
+-- common
 op:2
 flags:6
 saddr:32
+aux: 24
+-- per message
 key:16
 val:32
 checksum: 16
