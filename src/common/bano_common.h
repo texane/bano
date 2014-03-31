@@ -6,7 +6,6 @@
 
 #define BANO_OP_SET 0
 #define BANO_OP_GET 1
-#define BANO_OP_ACK 2
 
 #define BANO_FLAG_SET_ACK (1 << 0)
 /* note: same as set_ack */
