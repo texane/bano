@@ -45,7 +45,7 @@ typedef struct
 
 static const bano_info_t bano_info_default =
 {
-  .wake_mask = BANO_WAKE_MSG,
+  .wake_mask = BANO_WAKE_NONE,
   .disable_mask = BANO_DISABLE_NONE,
   .pcint_mask = 0,
   .nodl_id = 0

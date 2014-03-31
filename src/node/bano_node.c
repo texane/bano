@@ -173,7 +173,7 @@ static uint32_t bano_node_addr = 0;
 uint8_t bano_init(const bano_info_t* info)
 {
   /* base address */
-  uint8_t addr[4] = { 0x5a, 0x5a, 0x5a, 0x5a };
+  uint8_t addr[4] = { 0x6a, 0x6a, 0x6a, 0x6a };
 
   /* nrf setup and default state */
   nrf_setup();
@@ -440,6 +440,7 @@ uint8_t bano_loop(void)
   uint8_t ev;
   bano_msg_t msg;
   uint8_t msg_flags;
+  uint8_t msg_op;
 
   while (1)
   {
@@ -452,9 +453,10 @@ uint8_t bano_loop(void)
 
     if (ev & BANO_EV_MSG)
     {
+      msg_op = msg.hdr.op;
       msg_flags = msg.hdr.flags;
 
-      if (msg.hdr.op == BANO_OP_SET)
+      if (msg_op == BANO_OP_SET)
       {
 	/* TODO: handle default keys */
 
@@ -462,11 +464,11 @@ uint8_t bano_loop(void)
 	val = le_to_uint32(msg.u.set.val);
 	bano_set_handler(key, val);
       }
-      else if (msg.hdr.op == BANO_OP_GET)
+      else if (msg_op == BANO_OP_GET)
       {
 	/* TODO: handle default keys */
 
-	key = uint16_to_le(msg.u.set.key);
+	key = le_to_uint16(msg.u.get.key);
 	if (bano_get_handler(key, &val) == 0)
 	{
 	  make_set_msg(&msg, key, val);
