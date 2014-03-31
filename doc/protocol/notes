@@ -1,64 +1,117 @@
-[ general ]
+[ overview ]
 
-bano (base node) protocol
+The BANO protocol has been designed to implement a wireless network where a
+resourceful device known as the base interacts with smaller devices known as
+the nodes. Applications includes domotics.
 
-the nodes must be kept as simple as possible, to allow cheap.
-think about a simple relay activation node
-the master is considered resourceful. any feature that can be
-implemented on the master to decrease the node resources
-requirments should be.
+In a typical architecture, the base centralizes node states. The base reports
+node information to the user, and schedules appropriate actions based on the
+user configuration.
+
+To ease conceptual understanding, this document focuses on the simple case where
+base and node roles are clearly distinct. However, there is no limitation that
+prevents a node to act as a base, and a base to act as a node. Also, the protocol
+does not limit the base count.
+
+The BANO protocol is used between bases and nodes for accessing key value pairs
+using 2 basic operations:
+. BANO_OP_SET key value
+. BANO_OP_GET key
+
+/keys/ are 16 bits identifiers (BANO_KEY_xxx). Each node exposes a set of
+predefined keys and a set of specific keys.
+
+/value/ are 32 bits wide. The protocol does not specify a format for this
+field. For instance, it can be used to transmit integer or real values.
+The base uses the node description file to interpret the value of a specific
+key.
+
+These 2 operations are used to implement the following:
+. synchronous SET with optionnal acknowledgement: a base can set a node value
+by sending a SET message. If required, an acknowledgement can be sent back as
+a flagged message,
+. synchronous GET: a base can get a node value by sending a GET message, and
+wait for the corresponding reply,
+. asynchronous SET: a base can get a node value by listening for SET messages
+coming from nodes.
+
+The protocol uses little endianess for any field wider than one byte.
+
+
+[ design considerations ]
+
+[[ common case in mind ]]
+
+The protocol is designed with common case in mind. Any feature that is not
+mandatory should not impact its design. For instance, security is a feature
+that would impact message format if made mandatory. Another example is the
+lack of message routing support.
+
+[[ node simplicity ]]
+
+Nodes resource requirements should be as low as possible, enabling low cost
+8 bits microcontroller based configurations. On the contrary, the base is
+considered resourceful. This should be used to lower the node requirements.
+
+[[ small messages ]]
+
+TODO
 
 
 [ transport layer ]
 
-TODO: no ordering
-TODO: optionnal integrity via 2 bytes checksuming
-
-bano aims at being independent from the physical layer and
-limits the constraints put on the physical layer and its
-protocol. bano requires:
-. a packet based transport layer
-. if provided by hardware, addressing must be at least 4
-bytes. otherwise, addressing is implement in software and
-the payload size must be increased by 4 bytes.
-. crc must be at least 2 bytes. can be implemented in sw.
-. data payload size must be at least 8 bytes, but depends
-on what is implemented in software
+BANO aims at being independent from the physical layer and limits the constraints
+put on the physical layer and its protocol. bano requires:
+. a packet based transport layer,
+. if provided by hardware, addressing must be at least 4 bytes. Otherwise,
+addressing is implement in software and the payload size must be increased by
+4 bytes,
+. crc must be at least 2 bytes. can be implemented in sw,
+. data payload size must be at least 8 bytes, but depends on what is implemented
+in software,
 . no packet ordering is assumed
 . no packet acknowledgement is assumed
 
-the physical layer can work in all the commonly used wireless
-ranges (433, 868, 915 MHz and 2.4 GHz).
-
-2 chipsets are considered:
+The physical layer can work in all the commonly used wireless ranges (433, 868,
+915 MHz and 2.4 GHz). 2 chipsets are considered:
 . NRF905
 . NRF24L01P
-
-in the above chipsets, the main differences are the addressing
-scheme length (4 bytes max for NRF905, 5 bytes for NRF24L01P).
 
 
 [ addressing ]
 
+Network nodes are addressed using 32 bits identifiers. Addresses are randomly
+generated at programming time, along with a random 32 bits seed. At any time,
+the base can detect address collision by checking the uniqueness of the
+addr,seed pair. To do so, it sends a message to all the nodes that it has
+currently discovered:
+msg.daddr = node_addr
+msg.hdr.op = BANO_OP_GET
+msg.hdr.flags = 0
+msg.hdr.saddr = base_addr
+msg.u.set.key = BANO_KEY_ADDR
+
+Nodes reply with the following message:
+msg.daddr = base_addr
+msg.hdr.op = BANO_OP_SET
+msg.hdr.flags = BANO_FLAG_REPLY
+msg.hdr.saddr = node_addr
+msg.u.set.key = BANO_KEY_ADDR
+msg.u.set.val = node_seed
+
+If there are 2 random ids for one address, a collision is detected. The base
+resolves the conflict and sends new addresses to the node:
+msg.daddr = node_previous_addr
+msg.hdr.op = BANO_OP_SET
+msg.hdr.flags = 0
+msg.hdr.saddr = node_new_addr
+msg.u.set.key = BANO_KEY_ADDR
+msg.u.set.val = node_seed
+
+
 [[ base default address ]]
 
-the base has a fixed address BANO_BASE_ADDR.
-
-
-[[ dynamic addressing ]]
-
-when a node joins a network, a node has a default BANO_ANY_ADDR.
-address. it sends the base a request:
-BANO_OP_GET, BANO_KEY_ADDR, random_id[4]
-the base allocates a new address, and reply with:
-BANO_OP_SET, BANO_KEY_ADDR, random_id[4], addr
-
-to enumerate the nodes, a base
-
-
-[[ static addressing ]]
-
-a node can be programmed to use a fixed address
+By default, the base uses the BANO_DEFAULT_BASE_ADDR address.
 
 
 [ messaging ]
