@@ -8,7 +8,9 @@
 #define BANO_OP_GET 1
 #define BANO_OP_ACK 2
 
-#define BANO_FLAG_ACK (1 << 0)
+#define BANO_FLAG_SET_ACK (1 << 0)
+/* note: same as set_ack */
+#define BANO_FLAG_GET_REPLY (1 << 0)
 
 typedef struct bano_msg_hdr
 {
@@ -50,8 +52,11 @@ typedef struct bano_msg
 /* broadcast address */
 #define BANO_ANY_ADDR ((uint16_t)-1)
 
+/* default node address */
+#define BANO_DEFAULT_NODE_ADDR ((uint32_t)0xa5a5a5a5)
+
 /* default base address */
-#define BANO_BASE_ADDR ((uint32_t)0x5a5a5a5a)
+#define BANO_DEFAULT_BASE_ADDR ((uint32_t)0x5a5a5a5a)
 
 
 #endif /* BANO_COMMON_H_INCLUDED */
