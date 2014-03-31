@@ -14,3 +14,7 @@ other require complex features. for instance, security through
 payload encryption and security token may be useful for some
 node only (for instance a relay actuator), while others sends
 non critical data (for instance temperature sensor).
+
+a NODL file database can be query using a NODL identifier. The
+identifier can be retrieved by querying the node BANO_KEY_NODL_ID
+key, or entered manually if the node is passive.

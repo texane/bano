@@ -1,3 +1,12 @@
+[ TODO ]
+encryption on a per message basis not possible since key
+will be encrtyped too
+ -> switch encryption mode: must include the seed
+ -> replay attack: should be done in 2 message
+  (original then copy)
+ -> use 2 messages
+
+
 [ general ]
 
 bano (base node) protocol
@@ -18,7 +27,10 @@ protocol. bano requires:
 bytes. otherwise, addressing is implement in software and
 the payload size must be increased by 4 bytes.
 . crc must be at least 2 bytes. can be implemented in sw.
-. data payload size must be at least 8 bytes
+. data payload size must be at least 8 bytes, but depends
+on what is implemented in software
+. no packet ordering is assumed
+. no packet acknowledgement is assumed
 
 the physical layer can work in all the commonly used wireless
 ranges (433, 868, 915 MHz and 2.4 GHz).
@@ -56,9 +68,13 @@ completion.
 also, note the polling scheme prevents a malicious sender to
 keep transmitting to a node in order to reduce its battery life.
 
-[[ integrity ]]
+
+[ message integrity ]
 
 the integrity is handled by hardware via a 2 bytes checksum.
+
+
+[ message acknowledgment ]
 
 
 [ keys ]
@@ -106,6 +122,47 @@ Designing the protocol this way will increase
 
 [ on security ]
 
+Implementing security adds complexity not required by the common
+case, and goes against some other BANO protocol design choices
+(stateless, common case, short message size). However, it is
+undeniable that there are node messages that require some or all
+of the following security features:
+. hiding message contents
+. preventing replay attack
+. preventing brute force
+. preventing tampering attacks (mim ...)
+. detecting flood
+. node DOS
+
+[[ message contents hiding ]]
+Per symetric block ciphers can be used to hide message contents.
+The ciphers rely on a shared secret key. Proposed ciphers:
+. AES 128 bits
+
+[[ preventing replay attack ]]
+The usual way to prevent replay attack is for the node to
+convey a seed. This seed must not be known by the attacker
+at the time the message is generated.
+
+example: shutting down an alarm
+An attacker may replay a previously capture message used to
+unlock an alarm, even if encrypted. If the message contains
+a time dependent information that can be checked by the base,
+then any previously generated message will no longer be valid.
+The time dependent information should be generated randomly
+in a fashion not known by the attacker. For instance, a seed
+can be generated locally by the base and sent encrypted to
+the node.
+
+[[ preventing brute force ]]
+
+[[ preventing tampering attacks (mim ...) ]]
+
+[[ detecting node flood ]]
+flood can be used or to prevent a node from speaking with
+the base.
+
+
 . security token
 -> the whole message is readable, a secret key based seed is
 used to validate the security
@@ -130,9 +187,16 @@ encryption
 [ frame layout ]
 op:2
 flags:6
-saddr:16
+saddr:32
 key:16
 val:32
+checksum: 16
+
+--
+security:16
+
+--
+ordering:8
 
 
 [ TODO: review existing protocols ]
