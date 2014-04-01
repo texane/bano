@@ -65,4 +65,15 @@ extern uint8_t bano_timer_handler(void);
 extern uint8_t bano_pcint_handler(void);
 
 
+/* static configuration */
+
+#ifndef BANO_CONFIG_NODE_ADDR
+#error "BANO_CONFIG_NODE_ADDR not defined"
+#endif /* BANO_CONFIG_NODE_ADDR */
+
+#ifndef BANO_CONFIG_NODE_SEED
+#error "BANO_CONFIG_NODE_SEED not defined"
+#endif /* BANO_CONFIG_NODE_SEED */
+
+
 #endif /* ! BANO_NODE_H_INCLUDED */

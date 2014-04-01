@@ -464,6 +464,8 @@ uint8_t bano_loop(void)
 	key = le_to_uint16(msg.u.set.key);
 	val = le_to_uint32(msg.u.set.val);
 	bano_set_handler(key, val);
+
+	/* TODO: BANO_FLAG_ACK */
       }
       else if (msg_op == BANO_OP_GET)
       {
@@ -473,19 +475,13 @@ uint8_t bano_loop(void)
 	if (bano_get_handler(key, &val) == 0)
 	{
 	  make_set_msg(&msg, key, val);
+	  msg.hdr.flags |= BANO_FLAG_REPLY;
 	  send_msg(&msg);
 	}
       }
       else
       {
 	/* TODO: report error */
-      }
-
-      if (msg_flags & BANO_FLAG_SET_ACK)
-      {
-	/* TODO: ack */
-	/* to acknowledge, send {SET,KEY,VAL} */
-	/* the base station can remove the entry from its queue */
       }
     }
 

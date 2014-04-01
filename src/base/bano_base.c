@@ -278,19 +278,24 @@ static int handle_set_msg
 {
   bano_io_t* pending_io;
 
-  pending_io = find_pending_io(node, msg);
-  if (pending_io != NULL)
+  if (msg->hdr.flags & BANO_FLAG_REPLY)
   {
-    /* reply to previous get message */
+    /* this is a reply, check pending messages */
 
-    if (pending_io->compl_fn != NULL)
+    pending_io = find_pending_io(node, msg);
+    if (pending_io != NULL)
     {
-      pending_io->compl_err = 0;
-      pending_io->compl_val = le_to_uint32(msg->u.set.val);
-      pending_io->compl_fn(pending_io, pending_io->compl_data);
-    }
+      /* reply to previous get message */
 
-    free_io(pending_io);
+      if (pending_io->compl_fn != NULL)
+      {
+	pending_io->compl_err = 0;
+	pending_io->compl_val = le_to_uint32(msg->u.set.val);
+	pending_io->compl_fn(pending_io, pending_io->compl_data);
+      }
+
+      free_io(pending_io);
+    }
   }
   else if (prwmd->linfo->set_fn != NULL)
   {
