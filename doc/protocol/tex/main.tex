@@ -71,6 +71,35 @@ for incoming \textit{SET} messages.
 \end{itemize}
 
 
+%%
+%% transport layer
+\clearpage
+\section{Transport layer}
+\paragraph{}
+BANO is designed for wireless networks. The hardware (RF chipsets) and logic
+(low level protocol) used to transport messages are refer to as the
+\textit{transport layer}. The following points have been considered for choosing
+a transport layer:
+\begin{itemize}
+\item packet based, with at least 16 bytes data payloads,
+\item packet ordering is not required,
+\item packet acknowledgement is not required,
+\item packet routing is not required,
+\item if provided by hardware, addressing must be at least 4 bytes. Otherwise,
+addressing is implement in software and the payload size must be increased by 4
+bytes,
+\item if implemented by hardware, the CRC must be at least 2 bytes. Otherwise,
+the CRC can be implemented in software.
+\end{itemize}
+
+\paragraph{}
+After investigations, the following 2 chipsets were selected:
+\begin{itemize}
+\item NRF905 (covers sub GHz bands),
+\item NRF24L01P (covers 2.4GHz band)
+\end{itemize}
+
+
 \clearpage
 \section{Messages}
 
@@ -105,7 +134,7 @@ A combination of the following flags:
 \item BANO\_FLAG\_REPLY ($1<<1$): this message replies a previous one.
 \end{itemize}
 \item \textit{SADDR}, 32 bits\\
-The sender address.
+The source address (sender node or base).
 \item \textit{AUX}, 24 bits\\
 Auxiliary data. Usage of this field is left to the application.
 \item \textit{CSUM}, 16 bits\\
@@ -119,6 +148,15 @@ values. For instance, it can be used to transmit integer or real values.
 \item \textit{PAD}, 32 bits\\
 Padding. Contents are undefined.
 \end{itemize}
+
+\paragraph{}
+NOTE: Currently, the destination address is handled by the transport layer,
+and is not part of the message format. On the contrary, the source address
+is not handled by the transport layer and is included in the message.
+
+\paragraph{}
+NOTE: if a checksum is already computed by the transport layer hardware, the
+CSUM is not used.
 
 \subsection{Message integrity}
 \paragraph{}
@@ -265,33 +303,6 @@ considered resourceful. This should be used to lower the node requirements.
 \subsection{Low memory footprint}
 \paragraph{}
 \textbf{TODO}
-
-
-\subsection{Transport layer}
-\paragraph{}
-BANO aims at being independent from the physical layer and limits the
-constraints put on the layer used to transport messages. It requires:
-\begin{itemize}
-\item packet ordering is not required,
-\item packet acknowledgement is not required,
-\item a fixed size packet based transport layer,
-\item if provided by hardware, addressing must be at least 4 bytes.
-Otherwise, addressing is implement in software and the payload size must be
-increased by 4 bytes,
-\item if implemented by hardware, the CRC must be at least 2 bytes. Otherwise,
-the CRC can be implemented in software,
-\item data payload size must be at least 16 bytes, and depends on what is
-implemented in software.
-\end{itemize}
-
-\paragraph{}
-The physical layer can work in all the commonly used wireless ranges (433, 868,
-915 MHz and 2.4 GHz). 2 chipsets are considered:
-\begin{itemize}
-\item NRF905
-\item NRF24L01P
-\end{itemize}
-
 
 %% \subsection{Messaging}
 %% \paragraph{}
