@@ -269,10 +269,6 @@ TODO: message acknowledgement
 
 %% Designing the protocol this way will increase
 
-
-
-\section{BANO protocol implementation}
-
 \subsection{Message format}
 
 \paragraph{}
@@ -323,8 +319,9 @@ Auxiliary data, whose usage is left to the application.
 
 \subsubsection{CSUM, 16 bits}
 \paragraph{}
-Checksum, covers all the message. When computing the checksum field 
-is considered zero.
+Checksum, covers all the message. During computation, the CSUM field 
+is considered zero. The use of a checksum is optionnal and configured
+in the node description file.
 
 \subsubsection{KEY, 16 bits}
 \paragraph{}
@@ -332,9 +329,10 @@ The operation target key.
 
 \subsubsection{VALUE, 32 bits}
 \paragraph{}
-The value. The protocol does not specify a format for values. For instance, it
-can be used to transmit integer or real values. The base uses the node description
-file to interpret the value of a specific key.
+The operation target value. The protocol does not specify a format for
+values. For instance, it can be used to transmit integer or real values.
+The base uses the node description file to interpret the value of a
+specific key.
 
 \subsubsection{PAD, 32 bits}
 \paragraph{}
