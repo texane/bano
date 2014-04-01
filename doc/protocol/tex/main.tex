@@ -296,34 +296,49 @@ The following section details the message fields.
 
 \subsubsection{OP, 2 bits}
 \paragraph{}
+One of the following message operation:
+\begin{itemize}
+\item BANO\_OP\_GET (0x0): get a value given a key,
+\item BANO\_OP\_SET (0x1): set a value given a key.
+\end{itemize}
 
 \subsubsection{FLAGS, 6 bits}
 \paragraph{}
+A combination of the following flags:
+\begin{itemize}
+\item BANO\_FLAG\_ACK ($1<<0$): this message acknowledges a previous
+operation,
+\item BANO\_FLAG\_REPLY ($1<<1$): this message replies a previous
+operation.
+\end{itemize}
 
 \subsubsection{SADDR, 32 bits}
 \paragraph{}
+The message source address. In case of forwarding, the original source
+address must be conserved.
 
 \subsubsection{AUX, 24 bits}
 \paragraph{}
+Auxiliary data, whose usage is left to the application.
 
 \subsubsection{CSUM, 16 bits}
 \paragraph{}
+Checksum, covers all the message. When computing the checksum field 
+is considered zero.
 
 \subsubsection{KEY, 16 bits}
 \paragraph{}
-%% \textit{keys} are 16 bits identifiers. Each node exposes a set of predefined
-%% keys and a set of specific keys.
+The operation target key.
 
 \subsubsection{VALUE, 32 bits}
 \paragraph{}
-%% \textit{value} are 32 bits wide. The protocol does not specify a format for
-%% this field. For instance, it can be used to transmit integer or real values.
-%% The base uses the node description file to interpret the value of a specific
-%% key.
-
+The value. The protocol does not specify a format for values. For instance, it
+can be used to transmit integer or real values. The base uses the node description
+file to interpret the value of a specific key.
 
 \subsubsection{PAD, 32 bits}
 \paragraph{}
+Padding. Contents is undefined.
 
 
 \end{document}
