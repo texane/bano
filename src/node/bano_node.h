@@ -4,6 +4,20 @@
 
 #include <stdint.h>
 
+
+/* static configuration */
+
+#ifndef BANO_CONFIG_NODE_ADDR
+#error "BANO_CONFIG_NODE_ADDR not defined"
+#endif /* BANO_CONFIG_NODE_ADDR */
+
+#ifndef BANO_CONFIG_NODE_SEED
+#error "BANO_CONFIG_NODE_SEED not defined"
+#endif /* BANO_CONFIG_NODE_SEED */
+
+
+/* events */
+
 #define BANO_EV_ERROR (1 << 0)
 #define BANO_EV_TIMER (1 << 1)
 #define BANO_EV_MSG (1 << 2)
@@ -35,9 +49,6 @@ typedef struct
 
   uint32_t pcint_mask;
 
-  /* address */
-  uint32_t node_addr;
-
   /* nodle identifier */
   uint32_t nodl_id;
 
@@ -63,17 +74,6 @@ extern uint8_t bano_set_handler(uint16_t, uint32_t);
 extern uint8_t bano_get_handler(uint16_t, uint32_t*);
 extern uint8_t bano_timer_handler(void);
 extern uint8_t bano_pcint_handler(void);
-
-
-/* static configuration */
-
-#ifndef BANO_CONFIG_NODE_ADDR
-#error "BANO_CONFIG_NODE_ADDR not defined"
-#endif /* BANO_CONFIG_NODE_ADDR */
-
-#ifndef BANO_CONFIG_NODE_SEED
-#error "BANO_CONFIG_NODE_SEED not defined"
-#endif /* BANO_CONFIG_NODE_SEED */
 
 
 #endif /* ! BANO_NODE_H_INCLUDED */
