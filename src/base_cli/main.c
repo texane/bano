@@ -230,7 +230,7 @@ int main(int ac, char** av)
   sinfo.type = BANO_SOCKET_TYPE_SNRF;
   sinfo.u.snrf.dev_path = "/dev/ttyUSB0";
   sinfo.u.snrf.addr_width = 4;
-  sinfo.u.snrf.addr_val = BANO_BASE_ADDR;
+  sinfo.u.snrf.addr_val = BANO_DEFAULT_BASE_ADDR;
   if (bano_add_socket(&base, &sinfo))
   {
     BANO_PERROR();
