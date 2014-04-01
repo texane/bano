@@ -438,7 +438,6 @@ uint8_t bano_loop(void)
   uint32_t val;
   uint8_t ev;
   bano_msg_t msg;
-  uint8_t msg_flags;
   uint8_t msg_op;
 
   while (1)
@@ -453,7 +452,6 @@ uint8_t bano_loop(void)
     if (ev & BANO_EV_MSG)
     {
       msg_op = msg.hdr.op;
-      msg_flags = msg.hdr.flags;
 
       if (msg_op == BANO_OP_SET)
       {
