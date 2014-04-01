@@ -37,8 +37,8 @@ node information to the user, and schedules appropriate actions based on the
 user configuration.
 
 \paragraph{}
-To ease conceptual understanding, this document focuses on the common case where
-base and node roles are clearly distinct. However, there is no limitation that
+To ease understanding, this document focuses on the common case where base and
+node roles are clearly distinct. However, there is no strong limitation that
 prevents a node to act as a base, and a base to act as a node. Also, the protocol
 does not limit the base count.
 
@@ -78,7 +78,7 @@ for incoming \textit{SET} messages.
 \paragraph{}
 BANO is designed for wireless networks. The hardware (RF chipsets) and logic
 (low level protocol) used to transport messages are refer to as the
-\textit{transport layer}. The following points have been considered for choosing
+\textit{transport layer}. The following points were considered for choosing
 a transport layer:
 \begin{itemize}
 \item packet based, with at least 16 bytes data payloads,
@@ -93,10 +93,11 @@ the CRC can be implemented in software.
 \end{itemize}
 
 \paragraph{}
-After investigations, the following 2 chipsets were selected:
+After investigations, the following 2 chipsets from Nordic Semiconductor were
+selected:
 \begin{itemize}
 \item NRF905 (covers sub GHz bands),
-\item NRF24L01P (covers 2.4GHz band)
+\item NRF24L01P (covers 2.4GHz band).
 \end{itemize}
 
 
@@ -175,14 +176,16 @@ CSUM is not used.
 %% addressing
 \clearpage
 \section{Addressing}
+
 \paragraph{}
-Bases and nodes are addressed using 32 bits identifiers. Addresses are
-randomly generated at programming time, along with a random 32 bits
-\textit{seed}. At any time, the base can detect address collision by
-checking the uniqueness of the set of $(addr,seed)$ pairs.
-\paragraph{}
-To retrieve $(addr,seed)$ pairs, the base sends a message to all the
-nodes that it has discovered so far:
+Bases and nodes are identified using 32 bits \textit{addresses}. Bases use a
+known static address. Node addresses are randomly generated at programming time,
+along with a random 32 bits \textit{seed}. The following mechanism is proposed
+to detect address collision.
+
+\paragraph{} At any time, the base can detect by checking the uniqueness of
+nodes $(addr,seed)$ pairs. To retrieve $(addr,seed)$ pairs, the base sends a
+message to all the nodes that it has discovered so far:
 %% msg.daddr = node_addr
 %% msg.hdr.op = BANO_OP_GET
 %% msg.hdr.flags = 0
@@ -199,17 +202,15 @@ Nodes reply with the following message:
 %% msg.u.set.val = node_seed
 
 \paragraph{}
-If there are 2 random ids for one address, a collision is detected. The base
-resolves the conflict and sends new addresses to the node:
+Address collision is detected if one or more identical $(addr,seed)$
+pairs are received. The base resolves the conflict and sends new addresses
+to the nodes:
 %% msg.daddr = node_previous_addr
 %% msg.hdr.op = BANO_OP_SET
 %% msg.hdr.flags = 0
 %% msg.hdr.saddr = node_new_addr
 %% msg.u.set.key = BANO_KEY_ADDR
 %% msg.u.set.val = node_seed
-
-\paragraph{}
-%% By default, the base uses the BANO_DEFAULT_BASE_ADDR address.
 
 
 %%
