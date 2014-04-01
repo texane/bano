@@ -179,7 +179,7 @@ uint8_t bano_init(const bano_info_t* info)
   nrf_set_payload_width(BANO_MSG_SIZE);
   nrf_set_addr_width(4);
 
-  uint32_to_le_buf(BANO_BASE_ADDR, addr);
+  uint32_to_le_buf(BANO_DEFAULT_BASE_ADDR, addr);
   nrf_set_tx_addr(addr);
 
   uint32_to_le_buf(info->node_addr, addr);
@@ -481,7 +481,7 @@ uint8_t bano_loop(void)
 	/* TODO: report error */
       }
 
-      if (msg_flags & BANO_FLAG_ACK)
+      if (msg_flags & BANO_FLAG_SET_ACK)
       {
 	/* TODO: ack */
 	/* to acknowledge, send {SET,KEY,VAL} */
