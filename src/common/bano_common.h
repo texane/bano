@@ -7,8 +7,8 @@
 #define BANO_OP_SET 0
 #define BANO_OP_GET 1
 
-#define BANO_FLAG_SET_ACK (1 << 0)
-#define BANO_FLAG_GET_REPLY (1 << 1)
+#define BANO_FLAG_ACK (1 << 0)
+#define BANO_FLAG_REPLY (1 << 1)
 
 typedef struct bano_msg_hdr
 {
