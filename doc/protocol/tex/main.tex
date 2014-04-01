@@ -11,8 +11,8 @@
 
 \begin{document}
 
-\title{The BANO protocol design and implementation}
-\author{BANO team}
+\title{BANO protocol notes}
+\author{texane@gmail.com}
 \date{}
 
 \maketitle
@@ -23,19 +23,18 @@
 
 
 \clearpage
-\section{BANO protocol design}
+\section{Overview}
 
-\subsection{Overview}
 \paragraph{}
 The BANO protocol has been designed to implement a wireless network where a
-resourceful device known as the base interacts with smaller devices known as
-the nodes. The protocol especially targets domotics applications, but is not
-limited to them.
+resourceful device known as the \textit{base} interacts with smaller devices
+known as the \textit{nodes}. The protocol especially targets domotics applications,
+but is not limited to them.
 
 \paragraph{}
-In a typical architecture, the base centralizes node information. The base
-reports node information to the user, and schedules appropriate actions based
-on the user configuration.
+In a typical architecture, the base centralizes node information. It reports
+node information to the user, and schedules appropriate actions based on the
+user configuration.
 
 \paragraph{}
 To ease conceptual understanding, this document focuses on the common case where
@@ -44,11 +43,11 @@ prevents a node to act as a base, and a base to act as a node. Also, the protoco
 does not limit the base count.
 
 \paragraph{}
-The BANO protocol is used between bases and nodes for accessing key value pairs
-using 2 basic operations:
+The BANO protocol relies on 2 messages used between bases and nodes for accessing
+$(key,value)$ pairs:
 \begin{itemize}
-\item the \textit{SET} operation is used to set a value given a specific key,
-\item the \textit{GET} operation is used to get a value given a specific key.
+\item the \textit{SET} message is used to set a value given a specific key,
+\item the \textit{GET} message is used to get a value given a specific key.
 \end{itemize}
 
 \begin{figure}[!h]
@@ -60,39 +59,210 @@ using 2 basic operations:
 \end{figure}
 
 \paragraph{}
-These 2 operations are used to implement the following:
+These 2 messages are used to implement the following operations:
 \begin{itemize}
-\item \textit{synchronous SET} with optionnal acknowledgement: a base can set a
-node value by sending a \textit{SET} message. If required, an acknowledgement can
+\item \textit{synchronous SET} with optional acknowledgement: a base sets a
+node value using a \textit{SET} message. If required, an acknowledgement can
 be sent back as a flagged message,
-\item \textit{synchronous GET}: a base can get a node value by sending a
-\textit{GET} message, and wait for the corresponding reply,
-\item \textit{asynchronous SET}: a base can get a node value by listening for
-\textit{SET} messages coming from nodes.
+\item \textit{synchronous GET}: a base gets a node value by sending a
+\textit{GET} message, and waits for the corresponding reply,
+\item \textit{asynchronous SET}: a base gets node key value pairs by listening
+for incoming \textit{SET} messages.
 \end{itemize}
 
 
-\subsection{Design considerations}
+\clearpage
+\section{Messages}
 
-\subsubsection{Focus on common case}
+\subsection{Message format}
+
+\paragraph{}
+A message consists of a 128 bits sequence (16 bytes). Any field larger than 1
+byte uses the little endian encoding. A header is always present and its format
+is common to all the messages. The payload contents vary according to the operation
+field.
+
+\paragraph{}
+\begin{figure}[!h]
+\begin{center}
+\includegraphics[scale=0.2]{../dia/msg_format/main.jpeg}
+\end{center}
+\caption{\tiny{message format}}
+\label{msg_format}
+\end{figure}
+
+\begin{itemize}
+\item \textit{OP}, 2 bits\\
+One of the following message operation:
+\begin{itemize}
+\item BANO\_OP\_GET (0x0): get a value given a key,
+\item BANO\_OP\_SET (0x1): set a value given a key.
+\end{itemize}
+\item \textit{FLAGS}, 6 bits\\
+A combination of the following flags:
+\begin{itemize}
+\item BANO\_FLAG\_ACK ($1<<0$): this message acknowledges a previous one,
+\item BANO\_FLAG\_REPLY ($1<<1$): this message replies a previous one.
+\end{itemize}
+\item \textit{SADDR}, 32 bits\\
+The sender address.
+\item \textit{AUX}, 24 bits\\
+Auxiliary data. Usage of this field is left to the application.
+\item \textit{CSUM}, 16 bits\\
+2 bytes checksum covering all the message bytes. During computation,
+the CSUM field is considered zero. The use of a checksum is optional.
+\item \textit{KEY}, 16 bits\\
+The message target key.
+\item \textit{VALUE}, 32 bits\\
+The message target value. The protocol does not specify a format for
+values. For instance, it can be used to transmit integer or real values.
+\item \textit{PAD}, 32 bits\\
+Padding. Contents are undefined.
+\end{itemize}
+
+\subsection{Message integrity}
+\paragraph{}
+\textbf{TODO}
+
+\subsection{Message acknowledgement}
+\paragraph{}
+\textbf{TODO}
+
+\subsection{Message forwarding}
+\paragraph{}
+\textbf{TODO} repeater
+
+
+%%
+%% addressing
+\clearpage
+\section{Addressing}
+\paragraph{}
+Bases and nodes are addressed using 32 bits identifiers. Addresses are
+randomly generated at programming time, along with a random 32 bits
+\textit{seed}. At any time, the base can detect address collision by
+checking the uniqueness of the set of $(addr,seed)$ pairs.
+\paragraph{}
+To retrieve $(addr,seed)$ pairs, the base sends a message to all the
+nodes that it has discovered so far:
+%% msg.daddr = node_addr
+%% msg.hdr.op = BANO_OP_GET
+%% msg.hdr.flags = 0
+%% msg.hdr.saddr = base_addr
+%% msg.u.set.key = BANO_KEY_ADDR
+
+\paragraph{}
+Nodes reply with the following message:
+%% msg.daddr = base_addr
+%% msg.hdr.op = BANO_OP_SET
+%% msg.hdr.flags = BANO_FLAG_REPLY
+%% msg.hdr.saddr = node_addr
+%% msg.u.set.key = BANO_KEY_ADDR
+%% msg.u.set.val = node_seed
+
+\paragraph{}
+If there are 2 random ids for one address, a collision is detected. The base
+resolves the conflict and sends new addresses to the node:
+%% msg.daddr = node_previous_addr
+%% msg.hdr.op = BANO_OP_SET
+%% msg.hdr.flags = 0
+%% msg.hdr.saddr = node_new_addr
+%% msg.u.set.key = BANO_KEY_ADDR
+%% msg.u.set.val = node_seed
+
+\paragraph{}
+%% By default, the base uses the BANO_DEFAULT_BASE_ADDR address.
+
+
+%%
+%% security
+\clearpage
+\section{Security}
+
+\paragraph{}
+Implementing security adds complexity not required in all cases and goes
+against some other BANO protocol design choices (stateless, common case,
+short message size...). However, it is undeniable that there are node
+messages that requiring some or all of the following security features:
+\begin{itemize}
+\item hiding message contents,
+\item preventing replay attack,
+\item preventing brute force,
+\item preventing tampering attacks,
+\item detecting node flood.
+\end{itemize}
+
+\paragraph{}
+Each point is addressed in the following sections.
+
+\subsection{Hiding message contents}
+\paragraph{}
+Symetric block ciphers can be used to hide message contents. The cipher
+block size should comply with the BANO message size, ie. 16 bytes. Thus,
+a 128 bits cipher is chosen (AES 128). Also, encryption is enabled for
+all the messages of a given node. If this is a limitation, a node key
+can allow the node to switch switch the encryption mode. In this case,
+and because of statelessness, the encryption mode toggling should be
+sent in 2 encrypted and clear versions.
+\paragraph{}
+Ciphers rely on a secret key shared between the base and the node. There
+is no support for sharing the key built in the protocol. In a typical
+situation, the node is programmed with a random key that is made known
+to the base using the configuration interface.
+
+\subsection{Preventing replay attack}
+\paragraph{}
+The usual way to prevent replay attack is for the node message to convey
+a seed. This seed must not be known by the attacker at the time the message
+is generated.
+%% \paragraph{}
+%% example: shutting down an alarm
+%% An attacker may replay a previously capture message used to
+%% unlock an alarm, even if encrypted. If the message contains
+%% a time dependent information that can be checked by the base,
+%% then any previously generated message will no longer be valid.
+%% The time dependent information should be generated randomly
+%% in a fashion not known by the attacker. For instance, a seed
+%% can be generated locally by the base and sent encrypted to
+%% the node.
+
+\subsection{Preventing brute force}
+\paragraph{}
+\textbf{TODO}
+
+\subsection{Preventing tampering attacks}
+\paragraph{}
+\textbf{TODO} man in the middle ...
+
+\subsection{Detecting node flood}
+\paragraph{}
+\textbf{TODO}
+
+
+%%
+%% design considerations
+\clearpage
+\section{Design considerations}
+
+\subsection{Focus on common case}
 \paragraph{}
 The protocol is designed with common case in mind. Any feature that is not
 mandatory should not impact its design. For instance, security is a feature
 that would impact message format if made mandatory. Another example is the
 lack of message routing support.
 
-\subsubsection{Node simplicity}
+\subsection{Node simplicity}
 \paragraph{}
 Nodes resource requirements should be as low as possible, enabling low cost
 8 bits microcontroller based configurations. On the contrary, the base is
 considered resourceful. This should be used to lower the node requirements.
 
-\subsubsection{Low power consumption}
+\subsection{Low power consumption}
 \paragraph{}
 \textbf{TODO}
 %% TODO: node mode (passive, listen only, time ...)
 
-\subsubsection{Low memory footprint}
+\subsection{Low memory footprint}
 \paragraph{}
 \textbf{TODO}
 
@@ -123,44 +293,8 @@ The physical layer can work in all the commonly used wireless ranges (433, 868,
 \end{itemize}
 
 
-\subsection{Addressing}
-\paragraph{}
-Network nodes are addressed using 32 bits identifiers. Addresses are randomly
-generated at programming time, along with a random 32 bits seed. At any time,
-the base can detect address collision by checking the uniqueness of the
-addr,seed pair. To do so, it sends a message to all the nodes that it has
-currently discovered:
-%% msg.daddr = node_addr
-%% msg.hdr.op = BANO_OP_GET
-%% msg.hdr.flags = 0
-%% msg.hdr.saddr = base_addr
-%% msg.u.set.key = BANO_KEY_ADDR
-
-\paragraph{}
-Nodes reply with the following message:
-%% msg.daddr = base_addr
-%% msg.hdr.op = BANO_OP_SET
-%% msg.hdr.flags = BANO_FLAG_REPLY
-%% msg.hdr.saddr = node_addr
-%% msg.u.set.key = BANO_KEY_ADDR
-%% msg.u.set.val = node_seed
-
-\paragraph{}
-If there are 2 random ids for one address, a collision is detected. The base
-resolves the conflict and sends new addresses to the node:
-%% msg.daddr = node_previous_addr
-%% msg.hdr.op = BANO_OP_SET
-%% msg.hdr.flags = 0
-%% msg.hdr.saddr = node_new_addr
-%% msg.u.set.key = BANO_KEY_ADDR
-%% msg.u.set.val = node_seed
-
-\paragraph{}
-%% By default, the base uses the BANO_DEFAULT_BASE_ADDR address.
-
-
-\subsection{Messaging}
-\paragraph{}
+%% \subsection{Messaging}
+%% \paragraph{}
 %% in RX mode, a node receive logic consumes power. to reduce power consumption and
 %% avoid being, a node can poll the requests by sending a request:
 %% BANO_OP_GET, BANO_KEY_REQ, node_addr
@@ -168,86 +302,6 @@ resolves the conflict and sends new addresses to the node:
 %% node will then return to reduced power mode at completion.
 %% also, note the polling scheme prevents a malicious sender to
 %% keep transmitting to a node in order to reduce its battery life.
-
-%% TODO
-%% [ on message forwarding ]
-%% Some physical setup may require the use of repeater.
-
-\paragraph{}
-TODO: message integrity
-
-\paragraph{}
-TODO: message acknowledgement
-
-
-\subsection{Security}
-\paragraph{}
-%% Implementing security adds complexity not required in all cases and goes against
-%% some other BANO protocol design choices (stateless, common case, short message
-%% size). However, it is undeniable that there are node messages that require some
-%% or all of the following security features:
-%% . hiding message contents
-%% . preventing replay attack
-%% . preventing brute force
-%% . preventing tampering attacks (mim ...)
-%% . detecting flood
-%% . node DOS
-
-
-%% [[ message contents hiding ]]
-
-%% Symetric block ciphers can be used to hide message contents. The cipher
-%% block size should comply with the BANO message size, ie. 16 bytes. Thus,
-%% a 128 bits cipher is chosen (AES 128). Also, encryption is enabled for
-%% all the messages of a given node. If this is a limitation, a node key
-%% can allow the node to switch switch the encryption mode. In this case,
-%% and because of statelessness, the encryption mode toggling should be
-%% sent in 2 encrypted and clear versions.
-
-%% Ciphers rely on a secret key shared between the base and the node. There
-%% is no support for sharing the key built in the protocol. In a typical
-%% situation, the node is programmed with a random key that is made known
-%% to the base using the configuration interface.
-
-
-%% [[ preventing replay attack ]]
-
-%% The usual way to prevent replay attack is for the node message to convey
-%% a seed. This seed must not be known by the attacker at the time the message
-%% is generated.
-
-%% example: shutting down an alarm
-%% An attacker may replay a previously capture message used to
-%% unlock an alarm, even if encrypted. If the message contains
-%% a time dependent information that can be checked by the base,
-%% then any previously generated message will no longer be valid.
-%% The time dependent information should be generated randomly
-%% in a fashion not known by the attacker. For instance, a seed
-%% can be generated locally by the base and sent encrypted to
-%% the node.
-
-%% [[ preventing brute force ]]
-
-%% [[ preventing tampering attacks (mim ...) ]]
-
-%% a hash of the message payload is included in the message. the message
-%% is then encrypted. Thus, a modification
-
-
-%% [[ detecting node flood ]]
-%% flood can be used or to prevent a node from speaking with
-%% the base.
-
-
-%% . security seed broadcast
-%% -> the master (node?) broadcasts a seed at regular interval his security
-%% seed is used in the encryption token scheme
-%% -> if the node broadcast, it must be able to generate it, which means random
-%% number generation caps
-%% -> if the master broadcast it, the node has to store it
-
-%% => any failed attempt to check the security token should renegotiate the
-%% node security context
 
 %% TODO
 %% [ on the assumption base is always present before nodes ]
@@ -268,75 +322,6 @@ TODO: message acknowledgement
 %% required information in one message.
 
 %% Designing the protocol this way will increase
-
-\subsection{Message format}
-
-\paragraph{}
-A message consists of a 128 bits sequence (16 bytes). Any field wider than 1
-byte uses the little endian encoding. A header is always present and its format
-is common to all the messages. The payload varies according to the operation
-field.
-
-\paragraph{}
-\begin{figure}[!h]
-\begin{center}
-\includegraphics[scale=0.2]{../dia/implem_format/main.jpeg}
-\end{center}
-\caption{\tiny{message format}}
-\label{implem_format}
-\end{figure}
-
-
-\paragraph{}
-The following section details the message fields.
-
-\subsubsection{OP, 2 bits}
-\paragraph{}
-One of the following message operation:
-\begin{itemize}
-\item BANO\_OP\_GET (0x0): get a value given a key,
-\item BANO\_OP\_SET (0x1): set a value given a key.
-\end{itemize}
-
-\subsubsection{FLAGS, 6 bits}
-\paragraph{}
-A combination of the following flags:
-\begin{itemize}
-\item BANO\_FLAG\_ACK ($1<<0$): this message acknowledges a previous
-operation,
-\item BANO\_FLAG\_REPLY ($1<<1$): this message replies a previous
-operation.
-\end{itemize}
-
-\subsubsection{SADDR, 32 bits}
-\paragraph{}
-The message source address. In case of forwarding, the original source
-address must be conserved.
-
-\subsubsection{AUX, 24 bits}
-\paragraph{}
-Auxiliary data, whose usage is left to the application.
-
-\subsubsection{CSUM, 16 bits}
-\paragraph{}
-Checksum, covers all the message. During computation, the CSUM field 
-is considered zero. The use of a checksum is optionnal and configured
-in the node description file.
-
-\subsubsection{KEY, 16 bits}
-\paragraph{}
-The operation target key.
-
-\subsubsection{VALUE, 32 bits}
-\paragraph{}
-The operation target value. The protocol does not specify a format for
-values. For instance, it can be used to transmit integer or real values.
-The base uses the node description file to interpret the value of a
-specific key.
-
-\subsubsection{PAD, 32 bits}
-\paragraph{}
-Padding. Contents is undefined.
 
 
 \end{document}
