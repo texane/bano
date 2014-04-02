@@ -1,0 +1,51 @@
+\documentclass[a4paper, 11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{graphics}
+\usepackage{verbatim}
+\usepackage{listings}
+\usepackage{color}
+
+\begin{document}
+
+\title{BANO node API}
+\author{texane@gmail.com}
+\date{}
+
+\maketitle
+
+%% \newpage
+%% \tableofcontents
+%% \addtocontents{toc}{\protect\setcounter{tocdepth}{1}}
+
+
+\clearpage
+\section{Overview}
+
+\paragraph{}
+This document describes the BANO node application programming interface.
+It is intended for node developers.
+
+\paragraph{}
+BANO offers a runtime and the corresponding programming interface that
+abstracts a node application logic from low level details such as hardware
+architecture and protocol implementation. The interface is mainly descriptive
+and event based: the developer first initializes node related information.
+The BANO runtime then calls application handlers whenever appropriate:
+network messages reception, timers, hardware related interrupts ...
+
+
+\clearpage
+\section{Reference}
+\paragraph{}
+
+
+\clearpage
+\section{Example}
+\paragraph{}
+
+
+\end{document}
