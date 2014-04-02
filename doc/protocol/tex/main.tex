@@ -109,8 +109,7 @@ selected:
 \paragraph{}
 A message consists of a 128 bits sequence (16 bytes). Any field larger than 1
 byte uses the little endian encoding. A header is always present and its format
-is common to all the messages. The payload contents vary according to the operation
-field.
+is common to all the messages. The payload contents vary according to the operation.
 
 \paragraph{}
 \begin{figure}[!h]
@@ -180,8 +179,8 @@ CSUM is not used.
 \paragraph{}
 Bases and nodes are identified using 32 bits \textit{addresses}. Bases use a
 known static address. Node addresses are randomly generated at programming time,
-along with a random 32 bits \textit{seed}. The following mechanism is proposed
-to detect address collision.
+along with a random 32 bits \textit{seed}. If required, the following mechanism
+is proposed to detect address collision.
 
 \paragraph{} At any time, the base can detect by checking the uniqueness of
 nodes $(addr,seed)$ pairs. To retrieve $(addr,seed)$ pairs, the base sends a
