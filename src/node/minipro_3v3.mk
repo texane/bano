@@ -18,8 +18,9 @@ REPO_DIR ?= $(HOME)/repo
 BANO_DIR := $(REPO_DIR)
 BANO_CFLAGS = \
 -I$(BANO_DIR) \
--DBANO_CONFIG_NODE_ADDR=$(shell $(BANO_DIR)/bano/util/rand/a.out) \
--DBANO_CONFIG_NODE_SEED=$(shell $(BANO_DIR)/bano/util/rand/a.out)
+-DBANO_CONFIG_NODE_ADDR=$(shell $(BANO_DIR)/bano/util/rand/a.out -f uint32 -n 1) \
+-DBANO_CONFIG_NODE_SEED=$(shell $(BANO_DIR)/bano/util/rand/a.out -f uint32 -n 1) \
+-DBANO_CONFIG_NODE_KEY=$(shell $(BANO_DIR)/bano/util/rand/a.out -f uint8 -n 16)
 
 NRF_DIR := $(REPO_DIR)/nrf
 NRF_CFLAGS := -I$(NRF_DIR)
