@@ -6,6 +6,7 @@
 #include <sys/time.h>
 #include "bano_base.h"
 #include "bano_socket.h"
+#include "bano_timer.h"
 #include "bano_list.h"
 #include "bano_perror.h"
 #include "../common/bano_common.h"
@@ -119,6 +120,7 @@ static int free_socket_item(bano_list_item_t* li, void* p)
   return 0;
 }
 
+
 /* exported */
 
 static void on_sigint(int x)
@@ -140,11 +142,13 @@ int bano_open(bano_base_t* base, const bano_base_info_t* info)
 {
   bano_list_init(&base->nodes);
   bano_list_init(&base->sockets);
+  bano_timer_init(&base->timers);
   return 0;
 }
 
 int bano_close(bano_base_t* base)
 {
+  bano_timer_fini(&base->timers);
   bano_list_fini(&base->nodes, free_node_item, NULL);
   bano_list_fini(&base->sockets, free_socket_item, base);
   return 0;
@@ -213,15 +217,39 @@ int bano_add_node(bano_base_t* base, uint32_t addr)
   return -1;
 }
 
-int bano_post_io(bano_base_t* base, bano_node_t* node, bano_io_t* io)
+int bano_post_io
+(bano_base_t* base, bano_node_t* node, bano_io_t* io, unsigned timer_ms)
 {
+  bano_list_item_t* it;
+
   if (bano_list_add_tail(&node->posted_ios, io))
   {
     BANO_PERROR();
-    return -1;
+    goto on_error_0;
+  }
+
+  it = node->posted_ios.tail;
+
+  if (timer_ms > 0)
+  {
+    if (bano_timer_add(&base->timers, &io->timer, timer_ms))
+    {
+      BANO_PERROR();
+      goto on_error_1;
+    }
+
+    io->timer->data[0] = &node->posted_ios;
+    io->timer->data[1] = it;
+
+    io->flags |= BANO_IO_FLAG_TIMER;
   }
 
   return 0;
+
+ on_error_1:
+  bano_list_del(&node->posted_ios, it);
+ on_error_0:
+  return -1;
 }
 
 /* event loop, peek pending messages  */
@@ -252,49 +280,51 @@ static int cmp_pending_io(bano_list_item_t* li, void* p)
 static bano_io_t* find_pending_io(bano_node_t* node, const bano_msg_t* set_msg)
 {
   uintptr_t data[3];
-  bano_list_item_t* li;
-  bano_io_t* pending_io;
+  bano_list_item_t* it;
+  bano_io_t* io;
 
   data[0] = (uintptr_t)set_msg;
   data[1] = (uintptr_t)node;
   data[2] = (uintptr_t)NULL;
   bano_list_foreach(&node->pending_ios, cmp_pending_io, data);
 
-  li = (bano_list_item_t*)data[2];
+  it = (bano_list_item_t*)data[2];
 
   /* not found */
-  if (li == NULL) return NULL;
+  if (it == NULL) return NULL;
 
   /* free list item */
-  pending_io = li->data;
+  io = it->data;
 
-  bano_list_del(&node->pending_ios, li);
+  bano_list_del(&node->pending_ios, it);
 
-  return pending_io;
+  return io;
 }
 
 static int handle_set_msg
 (prw_msg_data_t* prwmd, const bano_msg_t* msg, bano_node_t* node)
 {
-  bano_io_t* pending_io;
-
   if (msg->hdr.flags & BANO_FLAG_REPLY)
   {
     /* this is a reply, check pending messages */
 
-    pending_io = find_pending_io(node, msg);
-    if (pending_io != NULL)
+    bano_io_t* const io = find_pending_io(node, msg);
+    if (io != NULL)
     {
-      /* reply to previous get message */
-
-      if (pending_io->compl_fn != NULL)
+      if (io->compl_fn != NULL)
       {
-	pending_io->compl_err = 0;
-	pending_io->compl_val = le_to_uint32(msg->u.set.val);
-	pending_io->compl_fn(pending_io, pending_io->compl_data);
+	io->compl_err = 0;
+	io->compl_val = le_to_uint32(msg->u.set.val);
+	io->compl_fn(io, io->compl_data);
       }
 
-      free_io(pending_io);
+      if (io->flags & BANO_IO_FLAG_TIMER)
+      {
+	/* remove the timer */
+	bano_timer_del(&prwmd->base->timers, io->timer);
+      }
+
+      free_io(io);
     }
   }
   else if (prwmd->linfo->set_fn != NULL)
@@ -481,7 +511,15 @@ static int post_io(bano_list_item_t* li, void* p)
   if (io->msg.hdr.op == BANO_OP_GET)
   {
     /* move in pending io list */
+
     bano_list_add_tail(&pid->node->pending_ios, io);
+
+    if (io->flags & BANO_IO_FLAG_TIMER)
+    {
+      bano_timer_t* const ti = io->timer;
+      ti->data[0] = &pid->node->pending_ios;
+      ti->data[1] = pid->node->pending_ios.tail;
+    }
   }
   else
   {
@@ -556,12 +594,6 @@ static int fill_wset(bano_list_item_t* li, void* p)
   return 0;
 }
 
-static void ms_to_timeval(struct timeval* tv, unsigned int ms)
-{
-  tv->tv_sec = ms / 1000;
-  tv->tv_usec = (ms % 1000) * 1000;
-}
-
 static int do_new_node(bano_list_item_t* li, void* p)
 {
   const bano_loop_info_t* const linfo = p;
@@ -573,12 +605,10 @@ int bano_start_loop(bano_base_t* base, const bano_loop_info_t* linfo)
 {
   struct fill_sets_data fsd;
   struct prw_msg_data prwmd;
-  struct timeval tm_diff;
-  struct timeval tm_start;
-  struct timeval tm_stop;
-  struct timeval tm_sel;
-  struct timeval* tm_selp;
-  struct timeval saved_tm_sel;
+  struct timeval timer_tv;
+  struct timeval* timer_tvp;
+  bano_timer_t* timer;
+  bano_timer_t* loop_timer;
   int err;
 
   /* process new nodes */
@@ -587,20 +617,20 @@ int bano_start_loop(bano_base_t* base, const bano_loop_info_t* linfo)
     bano_list_foreach(&base->nodes, do_new_node, (void*)linfo);
   }
 
-  /* compute timer */
-  tm_selp = NULL;
-  if (linfo->timer_fn != NULL)
-  {
-    ms_to_timeval(&saved_tm_sel, linfo->timer_ms);
-    tm_sel = saved_tm_sel;
-    tm_selp = &tm_sel;
-  }
+  loop_timer = NULL;
 
   while (1)
   {
-    if (linfo->timer_fn != NULL)
+    /* insert the loop timer if not already */
+
+    if ((loop_timer == NULL) && (linfo->timer_fn != NULL))
     {
-      gettimeofday(&tm_start, NULL);
+      if (bano_timer_add(&base->timers, &loop_timer, linfo->timer_ms))
+      {
+	BANO_PERROR();
+	err = -1;
+	goto on_loop_done;
+      }
     }
 
     /* process pending messages */
@@ -620,9 +650,16 @@ int bano_start_loop(bano_base_t* base, const bano_loop_info_t* linfo)
     FD_ZERO(&fsd.wset);
     bano_list_foreach(&base->nodes, fill_wset, &fsd);
 
-    if (fsd.nfd || (tm_selp != NULL))
+    timer_tvp = &timer_tv;
+    if (bano_timer_get_next(&base->timers, &timer, &timer_tv))
     {
-      err = select(fsd.nfd, &fsd.rset, &fsd.wset, NULL, tm_selp);
+      /* no timer */
+      timer_tvp = NULL;
+    }
+
+    if (fsd.nfd || (timer_tvp != NULL))
+    {
+      err = select(fsd.nfd, &fsd.rset, &fsd.wset, NULL, timer_tvp);
       if (err < 0)
       {
 	BANO_PERROR();
@@ -630,9 +667,33 @@ int bano_start_loop(bano_base_t* base, const bano_loop_info_t* linfo)
 	goto on_loop_done;
       }
 
-      if ((err == 0) && (linfo->timer_fn != NULL))
+      if (err == 0)
       {
-	goto on_timer;
+	if (timer != loop_timer)
+	{
+	  /* pending io timer. complete and destroy. */
+
+	  bano_list_t* const li = timer->data[0];
+	  bano_list_item_t* const it = timer->data[1];
+	  bano_io_t* const io = it->data;
+
+	  if (io->compl_fn != NULL)
+	  {
+	    io->flags |= BANO_IO_FLAG_ERR;
+	    io->compl_err = BANO_IO_ERR_TIMEOUT;
+	    io->compl_fn(io, io->compl_data);
+	  }
+
+	  bano_list_del(li, it);
+	  free_io(io);
+	}
+	else
+	{
+	  linfo->timer_fn(linfo->user_data);
+	  loop_timer = NULL;
+	}
+
+	bano_timer_del(&base->timers, timer);
       }
 
       /* fds in set ready */
@@ -649,29 +710,6 @@ int bano_start_loop(bano_base_t* base, const bano_loop_info_t* linfo)
 	prwmd.linfo = linfo;
 	prwmd.fds = &fsd.wset;
 	bano_list_foreach(&base->nodes, write_msg, &prwmd);
-      }
-    }
-
-    /* recompute timer */
-    if (linfo->timer_fn != NULL)
-    {
-      gettimeofday(&tm_stop, NULL);
-      timersub(&tm_stop, &tm_start, &tm_diff);
-      if (timercmp(&tm_sel, &tm_diff, <))
-      {
-      on_timer:
-	if (linfo->timer_fn(linfo->user_data))
-	{
-	  err = 0;
-	  goto on_loop_done;
-	}
-	/* reload select timer */
-	tm_sel = saved_tm_sel;
-      }
-      else
-      {
-	/* update select timer */
-	timersub(&tm_sel, &tm_diff, &tm_sel);
       }
     }
   }

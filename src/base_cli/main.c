@@ -66,9 +66,12 @@ static int on_get_compl(bano_io_t* io, void* p)
   struct node_get_data* const ngd = p;
   const uint32_t naddr = ngd->naddr;
   const uint16_t key = io->msg.u.get.key;
-  const uint32_t val = io->compl_val;
 
-  printf("%s: node{0x%08x, 0x%04x} == 0x%08x\n", __FUNCTION__, naddr, key, val);
+  printf("%s: node{0x%08x, 0x%04x} == ", __FUNCTION__, naddr, key);
+
+  if (io->compl_err == BANO_IO_ERR_SUCCESS) printf(" 0x%08x", io->compl_val);
+  else printf(" error (0x%08x)", io->compl_err);
+  printf("\n");
 
   return 0;
 }
@@ -107,9 +110,7 @@ static int on_node_get(void* p, bano_node_t* node, unsigned int reason)
     return -1;
   }
 
-  bano_set_io_timer(io, 1000000);
-
-  if (bano_post_io(base, node, io))
+  if (bano_post_io(base, node, io, 2000))
   {
     BANO_PERROR();
     return -1;
@@ -179,9 +180,7 @@ static int on_node_set(void* p, bano_node_t* node, unsigned int reason)
     return -1;
   }
 
-  bano_set_io_timer(io, 1000000);
-
-  if (bano_post_io(base, node, io))
+  if (bano_post_io(base, node, io, 0))
   {
     BANO_PERROR();
     bano_free_io(io);

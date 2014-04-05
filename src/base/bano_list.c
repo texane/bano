@@ -97,6 +97,23 @@ int bano_list_add_head(bano_list_t* l, void* p)
   return 0;
 }
 
+int bano_list_add_after(bano_list_t* li, bano_list_item_t* it_prev, void* p)
+{
+  /* NOTE: it_prev must not be NULL */
+
+  bano_list_item_t* const it = alloc_item();
+  if (it == NULL) return -1;
+
+  it->data = p;
+  it->prev = it_prev;
+
+  it_prev->next = it;
+
+  if (it_prev == li->tail) li->tail = it;
+
+  return 0;
+}
+
 int bano_list_del(bano_list_t* l, bano_list_item_t* i)
 {
   if (i->prev) i->prev->next = i->next;

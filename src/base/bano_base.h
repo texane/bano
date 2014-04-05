@@ -3,7 +3,9 @@
 
 
 #include <stdint.h>
+#include <time.h>
 #include "bano_list.h"
+#include "bano_timer.h"
 #include "bano_socket.h"
 #include "../common/bano_common.h"
 
@@ -32,7 +34,7 @@ typedef int (*bano_node_fn_t)(void*, struct bano_node*, unsigned int);
 typedef struct
 {
   /* loop flags */
-  unsigned int flags;
+  uint32_t flags;
 
   /* event handler fns */
   bano_set_fn_t set_fn;
@@ -56,11 +58,10 @@ typedef struct bano_io
   /* io flags */
 #define BANO_IO_FLAG_TIMER (1 << 0)
 #define BANO_IO_FLAG_ERR (1 << 1)
-  unsigned int flags;
+  uint32_t flags;
 
   /* valid if BANO_IO_FLAG_TIMER */
-#define BANO_TIMER_NONE ((unsigned int)-1)
-  unsigned int timer_ms;
+  bano_timer_t* timer;
 
   /* completion error */
 #define BANO_IO_ERR_SUCCESS 0
@@ -98,6 +99,7 @@ typedef struct
 {
   bano_list_t nodes;
   bano_list_t sockets;
+  bano_list_t timers;
 } bano_base_t;
 
 
@@ -121,7 +123,7 @@ int bano_start_loop(bano_base_t*, const bano_loop_info_t*);
 bano_io_t* bano_alloc_get_io(uint16_t, bano_compl_fn_t, void*);
 bano_io_t* bano_alloc_set_io(uint16_t, uint32_t, bano_compl_fn_t, void*);
 void bano_free_io(bano_io_t*);
-int bano_post_io(bano_base_t*, bano_node_t*, bano_io_t*);
+int bano_post_io(bano_base_t*, bano_node_t*, bano_io_t*, unsigned int);
 
 
 /* static inlined */
@@ -148,12 +150,6 @@ static inline void bano_init_loop_info(bano_loop_info_t* i)
 static inline void bano_init_socket_info(bano_socket_info_t* i)
 {
   i->type = BANO_SOCKET_TYPE_INVALID;
-}
-
-static inline void bano_set_io_timer(bano_io_t* io, unsigned int ms)
-{
-  io->flags |= BANO_IO_FLAG_TIMER;
-  io->timer_ms = ms;
 }
 
 static inline void bano_set_io_error(bano_io_t* io, unsigned int err)
