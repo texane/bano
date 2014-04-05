@@ -111,3 +111,7 @@ pdf: $(PRG).pdf
 %.png: %.fig
 	$(FIG2DEV) -L png $< $@
 
+upload:
+	sudo avrdude \
+	-patmega328p -carduino -P/dev/ttyUSB0 -b57600 -D \
+	-Uflash:w:main.hex:i
