@@ -63,23 +63,23 @@ int bano_timer_add(bano_list_t* li, bano_timer_t** tip, unsigned int ms)
     }
 
     ti->it = li->tail;
-    ti->rel_ms = ms;
+    ti->rel_ms = ms - ms_sum;
   }
   else
   {
-    if (bano_list_add_after(li, it, ti))
+    if (bano_list_add_before(li, it, ti))
     {
       BANO_PERROR();
       goto on_error;
     }
 
-    ti->it = it->next;
+    ti->it = it->prev;
 
     /* compute time relative to previous */
     ti->rel_ms = ms - ms_sum;
 
     /* recompute next relative time */
-    next_ti = it->next->data;
+    next_ti = it->data;
     next_ti->rel_ms = (ms_sum + next_ti->rel_ms) - ms;
   }
 
@@ -94,12 +94,14 @@ int bano_timer_add(bano_list_t* li, bano_timer_t** tip, unsigned int ms)
 
 int bano_timer_del(bano_list_t* li, bano_timer_t* ti)
 {
+#if 0
   /* recompute next timer */
   if (ti->it->next != NULL)
   {
     bano_timer_t* const next_ti = ti->it->next->data;
     next_ti->rel_ms += ti->rel_ms;
   }
+#endif
 
   bano_list_del(li, ti->it);
   free(ti);

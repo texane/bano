@@ -11,6 +11,12 @@
 
 /* event handlers */
 
+static int on_loop_timer(void* p)
+{
+  printf("%s\n", __FUNCTION__);
+  return 0;
+}
+
 static int on_get(void* p, bano_node_t* node, bano_io_t* io)
 {
   /* handle get messages */
@@ -272,6 +278,9 @@ int main(int ac, char** av)
     ngd.base = &base;
     ngd.naddr = str_to_uint32(av[2]);
     ngd.key = str_to_uint32(av[3]);
+
+    linfo.timer_fn = on_loop_timer;
+    linfo.timer_ms = 1000;
 
     linfo.node_fn = on_node_get;
     linfo.user_data = &ngd;
