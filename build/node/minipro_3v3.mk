@@ -9,14 +9,28 @@ BANO_O_FILES := $(BANO_C_FILES:.c=.o)
 NRF_DIR ?= $(BANO_DIR)/../nrf
 
 BANO_RAND := $(BANO_DIR)/util/rand/a.out
+
+ifeq ($(BANO_NODE_ADDR),)
+ BANO_NODE_ADDR = $(shell $(BANO_RAND) -f uint32 -n 1)
+endif
+
+ifeq ($(BANO_NODE_SEED),)
+ BANO_NODE_SEED = $(shell $(BANO_RAND) -f uint32 -n 1)
+endif
+
+ifeq ($(BANO_NODE_KEY),)
+ BANO_NODE_KEY = $(shell $(BANO_RAND) -f uint8 -n 16)
+endif
+
+# use lazy evaluation to build rand
 BANO_C_FLAGS = \
 -g -Wall -O2 -mmcu=atmega328p -Wno-unused-function \
 -DF_CPU=8000000L \
 -I$(BANO_DIR)/.. \
 -I$(NRF_DIR) \
--DBANO_CONFIG_NODE_ADDR=$(shell $(BANO_RAND) -f uint32 -n 1) \
--DBANO_CONFIG_NODE_SEED=$(shell $(BANO_RAND) -f uint32 -n 1) \
--DBANO_CONFIG_NODE_KEY=$(shell $(BANO_RAND) -f uint8 -n 16)
+-DBANO_CONFIG_NODE_ADDR=$(BANO_NODE_ADDR) \
+-DBANO_CONFIG_NODE_SEED=$(BANO_NODE_SEED) \
+-DBANO_CONFIG_NODE_KEY=$(BANO_NODE_KEY)
 
 BANO_L_FLAGS := -mmcu=atmega328p -Wl,-Map,main.map
 
