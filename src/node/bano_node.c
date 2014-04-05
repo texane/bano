@@ -1,3 +1,7 @@
+#ifndef BANO_NODE_C_INCLUDED
+#define BANO_NODE_C_INCLUDED
+
+
 #include <stdint.h>
 #include <stddef.h>
 #include <avr/io.h>
@@ -495,3 +499,6 @@ uint8_t bano_loop(void)
 
   return 0;
 }
+
+
+#endif /* BANO_NODE_C_INCLUDED */

@@ -3,6 +3,7 @@
 
 
 #include <stdint.h>
+#include "bano/src/common/bano_common.h"
 
 
 /* static configuration */
@@ -74,6 +75,10 @@ extern uint8_t bano_set_handler(uint16_t, uint32_t);
 extern uint8_t bano_get_handler(uint16_t, uint32_t*);
 extern uint8_t bano_timer_handler(void);
 extern uint8_t bano_pcint_handler(void);
+
+
+/* implementation */
+#include "bano/src/node/bano_node.c"
 
 
 #endif /* ! BANO_NODE_H_INCLUDED */
