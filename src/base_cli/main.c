@@ -197,7 +197,28 @@ static int on_node_set(void* p, bano_node_t* node, unsigned int reason)
 }
 
 
-/* main */
+/* cmdline */
+
+typedef struct cmdline_info
+{
+  /* flags */
+#define CMDLINE_FLAG_OP_NAME (1 << 0)
+#define CMDLINE_FLAG_OP_KEY (1 << 1)
+#define CMDLINE_FLAG_OP_VAL (1 << 2)
+#define CMDLINE_FLAG_CIPHER_ALG (1 << 3)
+#define CMDLINE_FLAG_CIPHER_KEY (1 << 4)
+#define CMDLINE_FLAG_NODE_ADDR (1 << 5)
+  uint32_t flags;
+  /* op */
+  const char* op_name;
+  uint32_t op_key;
+  uint32_t op_val;
+  /* cipher */
+  enum bano_cipher_alg cipher_alg;
+  uint8_t cipher_key[BANO_CIPHER_KEY_SIZE];
+  /* node */
+  uint32_t node_addr;
+} cmdline_info_t;
 
 static uint32_t str_to_uint32(const char* s)
 {
@@ -207,16 +228,96 @@ static uint32_t str_to_uint32(const char* s)
   return (uint32_t)strtoul(s, NULL, base);
 }
 
+static void str_to_cipher_key(uint8_t* k, const char* s)
+{
+  size_t i;
+
+  for (i = 0; i != BANO_CIPHER_KEY_SIZE; ++i)
+  {
+    k[i] = strtoul(s + i * 5, NULL, 16);
+  }
+}
+
+static int get_cmdline_info(cmdline_info_t* ci, int ac, char** av)
+{
+  int i;
+
+  if (ac & 1)
+  {
+    BANO_PERROR();
+    return -1;
+  }
+
+  ci->flags = 0;
+  ci->op_name = NULL;
+  ci->op_key = 0;
+  ci->op_val = 0;
+  ci->cipher_alg = BANO_CIPHER_ALG_NONE;
+  ci->node_addr = 0;
+
+  for (i = 0; i != ac; i += 2)
+  {
+    const char* const k = av[i + 0];
+    const char* const v = av[i + 1];
+
+    if (strcmp(k, "-op_name") == 0)
+    {
+      /* list, set, get, listen */
+      ci->flags |= CMDLINE_FLAG_OP_NAME;
+      ci->op_name = v;
+    }
+    else if (strcmp(k, "-op_key") == 0)
+    {
+      ci->flags |= CMDLINE_FLAG_OP_KEY;
+      ci->op_key = str_to_uint32(v);
+    }
+    else if (strcmp(k, "-op_val") == 0)
+    {
+      ci->flags |= CMDLINE_FLAG_OP_VAL;
+      ci->op_val = str_to_uint32(v);
+    }
+    else if (strcmp(k, "-cipher_alg") == 0)
+    {
+      ci->flags |= CMDLINE_FLAG_CIPHER_ALG;
+      if (strcmp(v, "none") == 0) ci->cipher_alg = BANO_CIPHER_ALG_NONE;
+      else if (strcmp(v, "xtea") == 0) ci->cipher_alg = BANO_CIPHER_ALG_XTEA;
+      else if (strcmp(v, "aes") == 0) ci->cipher_alg = BANO_CIPHER_ALG_AES;
+      else return -1;
+    }
+    else if (strcmp(k, "-cipher_key") == 0)
+    {
+      ci->flags |= CMDLINE_FLAG_CIPHER_KEY;
+      str_to_cipher_key(ci->cipher_key, v);
+    }
+    else if (strcmp(k, "-node_addr") == 0)
+    {
+      ci->flags |= CMDLINE_FLAG_NODE_ADDR;
+      ci->node_addr = str_to_uint32(v);
+    }
+  }
+
+  return 0;
+}
+
+
+/* main */
+
 int main(int ac, char** av)
 {
-  const char* const op = av[1];
   bano_base_t base;
   bano_base_info_t binfo;
   bano_loop_info_t linfo;
   bano_socket_info_t sinfo;
+  cmdline_info_t cinfo;
   int err = -1;
 
   seteuid(0);
+
+  if (get_cmdline_info(&cinfo, ac - 1, av + 1))
+  {
+    BANO_PERROR();
+    goto on_error_0;
+  }
 
   if (bano_init())
   {
@@ -244,38 +345,36 @@ int main(int ac, char** av)
 
   bano_init_loop_info(&linfo);
 
-  /* TODO: command line parsing */
-#if 1
+  if ((cinfo.flags & CMDLINE_FLAG_CIPHER_ALG) == 0)
   {
-    static const uint8_t key[BANO_CIPHER_KEY_SIZE] =
-    {
-      0x32,0x48,0xb5,0xa0,
-      0x4c,0x5c,0xc0,0xd3,
-      0x31,0x64,0x44,0x8f,
-      0x1d,0xf4,0xc8,0xa1
-    };
-
-    size_t i;
-    linfo.cipher_alg = BANO_CIPHER_ALG_XTEA;
-    for (i = 0; i != sizeof(key); ++i) linfo.cipher_key[i] = key[i];
+    cinfo.flags |= CMDLINE_FLAG_CIPHER_ALG;
+    cinfo.cipher_alg = BANO_CIPHER_ALG_NONE;
   }
-#endif
 
-  if (strcmp(op, "list") == 0)
+  linfo.cipher_alg = cinfo.cipher_alg;
+  memcpy(linfo.cipher_key, cinfo.cipher_key, BANO_CIPHER_KEY_SIZE);
+
+  if ((cinfo.flags & CMDLINE_FLAG_OP_NAME) == 0)
+  {
+    cinfo.flags |= CMDLINE_FLAG_OP_NAME;
+    cinfo.op_name = "listen";
+  }
+
+  if (strcmp(cinfo.op_name, "list") == 0)
   {
     linfo.node_fn = on_node_print;
     linfo.user_data = NULL;
   }
-  else if (strcmp(op, "set") == 0)
+  else if (strcmp(cinfo.op_name, "set") == 0)
   {
     /* set node_addr key val */
 
     static struct node_set_data nsd;
 
     nsd.base = &base;
-    nsd.naddr = str_to_uint32(av[2]);
-    nsd.key = str_to_uint32(av[3]);
-    nsd.val = str_to_uint32(av[4]);
+    nsd.naddr = cinfo.node_addr;
+    nsd.key = cinfo.op_key;
+    nsd.val = cinfo.op_val;
 
     linfo.node_fn = on_node_set;
     linfo.user_data = &nsd;
@@ -286,15 +385,15 @@ int main(int ac, char** av)
       goto on_error_2;
     }
   }
-  else if (strcmp(op, "get") == 0)
+  else if (strcmp(cinfo.op_name, "get") == 0)
   {
     /* get node_addr key */
 
     static struct node_get_data ngd;
 
     ngd.base = &base;
-    ngd.naddr = str_to_uint32(av[2]);
-    ngd.key = str_to_uint32(av[3]);
+    ngd.naddr = cinfo.node_addr;
+    ngd.key = cinfo.op_key;
 
     linfo.timer_fn = on_loop_timer;
     linfo.timer_ms = 1000;
@@ -308,7 +407,7 @@ int main(int ac, char** av)
       goto on_error_2;
     }
   }
-  else if (strcmp(op, "listen") == 0)
+  else if (strcmp(cinfo.op_name, "listen") == 0)
   {
     linfo.get_fn = on_get;
     linfo.set_fn = on_set;
