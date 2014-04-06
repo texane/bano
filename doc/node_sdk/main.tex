@@ -175,6 +175,8 @@ extern uint8_t bano_pcint_handler(void);
 \subsection{Enable disable a LED on BANO messages}
 \begin{tiny}
 \begin{verbatim}
+#include <stdint.h>
+#include <avr/io.h>
 #include "bano/src/node/bano_node.h"
 
 /* led routines */
@@ -247,6 +249,8 @@ int main(void)
 \subsection{Send periodic messages}
 \begin{tiny}
 \begin{verbatim}
+#include <stdint.h>
+#include <avr/io.h>
 #include "bano/src/node/bano_node.h"
 
 uint8_t bano_timer_handler(void)
@@ -282,6 +286,8 @@ int main(void)
 \subsection{Send message when GPIO changes}
 \begin{tiny}
 \begin{verbatim}
+#include <stdint.h>
+#include <avr/io.h>
 #include "bano/src/node/bano_node.h"
 
 #define GPIO_KEY 0x0000
