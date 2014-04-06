@@ -55,12 +55,13 @@ $> aptitude install avrdude
 Note that this tools are shipped with the ARDUINO environment.
 
 \paragraph{}
-Retrieving the BANO SDK requires cloning 2 repositories:
+Retrieving the BANO SDK requires cloning 3 repositories:
 \begin{itemize}
 \item the BANO SDK itself, which contains all the files required
 to develop node and a base applications,
 \item the NRF SDK, which provides support for NRF905 and NRF24L01P
-wireless chipsets from Nordic Semiconductor.
+wireless chipsets from Nordic Semiconductor,
+\item the AVR CRYPTO library, which is used for message encryption.
 \end{itemize}
 
 \paragraph{}
@@ -70,6 +71,10 @@ It is recommended to install them at the same level:
 $> cd ~/repo
 $> git clone https://github.com/texane/bano.git
 $> git clone https://github.com/texane/nrf.git
+# only for message encryption
+$> mkdir ~/repo/crypto-lib
+$> cd ~/repo/crypto-lib
+$> svn co http://das-labor.org/svn/microcontroller-2/crypto-lib .
 \end{verbatim}
 \end{scriptsize}
 
@@ -96,6 +101,10 @@ defining or overriding default variables in the node makefile:
 \item BANO\_DIR: the BANO top directory. If the previous section
 instructions were followed, the BANO\_DIR variable would be set
 to \$(HOME)/repo/bano. This variable is mandatory,
+\item NRF\_DIR: the NRF top directory. default to
+\$(BANO\_DIR)/../nrf,
+\item CRYPTOLIB\_DIR: the CRYPTO-LIB top directory. default to
+\$(BANO\_DIR)/../crypto-lib,
 \item BANO\_BOARD: the node board. Currently, only minipro\_3v3
 is supported. This variable is mandatory,
 \item NRF\_DIR: the NRF top directory. By default, the SDK
@@ -103,6 +112,10 @@ assumes that the NRF directory is located in the BANO parent
 directory, as recommended in the previous section,
 \item BANO\_C\_FILES: the list of C source files. This list
 can not be empty,
+\item BANO\_S\_FILES: an optional list of assembler source files.
+Names must end with big S suffixes (ie. main.S). GCC is used as
+the assembler allowing preprocessor directives. This list can be
+empty,
 \item BANO\_NODL\_ID: the NODL identifier as an hexadecimal
 32 bits unsigned integer. If not defined, 0 is used,
 \item BANO\_NODE\_ADDR: the node address as an hexadecimal 32

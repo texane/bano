@@ -49,6 +49,48 @@ static inline uint32_t le_to_uint32(uint32_t x)
 }
 
 
+/* cryptographic cipher */
+
+#if (BANO_CONFIG_CIPHER_ALG != BANO_CIPHER_ALG_NONE)
+static const uint8_t cipher_key[] =
+{
+  BANO_CONFIG_CIPHER_KEY
+};
+#endif
+
+#if (BANO_CONFIG_CIPHER_ALG == BANO_CIPHER_ALG_AES)
+#include "aes.h"
+static aes128_ctx_t cipher_ctx;
+#elif (BANO_CONFIG_CIPHER_ALG == BANO_CIPHER_ALG_XTEA)
+#include "xtea.h"
+#endif
+
+static void cipher_init(void)
+{
+#if (BANO_CONFIG_CIPHER_ALG == BANO_CIPHER_ALG_AES)
+  aes128_init(cipher_key, &cipher_ctx);
+#endif
+}
+
+static void cipher_enc(uint8_t* data)
+{
+#if (BANO_CONFIG_CIPHER_ALG == BANO_CIPHER_ALG_XTEA)
+  xtea_enc(data, data, cipher_key);
+#elif (BANO_CONFIG_CIPHER_ALG == BANO_CIPHER_ALG_AES)
+  aes128_dec(data, &cipher_ctx);
+#endif
+}
+
+static void cipher_dec(uint8_t* data)
+{
+#if (BANO_CONFIG_CIPHER_ALG == BANO_CIPHER_ALG_XTEA)
+  xtea_dec(data, data, cipher_key);
+#elif (BANO_CONFIG_CIPHER_ALG == BANO_CIPHER_ALG_AES)
+  aes128_dec(data, &cipher_ctx);
+#endif
+}
+
+
 /* core clock prescaler */
 
 static inline void clk_set_prescal(uint8_t x)
@@ -177,6 +219,9 @@ uint8_t bano_init(const bano_info_t* info)
 {
   uint8_t addr[4];
 
+  /* initialize cryptographic cipher context */
+  cipher_init();
+
   /* nrf setup and default state */
   nrf_setup();
   nrf_set_payload_width(BANO_MSG_SIZE);
@@ -275,6 +320,7 @@ uint8_t bano_fini(void)
 
 static inline void send_msg(bano_msg_t* msg)
 {
+  cipher_enc((uint8_t*)msg);
   nrf_send_payload_zero((uint8_t*)msg);
 }
 
@@ -357,6 +403,8 @@ uint8_t bano_wait_event(bano_msg_t* msg)
 
       /* reenable interrupts */
       nrf_enable_rx_irq();
+
+      cipher_dec((uint8_t*)msg);
 
       ev |= BANO_EV_MSG;
 

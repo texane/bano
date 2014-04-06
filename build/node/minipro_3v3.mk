@@ -1,64 +1,79 @@
+BANO_AS := avr-gcc
 BANO_CC := avr-gcc
 BANO_LD := avr-gcc
 BANO_OBJCOPY := avr-objcopy
 BANO_OBJDUMP := avr-objdump
 BANO_AVRDUDE := avrdude
 
-BANO_O_FILES := $(BANO_C_FILES:.c=.o)
-
 NRF_DIR ?= $(BANO_DIR)/../nrf
+CRYPTOLIB_DIR ?= $(BANO_DIR)/../crypto-lib
 
-BANO_RAND := $(BANO_DIR)/util/rand/a.out
+BANO_RAND := $(BANO_DIR)/util/rand/rand.sh
 
 ifeq ($(BANO_NODE_ADDR),)
- BANO_NODE_ADDR = $(shell $(BANO_RAND) -f uint32 -n 1)
+ BANO_NODE_ADDR := $(shell $(BANO_RAND) -f uint32 -n 1)
 endif
 
 ifeq ($(BANO_NODE_SEED),)
- BANO_NODE_SEED = $(shell $(BANO_RAND) -f uint32 -n 1)
+ BANO_NODE_SEED := $(shell $(BANO_RAND) -f uint32 -n 1)
 endif
 
 ifeq ($(BANO_CIPHER_ALG),xtea)
  BANO_CIPHER_ALG := BANO_CIPHER_ALG_XTEA
+ CRYPTOLIB_C_FLAGS := -I$(CRYPTOLIB_DIR)/xtea
+ BANO_C_FILES += $(CRYPTOLIB_DIR)/xtea/xtea.c
 else ifeq ($(BANO_CIPHER_ALG),aes)
  BANO_CIPHER_ALG := BANO_CIPHER_ALG_AES
+ CRYPTOLIB_C_FLAGS := -I$(CRYPTOLIB_DIR)/aes
+ CRYPTOLIB_C_FLAGS += -I$(CRYPTOLIB_DIR)/gf256mul
+ BANO_C_FILES += $(CRYPTOLIB_DIR)/aes/aes128_dec.c
+ BANO_C_FILES += $(CRYPTOLIB_DIR)/aes/aes128_enc.c
+ BANO_C_FILES += $(CRYPTOLIB_DIR)/aes/aes_dec.c
+ BANO_C_FILES += $(CRYPTOLIB_DIR)/aes/aes_enc.c
+ BANO_C_FILES += $(CRYPTOLIB_DIR)/aes/aes_invsbox.c
+ BANO_C_FILES += $(CRYPTOLIB_DIR)/aes/aes_keyschedule.c
+ BANO_C_FILES += $(CRYPTOLIB_DIR)/aes/aes_sbox.c
+ BANO_S_FILES += $(CRYPTOLIB_DIR)/gf256mul/gf256mul.S
 else
  BANO_CIPHER_ALG := BANO_CIPHER_ALG_NONE
+ CRYPTOLIB_C_FLAGS :=
 endif
 
 ifneq ($(BANO_CIPHER_ALG),BANO_CIPHER_ALG_NONE)
  ifeq ($(BANO_CIPHER_KEY),)
-  BANO_CIPHER_KEY = $(shell $(BANO_RAND) -f uint8 -n 16)
+  BANO_CIPHER_KEY := $(shell $(BANO_RAND) -f uint8 -n 16)
  endif
 endif
 
 ifeq ($(BANO_NODL_ID),)
- BANO_NODL_ID = 0x00000000
+ BANO_NODL_ID := 0x00000000
 endif
 
-# use lazy evaluation to build rand
-BANO_C_FLAGS = \
--g -Wall -O2 -mmcu=atmega328p -Wno-unused-function \
--DF_CPU=8000000L \
--I$(BANO_DIR)/.. \
--I$(NRF_DIR) \
--DBANO_CONFIG_NODE_ADDR=$(BANO_NODE_ADDR) \
--DBANO_CONFIG_NODE_SEED=$(BANO_NODE_SEED) \
--DBANO_CONFIG_CIPHER_ALG=$(BANO_CIPHER_ALG) \
--DBANO_CONFIG_CIPHER_KEY=$(BANO_CIPHER_KEY) \
--DBANO_CONFIG_NODL_ID=$(BANO_NODL_ID)
+BANO_O_FILES := $(BANO_C_FILES:.c=.o) $(BANO_S_FILES:.S=.o)
+
+BANO_S_FLAGS := -mmcu=atmega328p
+
+BANO_C_FLAGS := -g -Wall -O2 -mmcu=atmega328p -Wno-unused-function -DF_CPU=8000000L
+BANO_C_FLAGS += -I$(BANO_DIR)/..
+BANO_C_FLAGS += -I$(NRF_DIR)
+BANO_C_FLAGS += $(CRYPTOLIB_C_FLAGS)
+BANO_C_FLAGS += -DBANO_CONFIG_NODE_ADDR=$(BANO_NODE_ADDR)
+BANO_C_FLAGS += -DBANO_CONFIG_NODE_SEED=$(BANO_NODE_SEED)
+BANO_C_FLAGS += -DBANO_CONFIG_CIPHER_ALG=$(BANO_CIPHER_ALG)
+BANO_C_FLAGS += -DBANO_CONFIG_CIPHER_KEY=$(BANO_CIPHER_KEY)
+BANO_C_FLAGS += -DBANO_CONFIG_NODL_ID=$(BANO_NODL_ID)
 
 BANO_L_FLAGS := -mmcu=atmega328p -Wl,-Map,main.map
 
-.PHONY: clean $(BANO_RAND) upload
+.PHONY: clean upload
 
-all: $(BANO_DIR)/bano/util/rand/a.out main.elf lst text eeprom
-
-$(BANO_DIR)/bano/util/rand/a.out:
-	( cd $(BANO_DIR)/util/rand && make )
+all: main.elf lst text eeprom
 
 %.o: %.c
 	$(BANO_CC) $(BANO_C_FLAGS) -c -o $@ $^
+
+%.o: %.S
+	$(BANO_AS) $(BANO_S_FLAGS) -c -o $@ $^
 
 main.elf: $(BANO_O_FILES)
 	$(BANO_LD) $(BANO_L_FLAGS) -o $@ $^
