@@ -18,9 +18,15 @@ ifeq ($(BANO_NODE_SEED),)
  BANO_NODE_SEED = $(shell $(BANO_RAND) -f uint32 -n 1)
 endif
 
-ifeq ($(BANO_CIPHER_ALG),)
- BANO_CIPHER_ALG := NONE
+ifeq ($(BANO_CIPHER_ALG),xtea)
+ BANO_CIPHER_ALG := BANO_CIPHER_ALG_XTEA
+else ifeq ($(BANO_CIPHER_ALG),aes)
+ BANO_CIPHER_ALG := BANO_CIPHER_ALG_AES
 else
+ BANO_CIPHER_ALG := BANO_CIPHER_ALG_NONE
+endif
+
+ifneq ($(BANO_CIPHER_ALG),BANO_CIPHER_ALG_NONE)
  ifeq ($(BANO_CIPHER_KEY),)
   BANO_CIPHER_KEY = $(shell $(BANO_RAND) -f uint8 -n 16)
  endif

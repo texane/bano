@@ -21,6 +21,13 @@
 #endif /* BANO_CONFIG_NODL_ID */
 
 
+/* ciphers. compare with BANO_CONFIG_CIPHER_ALG. */
+
+#define BANO_CIPHER_ALG_NONE 0
+#define BANO_CIPHER_ALG_XTEA 1
+#define BANO_CIPHER_ALG_AES 2
+
+
 /* events */
 
 #define BANO_EV_ERROR (1 << 0)
