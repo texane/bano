@@ -13,7 +13,7 @@ enum bano_cipher_alg
   BANO_CIPHER_ALG_AES
 };
 
-/* 128 bits block cipher */
+/* 128 bits key cipher */
 #define BANO_CIPHER_KEY_SIZE 16
 
 

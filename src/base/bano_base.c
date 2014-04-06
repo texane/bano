@@ -382,12 +382,13 @@ static int handle_msg
 (prw_msg_data_t* prwmd, bano_socket_t* socket, bano_msg_t* msg)
 {
   const bano_loop_info_t* const linfo = prwmd->linfo;
-  const uint32_t saddr = le_to_uint32(msg->hdr.saddr);
+  uint32_t saddr;
   bano_node_t* node;
   int err = 0;
 
   bano_cipher_dec((uint8_t*)msg);
 
+  saddr = le_to_uint32(msg->hdr.saddr);
   node = find_node_by_addr(&prwmd->base->nodes, saddr);
   if (node == NULL)
   {
