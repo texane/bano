@@ -73,7 +73,7 @@ static int on_get_compl(bano_io_t* io, void* p)
   const uint32_t naddr = ngd->naddr;
   const uint16_t key = io->msg.u.get.key;
 
-  printf("%s: node{0x%08x, 0x%04x} == ", __FUNCTION__, naddr, key);
+  printf("%s: node{0x%08x, 0x%04x} ==", __FUNCTION__, naddr, key);
 
   if (io->compl_err == BANO_IO_ERR_SUCCESS) printf(" 0x%08x", io->compl_val);
   else printf(" error (0x%08x)", io->compl_err);

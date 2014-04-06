@@ -314,8 +314,15 @@ static int handle_set_msg
     {
       if (io->compl_fn != NULL)
       {
-	io->compl_err = 0;
-	io->compl_val = le_to_uint32(msg->u.set.val);
+	if ((msg->hdr.flags & BANO_FLAG_ERR) == 0)
+	{
+	  io->compl_err = 0;
+	  io->compl_val = le_to_uint32(msg->u.set.val);
+	}
+	else
+	{
+	  io->compl_err = BANO_IO_ERR_FAILURE;
+	}
 	io->compl_fn(io, io->compl_data);
       }
 
