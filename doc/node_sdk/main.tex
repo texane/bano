@@ -32,7 +32,9 @@ environment and programming interface.
 
 \subsection{Installing the SDK}
 \paragraph{}
-The BANO SDK is retrieved by cloning the following repository:
+The BANO SDK requires to clone 2 repositories. It is recommended
+to install them at the same level. The BANO SDK itself is
+retrieved by using:
 \begin{scriptsize}
 \begin{verbatim}
 git clone ssh://texane@dedibox/home/texane/repo/bano
@@ -40,10 +42,21 @@ git clone ssh://texane@dedibox/home/texane/repo/bano
 \end{scriptsize}
 
 \paragraph{}
-Also, BANO depends on the NRF source code:
+BANO depends on the NRF source code, which provides support for
+NRF905 and NRF24L01P wireless chipsets from Nordic Semiconductor.
+It can be retrieved using:
 \begin{scriptsize}
 \begin{verbatim}
 git clone ssh://texane@dedibox/home/texane/repo/nrf
+\end{verbatim}
+\end{scriptsize}
+
+\paragraph{}
+Also, working examples can be retrieved using:
+\begin{scriptsize}
+\begin{verbatim}
+git clone ssh://texane@dedibox/home/texane/repo/bano_reed
+git clone ssh://texane@dedibox/home/texane/repo/bano_led
 \end{verbatim}
 \end{scriptsize}
 
@@ -55,11 +68,11 @@ git clone ssh://texane@dedibox/home/texane/repo/nrf
 BANO allows the developer to interact with the build system by
 defining or overriding default variables in the node makefile:
 \begin{itemize}
-\item BANO\_DIR: the BANO top directory. It must be defined
-by the developer,
+\item BANO\_DIR: the BANO top directory. This variable is
+mandatory,
 \item NRF\_DIR: the NRF top directory. By default, the SDK
-assumes that the NRF directory is located in the parent
-directory on directory,
+assumes that the NRF directory is located in the BANO parent
+directory, as recommended in the previous section,
 \item BANO\_C\_FILES: the list of C source files. This list
 can not be empty,
 \item BANO\_NODL\_ID: the NODL identifier as an hexadecimal
@@ -105,9 +118,7 @@ calls application handlers whenever appropriate: network messages
 reception, timers, hardware related interrupts ...
 
 \subsection{Files}
-common/bano\_common.h: constants and types common to base and node\\
-node/bano\_node.h: function and type declarations\\
-node/bano\_node.c: function implementations
+node/bano\_node.h: function and type declarations.
 
 \subsection{Types}
 \begin{scriptsize}
@@ -224,6 +235,10 @@ uint8_t bano_set_handler(uint16_t key, uint32_t val)
   return 0;
 }
 
+/* unused */
+uint8_t bano_pcint_handler(void) { return (uint8_t)-1; }
+uint8_t bano_timer_handler(void) { return (uint8_t)-1; }
+
 int main(void)
 {
   /* initialize the runtime and loop forever */
@@ -260,6 +275,11 @@ uint8_t bano_timer_handler(void)
   bano_send_set(0x002a, 0xdeadbeef);
   return 0;
 }
+
+/* unused */
+uint8_t bano_get_handler(uint16_t key, uint32_t* val) { return (uint8_t)-1; }
+uint8_t bano_set_handler(uint16_t key, uint32_t val) { return (uint8_t)-1; }
+uint8_t bano_pcint_handler(void) { return (uint8_t)-1; }
 
 int main(void)
 {
@@ -301,6 +321,11 @@ uint8_t bano_pcint_handler(void)
   bano_send_set(GPIO_KEY, GPIO_PIN & GPIO_MASK);
   return 0;
 }
+
+/* unused */
+uint8_t bano_get_handler(uint16_t key, uint32_t* val) { return (uint8_t)-1; }
+uint8_t bano_set_handler(uint16_t key, uint32_t val) { return (uint8_t)-1; }
+uint8_t bano_timer_handler(void) { return (uint8_t)-1; }
 
 int main(void)
 {
