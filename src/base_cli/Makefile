@@ -8,6 +8,7 @@ main.c \
 $(REPO_DIR)/bano/src/base/bano_base.c \
 $(REPO_DIR)/bano/src/base/bano_timer.c \
 $(REPO_DIR)/bano/src/base/bano_list.c \
+$(REPO_DIR)/bano/src/base/bano_cipher.c \
 $(REPO_DIR)/bano/src/base/bano_socket_snrf.c
 
 OBJS := $(SRCS:.c=.o)

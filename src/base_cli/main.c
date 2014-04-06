@@ -244,6 +244,23 @@ int main(int ac, char** av)
 
   bano_init_loop_info(&linfo);
 
+  /* TODO: command line parsing */
+#if 1
+  {
+    static const uint8_t key[BANO_CIPHER_KEY_SIZE] =
+    {
+      0xe5,0xc1,0x5c,0xa7,
+      0x4b,0xf4,0x43,0x61,
+      0xb7,0x92,0xc9,0xe5,
+      0xd3,0xe0,0x4b,0x82
+    };
+
+    size_t i;
+    linfo.cipher_alg = BANO_CIPHER_ALG_XTEA;
+    for (i = 0; i != sizeof(key); ++i) linfo.cipher_key[i] = key[i];
+  }
+#endif
+
   if (strcmp(op, "list") == 0)
   {
     linfo.node_fn = on_node_print;

@@ -1,6 +1,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <string.h>
 #include <sys/types.h>
 #include <sys/select.h>
 #include <sys/time.h>
@@ -378,12 +379,14 @@ static bano_node_t* find_node_by_addr(bano_list_t* nodes, uint32_t addr)
 }
 
 static int handle_msg
-(prw_msg_data_t* prwmd, bano_socket_t* socket, const bano_msg_t* msg)
+(prw_msg_data_t* prwmd, bano_socket_t* socket, bano_msg_t* msg)
 {
   const bano_loop_info_t* const linfo = prwmd->linfo;
   const uint32_t saddr = le_to_uint32(msg->hdr.saddr);
   bano_node_t* node;
   int err = 0;
+
+  bano_cipher_dec((uint8_t*)msg);
 
   node = find_node_by_addr(&prwmd->base->nodes, saddr);
   if (node == NULL)
@@ -499,8 +502,12 @@ static int post_io(bano_list_item_t* li, void* p)
 {
   bano_io_t* const io = li->data;
   struct post_io_data* const pid = p;
+  bano_msg_t enc_msg;
 
-  if (bano_socket_write(pid->node->socket, pid->node->addr, &io->msg))
+  memcpy(&enc_msg, &io->msg, sizeof(enc_msg));
+  bano_cipher_enc((uint8_t*)&enc_msg);
+
+  if (bano_socket_write(pid->node->socket, pid->node->addr, &enc_msg))
   {
     BANO_PERROR();
     free_socket(pid->node->socket, pid->base);
@@ -611,6 +618,12 @@ int bano_start_loop(bano_base_t* base, const bano_loop_info_t* linfo)
   bano_timer_t* loop_timer;
   int err;
 
+  if (bano_cipher_init(linfo->cipher_alg, linfo->cipher_key))
+  {
+    BANO_PERROR();
+    goto on_loop_done;
+  }
+
   /* process new nodes */
   if (linfo->node_fn != NULL)
   {
@@ -715,6 +728,7 @@ int bano_start_loop(bano_base_t* base, const bano_loop_info_t* linfo)
   }
 
  on_loop_done:
+  bano_cipher_fini();
   return err;
 }
 

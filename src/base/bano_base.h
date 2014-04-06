@@ -7,6 +7,7 @@
 #include "bano_list.h"
 #include "bano_timer.h"
 #include "bano_socket.h"
+#include "bano_cipher.h"
 #include "../common/bano_common.h"
 
 
@@ -44,6 +45,10 @@ typedef struct
   /* timer in milliseconds */
   bano_timer_fn_t timer_fn;
   unsigned int timer_ms;
+
+  /* crypto cipher */
+  enum bano_cipher_alg cipher_alg;
+  uint8_t cipher_key[BANO_CIPHER_KEY_SIZE];
 
   /* user pointer passed to xxx_fn */
   void* user_data;
@@ -140,6 +145,8 @@ static inline void bano_init_base_info(bano_base_info_t* i)
 static inline void bano_init_loop_info(bano_loop_info_t* i)
 {
   i->flags = 0;
+
+  i->cipher_alg = BANO_CIPHER_ALG_NONE;
 
   i->set_fn = NULL;
   i->get_fn = NULL;
