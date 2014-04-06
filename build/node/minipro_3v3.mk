@@ -18,8 +18,12 @@ ifeq ($(BANO_NODE_SEED),)
  BANO_NODE_SEED = $(shell $(BANO_RAND) -f uint32 -n 1)
 endif
 
-ifeq ($(BANO_NODE_KEY),)
- BANO_NODE_KEY = $(shell $(BANO_RAND) -f uint8 -n 16)
+ifeq ($(BANO_CIPHER_ALG),)
+ BANO_CIPHER_ALG := NONE
+else
+ ifeq ($(BANO_CIPHER_KEY),)
+  BANO_CIPHER_KEY = $(shell $(BANO_RAND) -f uint8 -n 16)
+ endif
 endif
 
 ifeq ($(BANO_NODL_ID),)
@@ -34,7 +38,8 @@ BANO_C_FLAGS = \
 -I$(NRF_DIR) \
 -DBANO_CONFIG_NODE_ADDR=$(BANO_NODE_ADDR) \
 -DBANO_CONFIG_NODE_SEED=$(BANO_NODE_SEED) \
--DBANO_CONFIG_NODE_KEY=$(BANO_NODE_KEY) \
+-DBANO_CONFIG_CIPHER_ALG=$(BANO_CIPHER_ALG) \
+-DBANO_CONFIG_CIPHER_KEY=$(BANO_CIPHER_KEY) \
 -DBANO_CONFIG_NODL_ID=$(BANO_NODL_ID)
 
 BANO_L_FLAGS := -mmcu=atmega328p -Wl,-Map,main.map
