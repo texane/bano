@@ -22,6 +22,10 @@ ifeq ($(BANO_NODE_KEY),)
  BANO_NODE_KEY = $(shell $(BANO_RAND) -f uint8 -n 16)
 endif
 
+ifeq ($(BANO_NODL_ID),)
+ BANO_NODL_ID = 0x00000000
+endif
+
 # use lazy evaluation to build rand
 BANO_C_FLAGS = \
 -g -Wall -O2 -mmcu=atmega328p -Wno-unused-function \
@@ -30,7 +34,8 @@ BANO_C_FLAGS = \
 -I$(NRF_DIR) \
 -DBANO_CONFIG_NODE_ADDR=$(BANO_NODE_ADDR) \
 -DBANO_CONFIG_NODE_SEED=$(BANO_NODE_SEED) \
--DBANO_CONFIG_NODE_KEY=$(BANO_NODE_KEY)
+-DBANO_CONFIG_NODE_KEY=$(BANO_NODE_KEY) \
+-DBANO_CONFIG_NODL_ID=$(BANO_NODL_ID)
 
 BANO_L_FLAGS := -mmcu=atmega328p -Wl,-Map,main.map
 

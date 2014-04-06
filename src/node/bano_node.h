@@ -16,6 +16,10 @@
 #error "BANO_CONFIG_NODE_SEED not defined"
 #endif /* BANO_CONFIG_NODE_SEED */
 
+#ifndef BANO_CONFIG_NODL_ID
+#error "BANO_CONFIG_NODL_ID not defined"
+#endif /* BANO_CONFIG_NODL_ID */
+
 
 /* events */
 
@@ -50,17 +54,13 @@ typedef struct
 
   uint32_t pcint_mask;
 
-  /* nodle identifier */
-  uint32_t nodl_id;
-
 } bano_info_t;
 
 static const bano_info_t bano_info_default =
 {
   .wake_mask = BANO_WAKE_NONE,
   .disable_mask = BANO_DISABLE_NONE,
-  .pcint_mask = 0,
-  .nodl_id = 0
+  .pcint_mask = 0
 };
 
 /* exported */
