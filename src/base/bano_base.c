@@ -701,9 +701,6 @@ int bano_start_loop(bano_base_t* base, const bano_loop_info_t* linfo)
 	  else
 	  {
 	    /* repost */
-
-	    printf("repost: %u\n", io->retry_count);
-
 	    if (bano_list_add_tail(&io->node->posted_ios, io))
 	    {
 	      BANO_PERROR();
