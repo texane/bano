@@ -75,7 +75,8 @@ static void cipher_init(void)
 static void cipher_enc(uint8_t* data)
 {
 #if (BANO_CONFIG_CIPHER_ALG == BANO_CIPHER_ALG_XTEA)
-  xtea_enc(data, data, cipher_key);
+  xtea_enc(data + 0, data + 0, cipher_key);
+  xtea_enc(data + 8, data + 8, cipher_key);
 #elif (BANO_CONFIG_CIPHER_ALG == BANO_CIPHER_ALG_AES)
   aes128_dec(data, &cipher_ctx);
 #endif
@@ -84,7 +85,8 @@ static void cipher_enc(uint8_t* data)
 static void cipher_dec(uint8_t* data)
 {
 #if (BANO_CONFIG_CIPHER_ALG == BANO_CIPHER_ALG_XTEA)
-  xtea_dec(data, data, cipher_key);
+  xtea_dec(data + 0, data + 0, cipher_key);
+  xtea_dec(data + 8, data + 8, cipher_key);
 #elif (BANO_CONFIG_CIPHER_ALG == BANO_CIPHER_ALG_AES)
   aes128_dec(data, &cipher_ctx);
 #endif
