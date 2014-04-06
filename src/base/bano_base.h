@@ -60,13 +60,16 @@ typedef struct
 
 typedef struct bano_io
 {
+  struct bano_node* node;
+
   /* io flags */
-#define BANO_IO_FLAG_TIMER (1 << 0)
-#define BANO_IO_FLAG_ERR (1 << 1)
+#define BANO_IO_FLAG_REPLY (1 << 0)
   uint32_t flags;
 
-  /* valid if BANO_IO_FLAG_TIMER */
+  /* valid if BANO_IO_FLAG_PEND */
   bano_timer_t* timer;
+  unsigned int retry_ms;
+  unsigned int retry_count;
 
   /* completion error */
 #define BANO_IO_ERR_SUCCESS 0
@@ -126,9 +129,10 @@ int bano_add_socket(bano_base_t*, const struct bano_socket_info*);
 int bano_add_node(bano_base_t*, uint32_t);
 int bano_start_loop(bano_base_t*, const bano_loop_info_t*);
 bano_io_t* bano_alloc_get_io(uint16_t, bano_compl_fn_t, void*);
-bano_io_t* bano_alloc_set_io(uint16_t, uint32_t, bano_compl_fn_t, void*);
+bano_io_t* bano_alloc_set_io
+(uint16_t, uint32_t, unsigned int, bano_compl_fn_t, void*);
 void bano_free_io(bano_io_t*);
-int bano_post_io(bano_base_t*, bano_node_t*, bano_io_t*, unsigned int);
+int bano_post_io(bano_base_t*, bano_node_t*, bano_io_t*);
 
 
 /* static inlined */

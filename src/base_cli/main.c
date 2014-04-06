@@ -116,7 +116,7 @@ static int on_node_get(void* p, bano_node_t* node, unsigned int reason)
     return -1;
   }
 
-  if (bano_post_io(base, node, io, 2000))
+  if (bano_post_io(base, node, io))
   {
     BANO_PERROR();
     return -1;
@@ -134,6 +134,7 @@ struct node_set_data
   uint32_t naddr;
   uint16_t key;
   uint32_t val;
+  unsigned int is_ack;
 };
 
 static int on_set_compl(bano_io_t* io, void* p)
@@ -179,14 +180,14 @@ static int on_node_set(void* p, bano_node_t* node, unsigned int reason)
 
   /* setup and post io */
 
-  io = bano_alloc_set_io(key, val, on_set_compl, nsd);
+  io = bano_alloc_set_io(key, val, nsd->is_ack, on_set_compl, nsd);
   if (io == NULL)
   {
     BANO_PERROR();
     return -1;
   }
 
-  if (bano_post_io(base, node, io, 0))
+  if (bano_post_io(base, node, io))
   {
     BANO_PERROR();
     bano_free_io(io);
@@ -205,9 +206,10 @@ typedef struct cmdline_info
 #define CMDLINE_FLAG_OP_NAME (1 << 0)
 #define CMDLINE_FLAG_OP_KEY (1 << 1)
 #define CMDLINE_FLAG_OP_VAL (1 << 2)
-#define CMDLINE_FLAG_CIPHER_ALG (1 << 3)
-#define CMDLINE_FLAG_CIPHER_KEY (1 << 4)
-#define CMDLINE_FLAG_NODE_ADDR (1 << 5)
+#define CMDLINE_FLAG_OP_ACK (1 << 3)
+#define CMDLINE_FLAG_NODE_ADDR (1 << 4)
+#define CMDLINE_FLAG_CIPHER_ALG (1 << 5)
+#define CMDLINE_FLAG_CIPHER_KEY (1 << 6)
   uint32_t flags;
   /* op */
   const char* op_name;
@@ -276,6 +278,15 @@ static int get_cmdline_info(cmdline_info_t* ci, int ac, char** av)
       ci->flags |= CMDLINE_FLAG_OP_VAL;
       ci->op_val = str_to_uint32(v);
     }
+    else if (strcmp(k, "-op_ack") == 0)
+    {
+      if (strcmp(v, "1") == 0) ci->flags |= CMDLINE_FLAG_OP_ACK;
+    }
+    else if (strcmp(k, "-node_addr") == 0)
+    {
+      ci->flags |= CMDLINE_FLAG_NODE_ADDR;
+      ci->node_addr = str_to_uint32(v);
+    }
     else if (strcmp(k, "-cipher_alg") == 0)
     {
       ci->flags |= CMDLINE_FLAG_CIPHER_ALG;
@@ -288,11 +299,6 @@ static int get_cmdline_info(cmdline_info_t* ci, int ac, char** av)
     {
       ci->flags |= CMDLINE_FLAG_CIPHER_KEY;
       str_to_cipher_key(ci->cipher_key, v);
-    }
-    else if (strcmp(k, "-node_addr") == 0)
-    {
-      ci->flags |= CMDLINE_FLAG_NODE_ADDR;
-      ci->node_addr = str_to_uint32(v);
     }
   }
 
@@ -375,6 +381,7 @@ int main(int ac, char** av)
     nsd.naddr = cinfo.node_addr;
     nsd.key = cinfo.op_key;
     nsd.val = cinfo.op_val;
+    nsd.is_ack = cinfo.flags & CMDLINE_FLAG_OP_ACK;
 
     linfo.node_fn = on_node_set;
     linfo.user_data = &nsd;

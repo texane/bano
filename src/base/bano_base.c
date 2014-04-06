@@ -218,39 +218,17 @@ int bano_add_node(bano_base_t* base, uint32_t addr)
   return -1;
 }
 
-int bano_post_io
-(bano_base_t* base, bano_node_t* node, bano_io_t* io, unsigned timer_ms)
+int bano_post_io(bano_base_t* base, bano_node_t* node, bano_io_t* io)
 {
-  bano_list_item_t* it;
-
   if (bano_list_add_tail(&node->posted_ios, io))
   {
     BANO_PERROR();
-    goto on_error_0;
+    return -1;
   }
 
-  it = node->posted_ios.tail;
-
-  if (timer_ms > 0)
-  {
-    if (bano_timer_add(&base->timers, &io->timer, timer_ms))
-    {
-      BANO_PERROR();
-      goto on_error_1;
-    }
-
-    io->timer->data[0] = &node->posted_ios;
-    io->timer->data[1] = it;
-
-    io->flags |= BANO_IO_FLAG_TIMER;
-  }
+  io->node = node;
 
   return 0;
-
- on_error_1:
-  bano_list_del(&node->posted_ios, it);
- on_error_0:
-  return -1;
 }
 
 /* event loop, peek pending messages  */
@@ -266,25 +244,39 @@ typedef struct prw_msg_data
 static int cmp_pending_io(bano_list_item_t* li, void* p)
 {
   const bano_io_t* const pending_io = li->data;
-  const bano_msg_t* get_msg = &pending_io->msg;
-  const bano_msg_t* set_msg = (const bano_msg_t*)((uintptr_t*)p)[0];
+  const bano_msg_t* pend_msg = &pending_io->msg;
+  const bano_msg_t* answ_msg = (const bano_msg_t*)((uintptr_t*)p)[0];
   const bano_node_t* node = (const bano_node_t*)((uintptr_t*)p)[1];
+  uint16_t pend_key;
+  uint16_t answ_key;
 
-  if (node->addr != set_msg->hdr.saddr) return 0;
-  if (get_msg->u.get.key != set_msg->u.set.key) return 0;
+  if (node->addr != answ_msg->hdr.saddr) return 0;
+
+  if (pend_msg->hdr.op == BANO_OP_SET)
+  {
+    pend_key = pend_msg->u.set.key;
+    answ_key = answ_msg->u.set.key;
+  }
+  else
+  {
+    pend_key = pend_msg->u.get.key;
+    answ_key = answ_msg->u.get.key;
+  }
+
+  if (pend_key != answ_key) return 0;
 
   /* key found */
   ((uintptr_t*)p)[2] = (uintptr_t)li;
   return -1;
 }
 
-static bano_io_t* find_pending_io(bano_node_t* node, const bano_msg_t* set_msg)
+static bano_io_t* find_pending_io(bano_node_t* node, const bano_msg_t* answ_msg)
 {
   uintptr_t data[3];
   bano_list_item_t* it;
   bano_io_t* io;
 
-  data[0] = (uintptr_t)set_msg;
+  data[0] = (uintptr_t)answ_msg;
   data[1] = (uintptr_t)node;
   data[2] = (uintptr_t)NULL;
   bano_list_foreach(&node->pending_ios, cmp_pending_io, data);
@@ -326,12 +318,7 @@ static int handle_set_msg
 	io->compl_fn(io, io->compl_data);
       }
 
-      if (io->flags & BANO_IO_FLAG_TIMER)
-      {
-	/* remove the timer */
-	bano_timer_del(&prwmd->base->timers, io->timer);
-      }
-
+      bano_timer_del(&prwmd->base->timers, io->timer);
       free_io(io);
     }
   }
@@ -523,18 +510,20 @@ static int post_io(bano_list_item_t* li, void* p)
     return 0;
   }
 
-  if (io->msg.hdr.op == BANO_OP_GET)
+  if (io->flags & BANO_IO_FLAG_REPLY)
   {
     /* move in pending io list */
 
     bano_list_add_tail(&pid->node->pending_ios, io);
 
-    if (io->flags & BANO_IO_FLAG_TIMER)
+    if (bano_timer_add(&pid->base->timers, &io->timer, io->retry_ms))
     {
-      bano_timer_t* const ti = io->timer;
-      ti->data[0] = &pid->node->pending_ios;
-      ti->data[1] = pid->node->pending_ios.tail;
+      BANO_PERROR();
+      return 0;
     }
+
+    io->timer->data[0] = &pid->node->pending_ios;
+    io->timer->data[1] = pid->node->pending_ios.tail;
   }
   else
   {
@@ -692,21 +681,38 @@ int bano_start_loop(bano_base_t* base, const bano_loop_info_t* linfo)
       {
 	if (timer != loop_timer)
 	{
-	  /* pending io timer. complete and destroy. */
+	  /* pending io timer */
 
 	  bano_list_t* const li = timer->data[0];
 	  bano_list_item_t* const it = timer->data[1];
 	  bano_io_t* const io = it->data;
 
-	  if (io->compl_fn != NULL)
+	  if ((io->retry_count--) == 0)
 	  {
-	    io->flags |= BANO_IO_FLAG_ERR;
-	    io->compl_err = BANO_IO_ERR_TIMEOUT;
-	    io->compl_fn(io, io->compl_data);
+	    /* complete and destroy */
+	    if (io->compl_fn != NULL)
+	    {
+	    do_complete_io:
+	      io->compl_err = BANO_IO_ERR_TIMEOUT;
+	      io->compl_fn(io, io->compl_data);
+	    }
+	    free_io(io);
+	  }
+	  else
+	  {
+	    /* repost */
+
+	    printf("repost: %u\n", io->retry_count);
+
+	    if (bano_list_add_tail(&io->node->posted_ios, io))
+	    {
+	      BANO_PERROR();
+	      goto do_complete_io;
+	    }
 	  }
 
+	  /* delete from list */
 	  bano_list_del(li, it);
-	  free_io(io);
 	}
 	else
 	{
@@ -762,6 +768,12 @@ bano_io_t* bano_alloc_get_io
   }
 
   bano_init_common_io(io, fn, data);
+
+    /* default values: wait for 2s, retry 3 times */
+  io->flags |= BANO_IO_FLAG_REPLY;
+  io->retry_ms = 2000;
+  io->retry_count = 3;
+
   io->msg.hdr.op = BANO_OP_GET;
   io->msg.hdr.flags = 0;
   io->msg.hdr.saddr = 0;
@@ -771,7 +783,11 @@ bano_io_t* bano_alloc_get_io
 }
 
 bano_io_t* bano_alloc_set_io
-(uint16_t key, uint32_t val, bano_compl_fn_t fn, void* data)
+(
+ uint16_t key, uint32_t val,
+ unsigned int is_ack,
+ bano_compl_fn_t fn, void* data
+)
 {
   bano_io_t* const io = malloc(sizeof(bano_io_t));
 
@@ -782,6 +798,15 @@ bano_io_t* bano_alloc_set_io
   }
 
   bano_init_common_io(io, fn, data);
+
+  if (is_ack)
+  {
+    /* default values: wait for 2s, retry 3 times */
+    io->flags |= BANO_IO_FLAG_REPLY;
+    io->retry_ms = 2000;
+    io->retry_count = 3;
+  }
+
   io->msg.hdr.op = BANO_OP_SET;
   io->msg.hdr.flags = 0;
   io->msg.hdr.saddr = 0;
