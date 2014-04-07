@@ -80,8 +80,8 @@ uint8_t bano_loop(void);
 /* implemented by the user */
 extern uint8_t bano_set_handler(uint16_t, uint32_t);
 extern uint8_t bano_get_handler(uint16_t, uint32_t*);
-extern uint8_t bano_timer_handler(void);
-extern uint8_t bano_pcint_handler(void);
+extern void bano_timer_handler(void);
+extern void bano_pcint_handler(void);
 
 
 /* implementation */

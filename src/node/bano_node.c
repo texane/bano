@@ -488,51 +488,51 @@ uint8_t bano_wait_event(bano_msg_t* msg)
 
 uint8_t bano_loop(void)
 {
-  uint16_t key;
-  uint32_t val;
-  uint8_t ev;
   bano_msg_t msg;
-  uint8_t msg_op;
+  uint8_t ev;
 
   while (1)
   {
     ev = bano_wait_event(&msg);
 
-    if (ev & BANO_EV_TIMER)
-    {
-      bano_timer_handler();
-    }
+    /* do BANO_EV_MSG first as msg is lost in other handlers */
 
     if (ev & BANO_EV_MSG)
     {
-      msg_op = msg.hdr.op;
+      const uint8_t op = msg.hdr.op;
 
-      if (msg_op == BANO_OP_SET)
+      if (op == BANO_OP_SET)
       {
 	/* TODO: handle default keys */
 
-	key = le_to_uint16(msg.u.set.key);
-	val = le_to_uint32(msg.u.set.val);
-	bano_set_handler(key, val);
+	const uint16_t key = le_to_uint16(msg.u.set.key);
+	uint32_t val = le_to_uint32(msg.u.set.val);
+	const uint8_t flags = bano_set_handler(key, val);
 
-	/* TODO: BANO_FLAG_ACK */
-      }
-      else if (msg_op == BANO_OP_GET)
-      {
-	/* TODO: handle default keys */
-
-	key = le_to_uint16(msg.u.get.key);
-	if (bano_get_handler(key, &val) == 0)
+	if (flags & BANO_FLAG_ACK)
 	{
-	  make_set_msg(&msg, key, val);
-	  msg.hdr.flags |= BANO_FLAG_REPLY;
+	  msg.hdr.flags = flags;
 	  send_msg(&msg);
 	}
       }
-      else
+      else if (op == BANO_OP_GET)
       {
-	/* TODO: report error */
+	/* TODO: handle default keys */
+
+	uint32_t val = 0;
+	const uint16_t key = le_to_uint16(msg.u.get.key);
+	const uint8_t flags = bano_get_handler(key, &val);
+
+	msg.hdr.op = BANO_OP_SET;
+	msg.hdr.flags = BANO_FLAG_REPLY | flags;
+	msg.u.set.val = uint32_to_le(val);
+	send_msg(&msg);
       }
+    }
+
+    if (ev & BANO_EV_TIMER)
+    {
+      bano_timer_handler();
     }
 
     if (ev & BANO_EV_PCINT)
