@@ -508,7 +508,7 @@ uint8_t bano_loop(void)
 	uint32_t val = le_to_uint32(msg.u.set.val);
 	const uint8_t flags = bano_set_handler(key, val);
 
-	if (flags & BANO_FLAG_ACK)
+	if (flags & BANO_FLAG_REPLY)
 	{
 	  msg.hdr.flags = flags;
 	  send_msg(&msg);

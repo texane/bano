@@ -130,9 +130,9 @@ One of the following message operation:
 \item \textit{FLAGS}, 6 bits\\
 A combination of the following flags:
 \begin{itemize}
-\item BANO\_FLAG\_ACK ($1<<0$): this message acknowledges a previous one,
-\item BANO\_FLAG\_REPLY ($1<<1$): this message replies a previous one,
-\item BANO\_FLAG\_ERR ($1<<2$): error during operation execution.
+\item BANO\_FLAG\_REPLY ($1<<0$): this message replies or ack a
+previous operation,
+\item BANO\_FLAG\_ERR ($1<<1$): error during operation execution.
 \end{itemize}
 \item \textit{SADDR}, 32 bits\\
 The source address (sender node or base).
