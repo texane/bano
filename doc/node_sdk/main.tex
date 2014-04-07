@@ -232,8 +232,8 @@ uint8_t bano_loop(void);
 /* implemented by the application */
 extern uint8_t bano_set_handler(uint16_t, uint32_t);
 extern uint8_t bano_get_handler(uint16_t, uint32_t*);
-extern uint8_t bano_timer_handler(void);
-extern uint8_t bano_pcint_handler(void);
+extern void bano_timer_handler(void);
+extern void bano_pcint_handler(void);
 \end{verbatim}
 \end{scriptsize}
 
@@ -276,7 +276,8 @@ uint8_t bano_get_handler(uint16_t key, uint32_t* val)
 {
   /* called by the runtime on GET messages */
 
-  if (key != LED_KEY) return (uint8_t)-1;
+  if (key != LED_KEY) return BANO_FLAG_ERR;
+
   *val = led_value;
   return 0;
 }
@@ -285,16 +286,19 @@ uint8_t bano_set_handler(uint16_t key, uint32_t val)
 {
   /* called by the runtime on SET messages */
 
-  if (key != LED_KEY) return (uint8_t)-1;
+  if (key != LED_KEY) return BANO_FLAG_ERR;
+
   led_value = val;
   if (led_value == 0) led_set_low();
   else led_set_high();
-  return 0;
+
+  /* acknowledged operation */
+  return BANO_FLAG_ACK;
 }
 
 /* unused */
-uint8_t bano_pcint_handler(void) { return (uint8_t)-1; }
-uint8_t bano_timer_handler(void) { return (uint8_t)-1; }
+void bano_pcint_handler(void) { }
+void bano_timer_handler(void) { }
 
 int main(void)
 {
@@ -304,10 +308,9 @@ int main(void)
 
   info = bano_info_default;
   info.wake_mask |= BANO_WAKE_MSG;
+
   bano_init(&info);
-
   bano_loop();
-
   bano_fini();
 
   return 0;
@@ -325,18 +328,17 @@ int main(void)
 #include <avr/io.h>
 #include "bano/src/node/bano_node.h"
 
-uint8_t bano_timer_handler(void)
+void bano_timer_handler(void)
 {
   /* called every 10 seconds */
 
   bano_send_set(0x002a, 0xdeadbeef);
-  return 0;
 }
 
 /* unused */
-uint8_t bano_get_handler(uint16_t key, uint32_t* val) { return (uint8_t)-1; }
-uint8_t bano_set_handler(uint16_t key, uint32_t val) { return (uint8_t)-1; }
-uint8_t bano_pcint_handler(void) { return (uint8_t)-1; }
+uint8_t bano_get_handler(uint16_t key, uint32_t* val) { return BANO_FLAG_ERR; }
+uint8_t bano_set_handler(uint16_t key, uint32_t val) { return BANO_FLAG_ERR; }
+void bano_pcint_handler(void) { }
 
 int main(void)
 {
@@ -348,9 +350,7 @@ int main(void)
   info.timer_100ms = 100;
 
   bano_init(&info);
-
   bano_loop();
-
   bano_fini();
 
   return 0;
@@ -373,16 +373,16 @@ int main(void)
 #define GPIO_PIN PIND
 #define GPIO_MASK (1 << 3)
 
-uint8_t bano_pcint_handler(void)
+void bano_pcint_handler(void)
 {
   bano_send_set(GPIO_KEY, GPIO_PIN & GPIO_MASK);
   return 0;
 }
 
 /* unused */
-uint8_t bano_get_handler(uint16_t key, uint32_t* val) { return (uint8_t)-1; }
-uint8_t bano_set_handler(uint16_t key, uint32_t val) { return (uint8_t)-1; }
-uint8_t bano_timer_handler(void) { return (uint8_t)-1; }
+uint8_t bano_get_handler(uint16_t key, uint32_t* val) { return BANO_FLAG_ERR; }
+uint8_t bano_set_handler(uint16_t key, uint32_t val) { return BANO_FLAG_ERR; }
+void bano_timer_handler(void) { }
 
 int main(void)
 {
@@ -392,10 +392,9 @@ int main(void)
 
   info.wake_mask |= BANO_WAKE_PCINT;
   info.pcint_mask = 1UL << 19UL;
+
   bano_init(&info);
-
   bano_loop();
-
   bano_fini();
 
   return 0;
