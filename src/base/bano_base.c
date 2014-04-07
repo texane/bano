@@ -254,6 +254,10 @@ static int cmp_pending_io(bano_list_item_t* li, void* p)
 
   if (pend_msg->hdr.op == BANO_OP_SET)
   {
+    /* not the value asked for */
+    if (pend_msg->u.set.val != answ_msg->u.set.val)
+      return 0;
+
     pend_key = pend_msg->u.set.key;
     answ_key = answ_msg->u.set.key;
   }
