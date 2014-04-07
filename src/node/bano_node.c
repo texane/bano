@@ -322,6 +322,7 @@ uint8_t bano_fini(void)
 
 static inline void send_msg(bano_msg_t* msg)
 {
+  msg->hdr.saddr = uint32_to_le(BANO_CONFIG_NODE_ADDR);
   cipher_enc((uint8_t*)msg);
   nrf_send_payload_zero((uint8_t*)msg);
 }
@@ -330,7 +331,6 @@ static inline void make_set_msg(bano_msg_t* msg, uint16_t key, uint32_t val)
 {
   msg->hdr.op = BANO_OP_SET;
   msg->hdr.flags = 0;
-  msg->hdr.saddr = uint32_to_le(BANO_CONFIG_NODE_ADDR);
   msg->u.set.key = uint16_to_le(key);
   msg->u.set.val = uint32_to_le(val);
 }
@@ -339,7 +339,6 @@ static inline void make_get_msg(bano_msg_t* msg, uint16_t key)
 {
   msg->hdr.op = BANO_OP_GET;
   msg->hdr.flags = 0;
-  msg->hdr.saddr = uint32_to_le(BANO_CONFIG_NODE_ADDR);
   msg->u.get.key = uint16_to_le(key);
 }
 
@@ -522,10 +521,8 @@ uint8_t bano_loop(void)
 	uint32_t val = 0;
 	const uint16_t key = le_to_uint16(msg.u.get.key);
 	const uint8_t flags = bano_get_handler(key, &val);
-
-	msg.hdr.op = BANO_OP_SET;
+	make_set_msg(&msg, key, val);
 	msg.hdr.flags = BANO_FLAG_REPLY | flags;
-	msg.u.set.val = uint32_to_le(val);
 	send_msg(&msg);
       }
     }
