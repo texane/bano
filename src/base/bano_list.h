@@ -22,6 +22,7 @@ typedef int (*bano_list_fn_t)(bano_list_item_t*, void*);
 int bano_list_init(bano_list_t*);
 int bano_list_fini(bano_list_t*, bano_list_fn_t, void*);
 int bano_list_foreach(bano_list_t*, bano_list_fn_t, void*);
+int bano_list_foreach_at(bano_list_item_t*, bano_list_fn_t, void*);
 int bano_list_find(bano_list_t*, bano_list_fn_t, void*, bano_list_item_t**);
 int bano_list_add_tail(bano_list_t*, void*);
 int bano_list_add_head(bano_list_t*, void*);

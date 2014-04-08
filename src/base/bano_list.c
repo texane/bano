@@ -27,18 +27,23 @@ int bano_list_fini(bano_list_t* l, bano_list_fn_t f, void* p)
   return 0;
 }
 
-int bano_list_foreach(bano_list_t* l, bano_list_fn_t f, void* p)
+int bano_list_foreach_at(bano_list_item_t* it, bano_list_fn_t fn, void* p)
 {
   bano_list_item_t* pos;
   bano_list_item_t* next;
 
-  for (pos = l->head; pos != NULL; pos = next)
+  for (pos = it; pos != NULL; pos = next)
   {
     next = pos->next;
-    if (f(pos, p)) break ;
+    if (fn(pos, p)) break ;
   }
 
   return 0;
+}
+
+int bano_list_foreach(bano_list_t* l, bano_list_fn_t f, void* p)
+{
+  return bano_list_foreach_at(l->head, f, p);
 }
 
 int bano_list_find

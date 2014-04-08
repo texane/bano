@@ -1,0 +1,24 @@
+# LED node description
+
+# security
+secu
+{
+cipher_alg = xtea
+}
+
+# control the led status
+keyval
+{
+key = 0x0000
+fmt = uint32
+get = yes
+set = yes
+ack = yes
+}
+
+# periodically sent key
+keyval
+{
+key = 0x0001
+fmt = uint32
+}

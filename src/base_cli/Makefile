@@ -6,6 +6,7 @@ REPO_DIR ?= $(HOME)/repo
 SRCS := \
 main.c \
 $(REPO_DIR)/bano/src/base/bano_base.c \
+$(REPO_DIR)/bano/src/base/bano_parser.c \
 $(REPO_DIR)/bano/src/base/bano_timer.c \
 $(REPO_DIR)/bano/src/base/bano_list.c \
 $(REPO_DIR)/bano/src/base/bano_cipher.c \
