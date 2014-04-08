@@ -30,15 +30,10 @@ typedef struct bano_parser_struct
 
 typedef struct bano_parser
 {
-#define BANO_PARSER_FLAG_COMMENT (1 << 0)
-#define BANO_PARSER_FLAG_STRUCT (1 << 1)
-#define BANO_PARSER_FLAG_PAIR (1 << 2)
-#define BANO_PARSER_FLAG_ERROR (1 << 3)
-  uint32_t flags;
+  size_t off;
 
   uint8_t* mmap_data;
   size_t mmap_size;
-  size_t mmap_off;
 
   bano_list_t structs;
 

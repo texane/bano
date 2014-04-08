@@ -33,9 +33,56 @@ int bano_parser_close(bano_parser_t* parser)
   return 0;
 }
 
-static int do_parse(bano_parser_t* parser)
+static unsigned int is_ws(uint8_t c)
+{
+  return ((c == ' ') || (c == '\t'));
+}
+
+static unsigned int is_nl(uint8_t c)
+{
+  return ((c == '\r') || (c == '\n'));
+}
+
+static unsigned int is_comment(uint8_t c)
+{
+  return c == '#';
+}
+
+static int parse_pair(bano_parser_t* parser, bano_parser_pair_t* pair)
 {
   return -1;
+}
+
+static int parse_struct(bano_parser_t* parser, bano_parser_struct_t* strukt)
+{
+  return -1;
+}
+
+static void parse_line(bano_parser_t* parser)
+{
+}
+
+static void parse_comment(bano_parser_t* parser)
+{
+}
+
+static int do_parse(bano_parser_t* parser)
+{
+  int err = 0;
+
+  parser->off = 0;
+
+  for (parser->off = 0; parser->off != parser->mmap_size; ++parser->off)
+  {
+    if (is_ws(parser->mmap_data[parser->off]))
+      continue ;
+    else if (is_nl(parser->mmap_data[parser->off]))
+      continue ;
+    else if (is_comment(parser->mmap_data[parser->off]))
+      continue ;
+  }
+
+  return err;
 }
 
 int bano_parser_open_file(bano_parser_t* parser, const char* path)
@@ -43,7 +90,6 @@ int bano_parser_open_file(bano_parser_t* parser, const char* path)
   int fd;
   struct stat st;
 
-  parser->flags = 0;
   bano_list_init(&parser->structs);
 
   fd = open(path, O_RDONLY);
@@ -67,8 +113,6 @@ int bano_parser_open_file(bano_parser_t* parser, const char* path)
     BANO_PERROR();
     goto on_error_2;
   }
-
-  parser->mmap_off = 0;
 
   if (do_parse(parser))
   {
