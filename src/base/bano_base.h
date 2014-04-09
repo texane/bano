@@ -115,7 +115,9 @@ typedef struct
 
 typedef struct
 {
-  unsigned int dummy;
+#define BANO_BASE_FLAG_CONF (1 << 0)
+  uint32_t flags;
+  const char* conf_path;
 } bano_base_info_t;
 
 
@@ -144,6 +146,7 @@ static inline uint32_t bano_get_node_addr(bano_node_t* node)
 
 static inline void bano_init_base_info(bano_base_info_t* i)
 {
+  i->flags = 0;
 }
 
 static inline void bano_init_loop_info(bano_loop_info_t* i)

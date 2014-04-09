@@ -129,6 +129,12 @@ static int fini_buf_item(bano_list_item_t* it, void* p)
   return 0;
 }
 
+static int fini_cstr_item(bano_list_item_t* it, void* p)
+{
+  free(it->data);
+  return 0;
+}
+
 
 /* exported */
 
@@ -136,6 +142,7 @@ int bano_parser_fini(bano_parser_t* parser)
 {
   bano_list_fini(&parser->structs, fini_struct_item, NULL);
   bano_list_fini(&parser->bufs, fini_buf_item, NULL);
+  bano_list_fini(&parser->cstrs, fini_cstr_item, NULL);
   return 0;
 }
 
@@ -516,6 +523,7 @@ int bano_parser_load_file(bano_parser_t* parser, const char* path)
 
   bano_list_init(&parser->structs);
   bano_list_init(&parser->bufs);
+  bano_list_init(&parser->cstrs);
 
   if (get_dirname(parser->top_dir, &parser->top_len, path))
   {
@@ -547,10 +555,24 @@ int bano_parser_load_file(bano_parser_t* parser, const char* path)
  on_error_2:
   bano_list_fini(&parser->structs, fini_struct_item, NULL);
   bano_list_fini(&parser->bufs, fini_buf_item, NULL);
+  bano_list_fini(&parser->cstrs, fini_cstr_item, NULL);
  on_error_1:
   free_buf(buf);
  on_error_0:
   return -1;
+}
+
+
+int bano_parser_foreach_struct
+(bano_parser_t* parser, bano_list_fn_t fn, void* p)
+{
+  return bano_list_foreach(&parser->structs, fn, p);
+}
+
+int bano_parser_foreach_pair
+(bano_parser_struct_t* strukt, bano_list_fn_t fn, void* p)
+{
+  return bano_list_foreach(&strukt->pairs, fn, p);
 }
 
 
@@ -671,6 +693,35 @@ int bano_parser_string_cmp
   }
 
   return 0;
+}
+
+int bano_parser_string_to_cstr
+(bano_parser_t* parser, const bano_parser_string_t* string, const char** cstrp)
+{
+  char* cstr;
+
+  cstr = malloc((string->size + 1) * sizeof(char));
+  if (cstr == NULL)
+  {
+    BANO_PERROR();
+    goto on_error_0;
+  }
+
+  if (bano_list_add_tail(&parser->cstrs, cstr))
+  {
+    BANO_PERROR();
+    goto on_error_1;
+  }
+
+  memcpy(cstr, string->data, string->size);
+  cstr[string->size] = 0;
+
+  return 0;
+
+ on_error_1:
+  free(cstr);
+ on_error_0:
+  return -1;
 }
 
 

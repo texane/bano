@@ -17,7 +17,7 @@ int bano_list_fini(bano_list_t* l, bano_list_fn_t f, void* p)
   {
     bano_list_item_t* const tmp = pos;
     pos = pos->next;
-    f(tmp, p);
+    if (f != NULL) f(tmp, p);
     free(tmp);
   }
 

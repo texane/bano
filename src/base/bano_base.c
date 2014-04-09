@@ -9,6 +9,7 @@
 #include "bano_socket.h"
 #include "bano_timer.h"
 #include "bano_list.h"
+#include "bano_parser.h"
 #include "bano_perror.h"
 #include "../common/bano_common.h"
 
@@ -139,12 +140,120 @@ int bano_fini(void)
   return 0;
 }
 
+struct apply_data
+{
+  bano_base_t* base;
+  bano_parser_t* parser;
+  int err;
+
+  union
+  {
+    bano_socket_info_t socket_info;
+  } u;
+
+};
+
+static int apply_socket_pair(bano_list_item_t* it, void* p)
+{
+  const bano_parser_pair_t* const pair = it->data;
+  struct apply_data* const ad = p;
+  bano_socket_info_t* const sinfo = &ad->u.socket_info;
+  bano_parser_t* const parser = ad->parser;
+
+  if (bano_parser_string_cmp(&pair->key, "type") == 0)
+  {
+    if (bano_parser_string_cmp(&pair->val, "snrf") == 0)
+    {
+      sinfo->type = BANO_SOCKET_TYPE_SNRF;
+      sinfo->u.snrf.dev_path = "/dev/ttyUSB0";
+      sinfo->u.snrf.addr_width = 4;
+      /* TODO: should be base->addr */
+      sinfo->u.snrf.addr_val = BANO_DEFAULT_BASE_ADDR;
+    }
+  }
+  else if (bano_parser_string_cmp(&pair->key, "dev_path") == 0)
+  {
+    if (sinfo->type == BANO_SOCKET_TYPE_SNRF)
+    {
+      if (bano_parser_string_to_cstr(parser, &pair->val, &sinfo->u.snrf.dev_path))
+      {
+	BANO_PERROR();
+	ad->err = -1;
+      }
+    }
+  }
+
+  return ad->err;
+}
+
+static int apply_struct(bano_list_item_t* it, void* p)
+{
+  bano_parser_struct_t* const strukt = it->data;
+  struct apply_data* const ad = p;
+
+  if (bano_parser_string_cmp(&strukt->name, "socket") == 0)
+  {
+    bano_socket_info_t* const sinfo = &ad->u.socket_info;
+
+    bano_init_socket_info(sinfo);
+    bano_parser_foreach_pair(strukt, apply_socket_pair, ad);
+
+    if (ad->err) goto on_error;
+
+    if (bano_add_socket(ad->base, sinfo))
+    {
+      BANO_PERROR();
+      ad->err = -1;
+    }
+  }
+
+ on_error:
+  return ad->err;
+}
+
+static int apply_conf(bano_base_t* base, const char* conf_path)
+{
+  bano_parser_t parser;
+  struct apply_data ad;
+
+  if (bano_parser_load_file(&parser, conf_path))
+  {
+    BANO_PERROR();
+    return -1;
+  }
+
+  ad.base = base;
+  ad.parser = &parser;
+  ad.err = 0;
+  bano_parser_foreach_struct(&parser, apply_struct, &ad);
+
+  bano_parser_fini(&parser);
+
+  return ad.err;
+}
+
 int bano_open(bano_base_t* base, const bano_base_info_t* info)
 {
   bano_list_init(&base->nodes);
   bano_list_init(&base->sockets);
   bano_timer_init(&base->timers);
+
+  if (info->flags & BANO_BASE_FLAG_CONF)
+  {
+    if (apply_conf(base, info->conf_path))
+    {
+      BANO_PERROR();
+      goto on_error_0;
+    }
+  }
+
   return 0;
+
+ on_error_0:
+  bano_list_fini(&base->nodes, free_node_item, NULL);
+  bano_list_fini(&base->sockets, free_socket_item, NULL);
+  bano_timer_fini(&base->timers);
+  return -1;
 }
 
 int bano_close(bano_base_t* base)
