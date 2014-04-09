@@ -28,10 +28,19 @@ typedef struct bano_parser_struct
 } bano_parser_struct_t;
 
 
+typedef struct bano_parser_buf
+{
+  /* persistent until parser fini */
+#define BANO_PARSER_BUF_FLAG_MMAP (1 << 0)
+  uint32_t flags;
+  uint8_t* data;
+  size_t size;
+} bano_parser_buf_t;
+
+
 typedef struct bano_parser
 {
-  uint8_t* mmap_data;
-  size_t mmap_size;
+  bano_list_t bufs;
   bano_list_t structs;
 } bano_parser_t;
 

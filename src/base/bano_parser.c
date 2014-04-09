@@ -66,13 +66,75 @@ static int fini_struct_item(bano_list_item_t* it, void* p)
   return 0;
 }
 
+static bano_parser_buf_t* alloc_mmap_buf(const char* path)
+{
+  int err = -1;
+  int fd;
+  struct stat st;
+  bano_parser_buf_t* buf = NULL;
+
+  fd = open(path, O_RDONLY);
+  if (fd == -1)
+  {
+    BANO_PERROR();
+    goto on_error_0;
+  }
+
+  if (fstat(fd, &st))
+  {
+    BANO_PERROR();
+    goto on_error_1;
+  }
+
+  buf = malloc(sizeof(bano_parser_buf_t));
+  if (buf == NULL)
+  {
+    BANO_PERROR();
+    goto on_error_1;
+  }
+
+  buf->size = st.st_size;
+  buf->data = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
+  if (buf->data == (void*)MAP_FAILED)
+  {
+    BANO_PERROR();
+    goto on_error_2;
+  }
+
+  err = 0;
+
+ on_error_2:
+  if (err == -1)
+  {
+    free(buf);
+    buf = NULL;
+  }
+ on_error_1:
+  close(fd);
+ on_error_0:
+  return buf;
+}
+
+static void free_buf(bano_parser_buf_t* buf)
+{
+  if (buf->flags & BANO_PARSER_BUF_FLAG_MMAP)
+    munmap((void*)buf->data, buf->size);
+  free(buf);
+}
+
+static int fini_buf_item(bano_list_item_t* it, void* p)
+{
+  free_buf(it->data);
+  return 0;
+}
+
 
 /* exported */
 
 int bano_parser_fini(bano_parser_t* parser)
 {
   bano_list_fini(&parser->structs, fini_struct_item, NULL);
-  munmap((void*)parser->mmap_data, parser->mmap_size);
+  bano_list_fini(&parser->bufs, fini_buf_item, NULL);
   return 0;
 }
 
@@ -363,48 +425,37 @@ static size_t parse_buf(bano_parser_t* parser, const uint8_t* s, size_t n)
 
 int bano_parser_load_file(bano_parser_t* parser, const char* path)
 {
-  int fd;
-  struct stat st;
+  bano_parser_buf_t* buf;
 
   bano_list_init(&parser->structs);
+  bano_list_init(&parser->bufs);
 
-  fd = open(path, O_RDONLY);
-  if (fd == -1)
+  buf = alloc_mmap_buf(path);
+  if (buf == NULL)
   {
     BANO_PERROR();
     goto on_error_0;
   }
 
-  if (fstat(fd, &st))
+  if (bano_list_add_tail(&parser->bufs, buf))
   {
     BANO_PERROR();
     goto on_error_1;
   }
 
-  parser->mmap_size = st.st_size;
-  parser->mmap_data = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
-  close(fd);
-  fd = -1;
-  if (parser->mmap_data == (void*)MAP_FAILED)
+  if (parse_buf(parser, buf->data, buf->size) == (size_t)-1)
   {
     BANO_PERROR();
     goto on_error_2;
   }
 
-  if (parse_buf(parser, parser->mmap_data, parser->mmap_size) == (size_t)-1)
-  {
-    BANO_PERROR();
-    goto on_error_3;
-  }
-
   return 0;
 
- on_error_3:
-  bano_list_fini(&parser->structs, fini_struct_item, NULL);
  on_error_2:
-  munmap((void*)parser->mmap_data, parser->mmap_size);
+  bano_list_fini(&parser->structs, fini_struct_item, NULL);
+  bano_list_fini(&parser->bufs, fini_buf_item, NULL);
  on_error_1:
-  if (fd != -1) close(fd);
+  free_buf(buf);
  on_error_0:
   return -1;
 }
