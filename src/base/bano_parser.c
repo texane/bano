@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -76,6 +77,7 @@ static bano_parser_buf_t* alloc_mmap_buf(const char* path)
   fd = open(path, O_RDONLY);
   if (fd == -1)
   {
+    printf("path: %s\n", path);
     BANO_PERROR();
     goto on_error_0;
   }
@@ -161,6 +163,16 @@ static unsigned int is_comment(uint8_t c)
 static unsigned int is_directive(uint8_t c)
 {
   return c == '.';
+}
+
+static unsigned int is_include_directive(const uint8_t* s, size_t n)
+{
+#define INCLUDE_STRING ".include"
+#define INCLUDE_SIZE (sizeof(INCLUDE_STRING) - 1)
+
+  if (n != INCLUDE_SIZE) return 0;
+  if (memcmp(s, INCLUDE_STRING, INCLUDE_SIZE)) return 0;
+  return 1;
 }
 
 static size_t skip_whites(const uint8_t* s, size_t n)
@@ -350,11 +362,63 @@ static size_t parse_struct
   return (size_t)-1;
 }
 
+static size_t parse_buf(bano_parser_t*, const uint8_t*, size_t);
+
 static size_t parse_directive
 (bano_parser_t* parser, const uint8_t* s, size_t n)
 {
-  /* TODO */
-  return (size_t)-1;
+  char path[256];
+  bano_parser_buf_t* buf;
+  size_t tok[2];
+  size_t i = 0;
+
+  next_token(tok, s, n);
+
+  if ((tok[1] == 0) || (is_directive(s[tok[0]]) == 0))
+  {
+    BANO_PERROR();
+    return (size_t)-1;
+  }
+
+  if (is_include_directive(s + tok[0], tok[1]))
+  {
+    i += tok[0] + tok[1];
+
+    next_token(tok, s + i, n - i);
+    if ((tok[1] == 0) || (tok[1] >= sizeof(path)))
+    {
+      BANO_PERROR();
+      return (size_t)-1;
+    }
+
+    memcpy(path, s + i + tok[0], tok[1]);
+    path[tok[1]] = 0;
+
+    buf = alloc_mmap_buf(path);
+    if (buf == NULL)
+    {
+      BANO_PERROR();
+      return (size_t)-1;
+    }
+
+    if (parse_buf(parser, buf->data, buf->size) == (size_t)-1)
+    {
+      BANO_PERROR();
+      free_buf(buf);
+      return (size_t)-1;
+    }
+
+    if (bano_list_add_tail(&parser->bufs, buf))
+    {
+      BANO_PERROR();
+      free_buf(buf);
+      return (size_t)-1;
+    }
+
+    i += tok[0] + tok[1];
+  }
+
+  return i;
 }
 
 static size_t parse_directive_or_struct
