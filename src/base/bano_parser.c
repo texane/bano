@@ -304,6 +304,7 @@ static size_t parse_struct
   }
   i += tok[0];
   strukt->name.data = s + i;
+  strukt->name.size = tok[1];
   i += tok[1];
 
   /* opening accolade */
@@ -676,6 +677,38 @@ int bano_parser_string_cmp
 
 #ifdef BANO_CONFIG_UNIT /* unit */
 
+#include <stdio.h>
+
+static void print_string(const bano_parser_string_t* s)
+{
+  size_t i;
+  for (i = 0; i != s->size; ++i) printf("%c", s->data[i]);
+}
+
+static int print_pair_item(bano_list_item_t* it, void* p)
+{
+  bano_parser_pair_t* const pair = it->data;
+
+  print_string(&pair->key);
+  printf(" = ");
+  print_string(&pair->val);
+  printf("\n");
+
+  return 0;
+}
+
+static int print_struct_item(bano_list_item_t* it, void* p)
+{
+  bano_parser_struct_t* const strukt = it->data;
+
+  print_string(&strukt->name);
+  printf("\n{\n");
+  bano_list_foreach(&strukt->pairs, print_pair_item, NULL);
+  printf("}\n");
+
+  return 0;
+}
+
 int main(int ac, char** av)
 {
   bano_parser_t parser;
@@ -685,6 +718,8 @@ int main(int ac, char** av)
     BANO_PERROR();
     return -1;
   }
+
+  bano_list_foreach(&parser.structs, print_struct_item, NULL);
 
   bano_parser_fini(&parser);
 
