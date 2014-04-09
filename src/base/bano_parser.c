@@ -77,7 +77,6 @@ static bano_parser_buf_t* alloc_mmap_buf(const char* path)
   fd = open(path, O_RDONLY);
   if (fd == -1)
   {
-    printf("path: %s\n", path);
     BANO_PERROR();
     goto on_error_0;
   }
