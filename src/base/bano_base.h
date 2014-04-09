@@ -46,10 +46,6 @@ typedef struct
   bano_timer_fn_t timer_fn;
   unsigned int timer_ms;
 
-  /* crypto cipher */
-  enum bano_cipher_alg cipher_alg;
-  uint8_t cipher_key[BANO_CIPHER_KEY_SIZE];
-
   /* user pointer passed to xxx_fn */
   void* user_data;
 
@@ -98,7 +94,24 @@ typedef struct bano_node
   struct bano_socket* socket;
   bano_list_t posted_ios;
   bano_list_t pending_ios;
+  bano_cipher_t cipher;
+  /* TODO: bano_nodl_t* nodl; */
 } bano_node_t;
+
+typedef struct bano_node_info
+{
+#define BANO_NODE_FLAG_ADDR (1 << 0)
+#define BANO_NODE_FLAG_SEED (1 << 1)
+#define BANO_NODE_FLAG_NODL_ID (1 << 2)
+#define BANO_NODE_FLAG_CIPHER (1 << 3)
+#define BANO_NODE_FLAG_SOCKET (1 << 4)
+  uint32_t flags;
+  uint32_t addr;
+  uint32_t seed;
+  uint32_t nodl_id;
+  bano_cipher_info_t cipher_info;
+  bano_socket_t* socket;
+} bano_node_info_t;
 
 
 /* base context */
@@ -108,6 +121,7 @@ typedef struct
   bano_list_t nodes;
   bano_list_t sockets;
   bano_list_t timers;
+  bano_cipher_t cipher;
 } bano_base_t;
 
 
@@ -127,8 +141,8 @@ int bano_init(void);
 int bano_fini(void);
 int bano_open(bano_base_t*, const bano_base_info_t*);
 int bano_close(bano_base_t*);
-int bano_add_socket(bano_base_t*, const struct bano_socket_info*);
-int bano_add_node(bano_base_t*, uint32_t);
+int bano_add_socket(bano_base_t*, const bano_socket_info_t*);
+int bano_add_node(bano_base_t*, const bano_node_info_t*);
 int bano_start_loop(bano_base_t*, const bano_loop_info_t*);
 bano_io_t* bano_alloc_get_io(uint16_t, bano_compl_fn_t, void*);
 bano_io_t* bano_alloc_set_io
@@ -153,8 +167,6 @@ static inline void bano_init_loop_info(bano_loop_info_t* i)
 {
   i->flags = 0;
 
-  i->cipher_alg = BANO_CIPHER_ALG_NONE;
-
   i->set_fn = NULL;
   i->get_fn = NULL;
   i->node_fn = NULL;
@@ -164,6 +176,11 @@ static inline void bano_init_loop_info(bano_loop_info_t* i)
 static inline void bano_init_socket_info(bano_socket_info_t* i)
 {
   i->type = BANO_SOCKET_TYPE_INVALID;
+}
+
+static inline void bano_init_node_info(bano_node_info_t* i)
+{
+  i->flags = 0;
 }
 
 static inline void bano_set_io_error(bano_io_t* io, unsigned int err)

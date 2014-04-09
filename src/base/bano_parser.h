@@ -60,7 +60,7 @@ int bano_parser_find_pair(bano_parser_struct_t*, bano_list_item_t**, const char*
 
 int bano_parser_string_to_bool(const bano_parser_string_t*, unsigned int*);
 int bano_parser_string_to_uint32(const bano_parser_string_t*, uint32_t*);
-int bano_parser_string_to_array(const bano_parser_string_t*, uint8_t*, size_t);
+int bano_parser_string_to_cipher_key(const bano_parser_string_t*, uint8_t*);
 int bano_parser_string_to_cstr(bano_parser_t*, const bano_parser_string_t*, const char**);
 int bano_parser_string_cmp(const bano_parser_string_t*, const char*);
 

@@ -4,19 +4,11 @@
 #include "bano_perror.h"
 
 
-/* cipher context */
-
-static enum bano_cipher_alg cipher_alg = BANO_CIPHER_ALG_NONE;
-static uint8_t cipher_key[BANO_CIPHER_KEY_SIZE];
-
-
 /* xtea implementation */
 /* adapted from http://en.wikipedia.org/wiki/XTEA */
 
-static void xtea_enc(uint8_t* dest, const uint8_t* v)
+static void xtea_enc(uint8_t* dest, const uint8_t* v, const void* k)
 {
-  const void* const k = cipher_key;
-
   uint32_t v0 = ((uint32_t*)v)[0];
   uint32_t v1 = ((uint32_t*)v)[1];
   unsigned int i;
@@ -34,10 +26,8 @@ static void xtea_enc(uint8_t* dest, const uint8_t* v)
   ((uint32_t*)dest)[1] = v1;
 }
 
-static void xtea_dec(uint8_t* dest, const void* v)
+static void xtea_dec(uint8_t* dest, const void* v, const void* k)
 {
-  const void* const k = cipher_key;
-
   unsigned int i;
   uint32_t v0 = ((uint32_t*)v)[0];
   uint32_t v1 = ((uint32_t*)v)[1];
@@ -58,44 +48,28 @@ static void xtea_dec(uint8_t* dest, const void* v)
 
 /* exported */
 
-int bano_cipher_init(enum bano_cipher_alg alg, const uint8_t* key)
+int bano_cipher_init(bano_cipher_t* cipher, const bano_cipher_info_t* info)
 {
-  switch (alg)
+  /* currently a raw copy */
+  memcpy(cipher, info, sizeof(bano_cipher_t));
+  return 0;
+}
+
+int bano_cipher_fini(bano_cipher_t* cipher)
+{
+  return 0;
+}
+
+int bano_cipher_enc(bano_cipher_t* cipher, uint8_t* data)
+{
+  switch (cipher->alg)
   {
   case BANO_CIPHER_ALG_NONE:
     break ;
 
   case BANO_CIPHER_ALG_XTEA:
-    memcpy(cipher_key, key, BANO_CIPHER_KEY_SIZE);
-    break ;
-
-  default:
-    BANO_PERROR();
-    break ;
-    return -1;
-  }
-
-  /* set only on success */
-  cipher_alg = alg;
-
-  return 0;
-}
-
-int bano_cipher_fini(void)
-{
-  return 0;
-}
-
-int bano_cipher_enc(uint8_t* data)
-{
-  switch (cipher_alg)
-  {
-  case BANO_CIPHER_ALG_NONE:
-    break ;
-
-  case BANO_CIPHER_ALG_XTEA:
-    xtea_enc(data + 0, data + 0);
-    xtea_enc(data + 8, data + 8);
+    xtea_enc(data + 0, data + 0, cipher->key);
+    xtea_enc(data + 8, data + 8, cipher->key);
     break ;
 
   default:
@@ -106,16 +80,16 @@ int bano_cipher_enc(uint8_t* data)
   return 0;
 }
 
-int bano_cipher_dec(uint8_t* data)
+int bano_cipher_dec(bano_cipher_t* cipher, uint8_t* data)
 {
-  switch (cipher_alg)
+  switch (cipher->alg)
   {
   case BANO_CIPHER_ALG_NONE:
     break ;
 
   case BANO_CIPHER_ALG_XTEA:
-    xtea_dec(data + 0, data + 0);
-    xtea_dec(data + 8, data + 8);
+    xtea_dec(data + 0, data + 0, cipher->key);
+    xtea_dec(data + 8, data + 8, cipher->key);
     break ;
 
   default:

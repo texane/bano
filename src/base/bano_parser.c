@@ -7,6 +7,7 @@
 #include <sys/stat.h>
 #include <sys/mman.h>
 #include "bano_parser.h"
+#include "bano_cipher.h"
 #include "bano_list.h"
 #include "bano_perror.h"
 
@@ -662,9 +663,10 @@ int bano_parser_string_to_uint32
   return 0;
 }
 
-int bano_parser_string_to_array
-(const bano_parser_string_t* s, uint8_t* arr, size_t size)
+int bano_parser_string_to_cipher_key(const bano_parser_string_t* s, uint8_t* k)
 {
+  static const size_t size = BANO_CIPHER_KEY_SIZE;
+
   size_t i;
 
   if (s->size != (size * 5 - 1))
@@ -675,7 +677,7 @@ int bano_parser_string_to_array
 
   for (i = 0; i != size; ++i)
   {
-    arr[i] = strtoul((char*)s->data + i * 5, NULL, 16);
+    k[i] = strtoul((char*)s->data + i * 5, NULL, 16);
   }
 
   return 0;

@@ -58,6 +58,7 @@ static bano_node_t* alloc_node(void)
   if (node == NULL) return NULL;
   bano_list_init(&node->posted_ios);
   bano_list_init(&node->pending_ios);
+  bano_cipher_init(&node->cipher, &bano_cipher_info_none);
   return node;
 }
 
@@ -65,6 +66,7 @@ static void free_node(bano_node_t* node)
 {
   bano_list_fini(&node->posted_ios, free_io_item, NULL);
   bano_list_fini(&node->pending_ios, free_io_item, NULL);
+  bano_cipher_fini(&node->cipher);
   free(node);
 }
 
@@ -149,9 +151,44 @@ struct apply_data
   union
   {
     bano_socket_info_t socket_info;
+    bano_node_info_t node_info;
   } u;
 
 };
+
+static int apply_base_pair(bano_list_item_t* it, void* p)
+{
+  const bano_parser_pair_t* const pair = it->data;
+  struct apply_data* const ad = p;
+  bano_base_t* const base = ad->base;
+
+  if (bano_parser_string_cmp(&pair->key, "cipher_alg") == 0)
+  {
+    if (bano_parser_string_cmp(&pair->key, "none") == 0)
+    {
+      base->cipher.alg = BANO_CIPHER_ALG_NONE;
+    }
+    else if (bano_parser_string_cmp(&pair->key, "xtea") == 0)
+    {
+      base->cipher.alg = BANO_CIPHER_ALG_XTEA;
+    }
+    else
+    {
+      BANO_PERROR();
+      ad->err = -1;
+    }
+  }
+  else if (bano_parser_string_cmp(&pair->key, "cipher_key") == 0)
+  {
+    if (bano_parser_string_to_cipher_key(&pair->val, base->cipher.key))
+    {
+      BANO_PERROR();
+      ad->err = -1;
+    }
+  }
+
+  return ad->err;
+}
 
 static int apply_socket_pair(bano_list_item_t* it, void* p)
 {
@@ -182,6 +219,78 @@ static int apply_socket_pair(bano_list_item_t* it, void* p)
       }
     }
   }
+  else
+  {
+    BANO_PERROR();
+    ad->err = -1;
+  }
+
+  return ad->err;
+}
+
+static int apply_node_pair(bano_list_item_t* it, void* p)
+{
+  const bano_parser_pair_t* const pair = it->data;
+  struct apply_data* const ad = p;
+  bano_node_info_t* const ninfo = &ad->u.node_info;
+  bano_cipher_info_t* const cinfo = &ad->u.node_info.cipher_info;
+
+  if (bano_parser_string_cmp(&pair->key, "addr") == 0)
+  {
+    ninfo->flags |= BANO_NODE_FLAG_ADDR;
+    if (bano_parser_string_to_uint32(&pair->val, &ninfo->addr))
+    {
+      BANO_PERROR();
+      ad->err = -1;
+    }
+  }
+  else if (bano_parser_string_cmp(&pair->key, "seed") == 0)
+  {
+    ninfo->flags |= BANO_NODE_FLAG_SEED;
+    if (bano_parser_string_to_uint32(&pair->val, &ninfo->seed))
+    {
+      BANO_PERROR();
+      ad->err = -1;
+    }
+  }
+  else if (bano_parser_string_cmp(&pair->key, "cipher_alg") == 0)
+  {
+    ninfo->flags |= BANO_NODE_FLAG_CIPHER;
+    if (bano_parser_string_cmp(&pair->key, "none") == 0)
+    {
+      cinfo->alg = BANO_CIPHER_ALG_NONE;
+    }
+    else if (bano_parser_string_cmp(&pair->key, "xtea") == 0)
+    {
+      cinfo->alg = BANO_CIPHER_ALG_XTEA;
+    }
+    else
+    {
+      BANO_PERROR();
+      ad->err = -1;
+    }
+  }
+  else if (bano_parser_string_cmp(&pair->key, "cipher_key") == 0)
+  {
+    if (bano_parser_string_to_cipher_key(&pair->val, cinfo->key))
+    {
+      BANO_PERROR();
+      ad->err = -1;
+    }
+  }
+  else if (bano_parser_string_cmp(&pair->key, "nodl_id") == 0)
+  {
+    if (bano_parser_string_to_uint32(&pair->val, &ninfo->nodl_id))
+    {
+      BANO_PERROR();
+      ad->err = -1;
+    }
+  }
+  else
+  {
+    BANO_PERROR();
+    ad->err = -1;
+  }
 
   return ad->err;
 }
@@ -191,7 +300,12 @@ static int apply_struct(bano_list_item_t* it, void* p)
   bano_parser_struct_t* const strukt = it->data;
   struct apply_data* const ad = p;
 
-  if (bano_parser_string_cmp(&strukt->name, "socket") == 0)
+  if (bano_parser_string_cmp(&strukt->name, "base") == 0)
+  {
+    bano_parser_foreach_pair(strukt, apply_base_pair, ad);
+    if (ad->err) goto on_error;
+  }
+  else if (bano_parser_string_cmp(&strukt->name, "socket") == 0)
   {
     bano_socket_info_t* const sinfo = &ad->u.socket_info;
 
@@ -204,6 +318,32 @@ static int apply_struct(bano_list_item_t* it, void* p)
     {
       BANO_PERROR();
       ad->err = -1;
+      goto on_error;
+    }
+  }
+  else if (bano_parser_string_cmp(&strukt->name, "node") == 0)
+  {
+    bano_node_info_t* const ninfo = &ad->u.node_info;
+
+    if (ad->base->sockets.head == NULL)
+    {
+      BANO_PERROR();
+      ad->err = -1;
+      goto on_error;
+    }
+
+    bano_init_node_info(ninfo);
+    ninfo->flags |= BANO_NODE_FLAG_SOCKET;
+    ninfo->socket = ad->base->sockets.head->data;
+    bano_parser_foreach_pair(strukt, apply_node_pair, ad);
+
+    if (ad->err) goto on_error;
+
+    if (bano_add_node(ad->base, ninfo))
+    {
+      BANO_PERROR();
+      ad->err = -1;
+      goto on_error;
     }
   }
 
@@ -237,6 +377,8 @@ int bano_open(bano_base_t* base, const bano_base_info_t* info)
   bano_list_init(&base->nodes);
   bano_list_init(&base->sockets);
   bano_timer_init(&base->timers);
+
+  bano_cipher_init(&base->cipher, &bano_cipher_info_none);
 
   if (info->flags & BANO_BASE_FLAG_CONF)
   {
@@ -291,13 +433,17 @@ int bano_add_socket(bano_base_t* base, const bano_socket_info_t* si)
   return -1;
 }
 
-int bano_add_node(bano_base_t* base, uint32_t addr)
+int bano_add_node(bano_base_t* base, const bano_node_info_t* info)
 {
-  /* NOTE: node is added to the first socket */
-
   bano_node_t* node;
 
-  if (base->sockets.head == NULL)
+  if ((info->flags & BANO_NODE_FLAG_SOCKET) == 0)
+  {
+    BANO_PERROR();
+    goto on_error_0;
+  }
+
+  if ((info->flags & BANO_NODE_FLAG_ADDR) == 0)
   {
     BANO_PERROR();
     goto on_error_0;
@@ -310,8 +456,17 @@ int bano_add_node(bano_base_t* base, uint32_t addr)
     goto on_error_0;
   }
 
-  node->addr = addr;
-  node->socket = base->sockets.head->data;
+  node->addr = info->addr;
+  node->socket = info->socket;
+
+  if (info->flags & BANO_NODE_FLAG_CIPHER)
+  {
+    if (bano_cipher_init(&node->cipher, &info->cipher_info))
+    {
+      BANO_PERROR();
+      goto on_error_1;
+    }
+  }
 
   if (bano_list_add_tail(&base->nodes, node))
   {
@@ -493,7 +648,7 @@ static int handle_msg
   bano_node_t* node;
   int err = 0;
 
-  bano_cipher_dec((uint8_t*)msg);
+  bano_cipher_dec(&prwmd->base->cipher, (uint8_t*)msg);
 
   saddr = le_to_uint32(msg->hdr.saddr);
   node = find_node_by_addr(&prwmd->base->nodes, saddr);
@@ -613,7 +768,7 @@ static int post_io(bano_list_item_t* li, void* p)
   bano_msg_t enc_msg;
 
   memcpy(&enc_msg, &io->msg, sizeof(enc_msg));
-  bano_cipher_enc((uint8_t*)&enc_msg);
+  bano_cipher_enc(&pid->base->cipher, (uint8_t*)&enc_msg);
 
   if (bano_socket_write(pid->node->socket, pid->node->addr, &enc_msg))
   {
@@ -727,12 +882,6 @@ int bano_start_loop(bano_base_t* base, const bano_loop_info_t* linfo)
   bano_timer_t* timer;
   bano_timer_t* loop_timer;
   int err;
-
-  if (bano_cipher_init(linfo->cipher_alg, linfo->cipher_key))
-  {
-    BANO_PERROR();
-    goto on_loop_done;
-  }
 
   /* process new nodes */
   if (linfo->node_fn != NULL)
@@ -852,7 +1001,6 @@ int bano_start_loop(bano_base_t* base, const bano_loop_info_t* linfo)
   }
 
  on_loop_done:
-  bano_cipher_fini();
   return err;
 }
 
