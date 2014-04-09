@@ -48,41 +48,121 @@ static unsigned int is_comment(uint8_t c)
   return c == '#';
 }
 
-static int parse_pair(bano_parser_t* parser, bano_parser_pair_t* pair)
+static size_t skip_whites(const uint8_t* s, size_t n)
 {
-  return -1;
+  size_t i;
+
+  for (i = 0; i != n; ++i)
+  {
+    if (!(is_nl(s[i]) || is_ws(s[i]))) break ;
+  }
+
+  return i;
+}
+
+static size_t skip_comment(const uint8_t* s, size_t n)
+{
+  /* parser one line */
+
+  size_t i;
+
+  for (i = 0; i != n; ++i)
+  {
+    if (is_nl(s[i])) break ;
+  }
+
+  if (i != n) ++i;
+
+  return i;
+}
+
+static size_t skip_comments_and_whites(const uint8_t* s, size_t n)
+{
+  size_t i;
+
+  for (i = 0; i != n; )
+  {
+    i += skip_whites(s + i, n - i);
+    if (is_comment(s[i])) i += skip_comment(s + i, n - i);
+  }
+
+  return i;
+}
+
+static void next_token(size_t tok[2], const uint8_t* s, size_t n)
+{
+  /* retrieve next token skipping spaces and comments */
+  /* tok[0]: token offset */
+  /* tok[1]: token size */
+
+  size_t i;
+
+  tok[0] = skip_comments_and_whites(s, n);
+  tok[1] = 0;
+
+  for (i = tok[0]; i != n; ++i)
+  {
+    if (is_ws(s[i]) || is_nl(s[i])) break ;
+  }
+
+  tok[1] = i - tok[0];
+}
+
+static size_t parse_pair(bano_parser_pair_t* pair, const uint8_t* s, size_t n)
+{
+  size_t i = 0;
+  size_t tok[2];
+
+  /* key */
+  next_token(tok, s + i, n - i);
+  if (tok[1] == 0)
+  {
+    BANO_PERROR();
+    return 0;
+  }
+  pair->key.data = s + i + tok[0];
+  pair->key.size = tok[1];
+  i += tok[0] + tok[1];
+
+  /* equal */
+  next_token(tok, s + i, n - i);
+  if (tok[1] == 0)
+  {
+    BANO_PERROR();
+    return 0;
+  }
+  i += tok[0] + tok[1];
+
+  /* value */
+  next_token(tok, s + i, n - i);
+  if (tok[1] == 0)
+  {
+    BANO_PERROR();
+    return 0;
+  }
+  pair->val.data = s + i + tok[0];
+  pair->val.size = tok[1];
+  i += tok[0] + tok[1];
+
+  return i;
 }
 
 static int parse_struct(bano_parser_t* parser, bano_parser_struct_t* strukt)
 {
+  /* name */
+
+  /* opening accolade */
+
+  /* pairs */
+
+  /* closing accolade */
+
   return -1;
-}
-
-static void parse_line(bano_parser_t* parser)
-{
-}
-
-static void parse_comment(bano_parser_t* parser)
-{
 }
 
 static int do_parse(bano_parser_t* parser)
 {
-  int err = 0;
-
-  parser->off = 0;
-
-  for (parser->off = 0; parser->off != parser->mmap_size; ++parser->off)
-  {
-    if (is_ws(parser->mmap_data[parser->off]))
-      continue ;
-    else if (is_nl(parser->mmap_data[parser->off]))
-      continue ;
-    else if (is_comment(parser->mmap_data[parser->off]))
-      continue ;
-  }
-
-  return err;
+  return -1;
 }
 
 int bano_parser_open_file(bano_parser_t* parser, const char* path)
