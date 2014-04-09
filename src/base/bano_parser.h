@@ -30,21 +30,14 @@ typedef struct bano_parser_struct
 
 typedef struct bano_parser
 {
-  size_t off;
-
   uint8_t* mmap_data;
   size_t mmap_size;
-
   bano_list_t structs;
-
-  size_t err_line;
-  size_t err_col;
-
 } bano_parser_t;
 
 
-int bano_parser_open_file(bano_parser_t*, const char*);
-int bano_parser_close(bano_parser_t*);
+int bano_parser_load_file(bano_parser_t*, const char*);
+int bano_parser_fini(bano_parser_t*);
 int bano_parser_foreach_struct(bano_parser_t*, bano_list_fn_t, void*);
 int bano_parser_foreach_pair(bano_parser_struct_t*);
 

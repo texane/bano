@@ -1,4 +1,6 @@
 # LED node description
+# TODO: .include xtea.nodl
+# TODO: .include common.nodl
 
 # security
 secu
