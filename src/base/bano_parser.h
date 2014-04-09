@@ -40,6 +40,9 @@ typedef struct bano_parser_buf
 
 typedef struct bano_parser
 {
+#define BANO_PARSER_PATHLEN 256
+  char top_dir[BANO_PARSER_PATHLEN];
+  size_t top_len;
   bano_list_t bufs;
   bano_list_t structs;
 } bano_parser_t;

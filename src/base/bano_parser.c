@@ -367,7 +367,7 @@ static size_t parse_buf(bano_parser_t*, const uint8_t*, size_t);
 static size_t parse_directive
 (bano_parser_t* parser, const uint8_t* s, size_t n)
 {
-  char path[256];
+  char path[BANO_PARSER_PATHLEN];
   bano_parser_buf_t* buf;
   size_t tok[2];
   size_t i = 0;
@@ -385,14 +385,15 @@ static size_t parse_directive
     i += tok[0] + tok[1];
 
     next_token(tok, s + i, n - i);
-    if ((tok[1] == 0) || (tok[1] >= sizeof(path)))
+    if ((tok[1] == 0) || ((parser->top_len + tok[1]) >= sizeof(path)))
     {
       BANO_PERROR();
       return (size_t)-1;
     }
 
-    memcpy(path, s + i + tok[0], tok[1]);
-    path[tok[1]] = 0;
+    memcpy(path, parser->top_dir, parser->top_len);
+    memcpy(path + parser->top_len, s + i + tok[0], tok[1]);
+    path[parser->top_len + tok[1]] = 0;
 
     buf = alloc_mmap_buf(path);
     if (buf == NULL)
@@ -487,12 +488,40 @@ static size_t parse_buf(bano_parser_t* parser, const uint8_t* s, size_t n)
   return i;
 }
 
+static int get_dirname(char* dirname, size_t* dirlen, const char* path)
+{
+  size_t i;
+  size_t j = 0;
+
+  for (i = 0; path[i]; ++i)
+  {
+    if (i == BANO_PARSER_PATHLEN)
+    {
+      BANO_PERROR();
+      return -1;
+    }
+
+    if (path[i] == '/') j = i;
+  }
+
+  memcpy(dirname, path, j + 1);
+  *dirlen = j + 1;
+
+  return 0;
+}
+
 int bano_parser_load_file(bano_parser_t* parser, const char* path)
 {
   bano_parser_buf_t* buf;
 
   bano_list_init(&parser->structs);
   bano_list_init(&parser->bufs);
+
+  if (get_dirname(parser->top_dir, &parser->top_len, path))
+  {
+    BANO_PERROR();
+    goto on_error_0;
+  }
 
   buf = alloc_mmap_buf(path);
   if (buf == NULL)
