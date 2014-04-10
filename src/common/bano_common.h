@@ -9,12 +9,15 @@
 
 #define BANO_FLAG_REPLY (1 << 0)
 #define BANO_FLAG_ERR (1 << 1)
+#define BANO_FLAG_ENC (1 << 2)
 
 typedef struct bano_msg_hdr
 {
   uint8_t op: 2;
   uint8_t flags: 6;
   uint32_t saddr: 32;
+  uint16_t csum: 16;
+  uint32_t token: 32;
 } __attribute__((packed)) bano_msg_hdr_t;
 
 typedef struct bano_msg_get
@@ -30,7 +33,7 @@ typedef struct bano_msg_set
 
 typedef struct bano_msg
 {
-#define BANO_MSG_SIZE 16
+#define BANO_MSG_SIZE 17
   bano_msg_hdr_t hdr;
   union
   {

@@ -625,7 +625,10 @@ static int handle_msg
   bano_node_t* node;
   int err = 0;
 
-  bano_cipher_dec(&prwmd->base->cipher, (uint8_t*)msg);
+  if (msg->hdr.flags & BANO_FLAG_ENC)
+  {
+    bano_cipher_dec(&prwmd->base->cipher, ((uint8_t*)msg) + 1);
+  }
 
   saddr = le_to_uint32(msg->hdr.saddr);
   node = find_node_by_addr(&prwmd->base->nodes, saddr);
@@ -745,7 +748,12 @@ static int post_io(bano_list_item_t* li, void* p)
   bano_msg_t enc_msg;
 
   memcpy(&enc_msg, &io->msg, sizeof(enc_msg));
-  bano_cipher_enc(&pid->base->cipher, (uint8_t*)&enc_msg);
+
+  if (pid->base->cipher.alg != BANO_CIPHER_ALG_NONE)
+  {
+    bano_cipher_enc(&pid->base->cipher, ((uint8_t*)&enc_msg) + 1);
+    enc_msg.hdr.flags |= BANO_FLAG_ENC;
+  }
 
   if (bano_socket_write(pid->node->socket, pid->node->addr, &enc_msg))
   {
