@@ -7,18 +7,13 @@
 #include <sys/stat.h>
 #include <sys/mman.h>
 #include "bano_parser.h"
+#include "bano_string.h"
 #include "bano_cipher.h"
 #include "bano_list.h"
 #include "bano_perror.h"
 
 
 /* allocation and init routines */
-
-static void init_string(bano_parser_string_t* s)
-{
-  s->data = NULL;
-  s->size = 0;
-}
 
 static bano_parser_pair_t* alloc_pair(void)
 {
@@ -29,8 +24,8 @@ static bano_parser_pair_t* alloc_pair(void)
     return NULL;
   }
 
-  init_string(&pair->key);
-  init_string(&pair->val);
+  bano_string_init(&pair->key);
+  bano_string_init(&pair->val);
 
   return pair;
 }
@@ -50,7 +45,7 @@ static bano_parser_struct_t* alloc_struct(void)
     return NULL;
   }
 
-  init_string(&strukt->name);
+  bano_string_init(&strukt->name);
   bano_list_init(&strukt->pairs);
 
   return strukt;
@@ -587,12 +582,12 @@ struct find_item_data
 static int find_item(bano_list_item_t* it, void* p)
 {
   struct find_item_data* const fid = p;
-  bano_parser_string_t* s;
+  bano_string_t* s;
 
   if (fid->is_struct) s = &((bano_parser_struct_t*)it->data)->name;
   else s = &((bano_parser_pair_t*)it->data)->key;
 
-  if (bano_parser_string_cmp(s, fid->s)) return 0;
+  if (bano_string_cmp_cstr(s, fid->s)) return 0;
 
   fid->it = it;
 
@@ -637,91 +632,29 @@ int bano_parser_find_pair
   return 0;
 }
 
-int bano_parser_string_to_bool
-(const bano_parser_string_t* s, unsigned int* b)
+int bano_parser_add_cstr
+(bano_parser_t* parser, const bano_string_t* s, const char** cstrp)
 {
-  /* yes or no, true or false, 1 or 0 */
+  const char* cstr;
 
-  if (bano_parser_string_cmp(s, "yes") == 0) *b = 1;
-  else if (bano_parser_string_cmp(s, "true") == 0) *b = 1;
-  else if (bano_parser_string_cmp(s, "1") == 0) *b = 1;
-  else if (bano_parser_string_cmp(s, "no") == 0) *b = 0;
-  else if (bano_parser_string_cmp(s, "false") == 0) *b = 0;
-  else if (bano_parser_string_cmp(s, "0") == 0) *b = 0;
-  else return -1;
-
-  return 0;
-}
-
-int bano_parser_string_to_uint32
-(const bano_parser_string_t* s, uint32_t* x)
-{
-  int base = 10; 
-  if ((s->size > 2) && (s->data[0] == '0') && (s->data[1] == 'x'))
-    base = 16;
-  *x = (uint32_t)strtoul((char*)s->data, NULL, base);
-  return 0;
-}
-
-int bano_parser_string_to_cipher_key(const bano_parser_string_t* s, uint8_t* k)
-{
-  static const size_t size = BANO_CIPHER_KEY_SIZE;
-
-  size_t i;
-
-  if (s->size != (size * 5 - 1))
-  {
-    BANO_PERROR();
-    return -1;
-  }
-
-  for (i = 0; i != size; ++i)
-  {
-    k[i] = strtoul((char*)s->data + i * 5, NULL, 16);
-  }
-
-  return 0;
-}
-
-int bano_parser_string_cmp
-(const bano_parser_string_t* a, const char* b)
-{
-  size_t i;
-
-  for (i = 0; i != a->size; ++i)
-  {
-    if (b[i] == 0) return -1;
-    if (a->data[i] != b[i]) return -1;
-  }
-
-  return 0;
-}
-
-int bano_parser_string_to_cstr
-(bano_parser_t* parser, const bano_parser_string_t* string, const char** cstrp)
-{
-  char* cstr;
-
-  cstr = malloc((string->size + 1) * sizeof(char));
-  if (cstr == NULL)
+  if (bano_string_to_cstr(s, &cstr))
   {
     BANO_PERROR();
     goto on_error_0;
   }
 
-  if (bano_list_add_tail(&parser->cstrs, cstr))
+  if (bano_list_add_tail(&parser->cstrs, (void*)cstr))
   {
     BANO_PERROR();
     goto on_error_1;
   }
 
-  memcpy(cstr, string->data, string->size);
-  cstr[string->size] = 0;
+  *cstrp = cstr;
 
   return 0;
 
  on_error_1:
-  free(cstr);
+  free((void*)cstr);
  on_error_0:
   return -1;
 }
@@ -731,7 +664,7 @@ int bano_parser_string_to_cstr
 
 #include <stdio.h>
 
-static void print_string(const bano_parser_string_t* s)
+static void print_string(const bano_string_t* s)
 {
   size_t i;
   for (i = 0; i != s->size; ++i) printf("%c", s->data[i]);

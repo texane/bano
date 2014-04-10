@@ -160,13 +160,13 @@ static int apply_base_pair(bano_list_item_t* it, void* p)
   struct apply_data* const ad = p;
   bano_base_t* const base = ad->base;
 
-  if (bano_parser_string_cmp(&pair->key, "cipher_alg") == 0)
+  if (bano_string_cmp_cstr(&pair->key, "cipher_alg") == 0)
   {
-    if (bano_parser_string_cmp(&pair->key, "none") == 0)
+    if (bano_string_cmp_cstr(&pair->key, "none") == 0)
     {
       base->cipher.alg = BANO_CIPHER_ALG_NONE;
     }
-    else if (bano_parser_string_cmp(&pair->key, "xtea") == 0)
+    else if (bano_string_cmp_cstr(&pair->key, "xtea") == 0)
     {
       base->cipher.alg = BANO_CIPHER_ALG_XTEA;
     }
@@ -176,9 +176,9 @@ static int apply_base_pair(bano_list_item_t* it, void* p)
       ad->err = -1;
     }
   }
-  else if (bano_parser_string_cmp(&pair->key, "cipher_key") == 0)
+  else if (bano_string_cmp_cstr(&pair->key, "cipher_key") == 0)
   {
-    if (bano_parser_string_to_cipher_key(&pair->val, base->cipher.key))
+    if (bano_string_to_cipher_key(&pair->val, base->cipher.key))
     {
       BANO_PERROR();
       ad->err = -1;
@@ -195,9 +195,9 @@ static int apply_socket_pair(bano_list_item_t* it, void* p)
   bano_socket_info_t* const sinfo = &ad->u.socket_info;
   bano_parser_t* const parser = ad->parser;
 
-  if (bano_parser_string_cmp(&pair->key, "type") == 0)
+  if (bano_string_cmp_cstr(&pair->key, "type") == 0)
   {
-    if (bano_parser_string_cmp(&pair->val, "snrf") == 0)
+    if (bano_string_cmp_cstr(&pair->val, "snrf") == 0)
     {
       sinfo->type = BANO_SOCKET_TYPE_SNRF;
       sinfo->u.snrf.dev_path = "/dev/ttyUSB0";
@@ -206,11 +206,11 @@ static int apply_socket_pair(bano_list_item_t* it, void* p)
       sinfo->u.snrf.addr_val = BANO_DEFAULT_BASE_ADDR;
     }
   }
-  else if (bano_parser_string_cmp(&pair->key, "dev_path") == 0)
+  else if (bano_string_cmp_cstr(&pair->key, "dev_path") == 0)
   {
     if (sinfo->type == BANO_SOCKET_TYPE_SNRF)
     {
-      if (bano_parser_string_to_cstr(parser, &pair->val, &sinfo->u.snrf.dev_path))
+      if (bano_parser_add_cstr(parser, &pair->val, &sinfo->u.snrf.dev_path))
       {
 	BANO_PERROR();
 	ad->err = -1;
@@ -232,27 +232,27 @@ static int apply_node_pair(bano_list_item_t* it, void* p)
   struct apply_data* const ad = p;
   bano_node_info_t* const ninfo = &ad->u.node_info;
 
-  if (bano_parser_string_cmp(&pair->key, "addr") == 0)
+  if (bano_string_cmp_cstr(&pair->key, "addr") == 0)
   {
     ninfo->flags |= BANO_NODE_FLAG_ADDR;
-    if (bano_parser_string_to_uint32(&pair->val, &ninfo->addr))
+    if (bano_string_to_uint32(&pair->val, &ninfo->addr))
     {
       BANO_PERROR();
       ad->err = -1;
     }
   }
-  else if (bano_parser_string_cmp(&pair->key, "seed") == 0)
+  else if (bano_string_cmp_cstr(&pair->key, "seed") == 0)
   {
     ninfo->flags |= BANO_NODE_FLAG_SEED;
-    if (bano_parser_string_to_uint32(&pair->val, &ninfo->seed))
+    if (bano_string_to_uint32(&pair->val, &ninfo->seed))
     {
       BANO_PERROR();
       ad->err = -1;
     }
   }
-  else if (bano_parser_string_cmp(&pair->key, "nodl_id") == 0)
+  else if (bano_string_cmp_cstr(&pair->key, "nodl_id") == 0)
   {
-    if (bano_parser_string_to_uint32(&pair->val, &ninfo->nodl_id))
+    if (bano_string_to_uint32(&pair->val, &ninfo->nodl_id))
     {
       BANO_PERROR();
       ad->err = -1;
@@ -272,12 +272,12 @@ static int apply_struct(bano_list_item_t* it, void* p)
   bano_parser_struct_t* const strukt = it->data;
   struct apply_data* const ad = p;
 
-  if (bano_parser_string_cmp(&strukt->name, "base") == 0)
+  if (bano_string_cmp_cstr(&strukt->name, "base") == 0)
   {
     bano_parser_foreach_pair(strukt, apply_base_pair, ad);
     if (ad->err) goto on_error;
   }
-  else if (bano_parser_string_cmp(&strukt->name, "socket") == 0)
+  else if (bano_string_cmp_cstr(&strukt->name, "socket") == 0)
   {
     bano_socket_info_t* const sinfo = &ad->u.socket_info;
 
@@ -293,7 +293,7 @@ static int apply_struct(bano_list_item_t* it, void* p)
       goto on_error;
     }
   }
-  else if (bano_parser_string_cmp(&strukt->name, "node") == 0)
+  else if (bano_string_cmp_cstr(&strukt->name, "node") == 0)
   {
     bano_node_info_t* const ninfo = &ad->u.node_info;
 
