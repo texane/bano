@@ -58,7 +58,6 @@ static bano_node_t* alloc_node(void)
   if (node == NULL) return NULL;
   bano_list_init(&node->posted_ios);
   bano_list_init(&node->pending_ios);
-  bano_cipher_init(&node->cipher, &bano_cipher_info_none);
   return node;
 }
 
@@ -66,7 +65,6 @@ static void free_node(bano_node_t* node)
 {
   bano_list_fini(&node->posted_ios, free_io_item, NULL);
   bano_list_fini(&node->pending_ios, free_io_item, NULL);
-  bano_cipher_fini(&node->cipher);
   free(node);
 }
 
@@ -233,7 +231,6 @@ static int apply_node_pair(bano_list_item_t* it, void* p)
   const bano_parser_pair_t* const pair = it->data;
   struct apply_data* const ad = p;
   bano_node_info_t* const ninfo = &ad->u.node_info;
-  bano_cipher_info_t* const cinfo = &ad->u.node_info.cipher_info;
 
   if (bano_parser_string_cmp(&pair->key, "addr") == 0)
   {
@@ -248,31 +245,6 @@ static int apply_node_pair(bano_list_item_t* it, void* p)
   {
     ninfo->flags |= BANO_NODE_FLAG_SEED;
     if (bano_parser_string_to_uint32(&pair->val, &ninfo->seed))
-    {
-      BANO_PERROR();
-      ad->err = -1;
-    }
-  }
-  else if (bano_parser_string_cmp(&pair->key, "cipher_alg") == 0)
-  {
-    ninfo->flags |= BANO_NODE_FLAG_CIPHER;
-    if (bano_parser_string_cmp(&pair->key, "none") == 0)
-    {
-      cinfo->alg = BANO_CIPHER_ALG_NONE;
-    }
-    else if (bano_parser_string_cmp(&pair->key, "xtea") == 0)
-    {
-      cinfo->alg = BANO_CIPHER_ALG_XTEA;
-    }
-    else
-    {
-      BANO_PERROR();
-      ad->err = -1;
-    }
-  }
-  else if (bano_parser_string_cmp(&pair->key, "cipher_key") == 0)
-  {
-    if (bano_parser_string_to_cipher_key(&pair->val, cinfo->key))
     {
       BANO_PERROR();
       ad->err = -1;
@@ -458,15 +430,6 @@ int bano_add_node(bano_base_t* base, const bano_node_info_t* info)
 
   node->addr = info->addr;
   node->socket = info->socket;
-
-  if (info->flags & BANO_NODE_FLAG_CIPHER)
-  {
-    if (bano_cipher_init(&node->cipher, &info->cipher_info))
-    {
-      BANO_PERROR();
-      goto on_error_1;
-    }
-  }
 
   if (bano_list_add_tail(&base->nodes, node))
   {

@@ -94,7 +94,6 @@ typedef struct bano_node
   struct bano_socket* socket;
   bano_list_t posted_ios;
   bano_list_t pending_ios;
-  bano_cipher_t cipher;
   /* TODO: bano_nodl_t* nodl; */
 } bano_node_t;
 
@@ -103,13 +102,11 @@ typedef struct bano_node_info
 #define BANO_NODE_FLAG_ADDR (1 << 0)
 #define BANO_NODE_FLAG_SEED (1 << 1)
 #define BANO_NODE_FLAG_NODL_ID (1 << 2)
-#define BANO_NODE_FLAG_CIPHER (1 << 3)
 #define BANO_NODE_FLAG_SOCKET (1 << 4)
   uint32_t flags;
   uint32_t addr;
   uint32_t seed;
   uint32_t nodl_id;
-  bano_cipher_info_t cipher_info;
   bano_socket_t* socket;
 } bano_node_info_t;
 
