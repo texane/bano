@@ -162,11 +162,11 @@ static int apply_base_pair(bano_list_item_t* it, void* p)
 
   if (bano_string_cmp_cstr(&pair->key, "cipher_alg") == 0)
   {
-    if (bano_string_cmp_cstr(&pair->key, "none") == 0)
+    if (bano_string_cmp_cstr(&pair->val, "none") == 0)
     {
       base->cipher.alg = BANO_CIPHER_ALG_NONE;
     }
-    else if (bano_string_cmp_cstr(&pair->key, "xtea") == 0)
+    else if (bano_string_cmp_cstr(&pair->val, "xtea") == 0)
     {
       base->cipher.alg = BANO_CIPHER_ALG_XTEA;
     }

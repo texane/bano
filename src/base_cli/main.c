@@ -284,7 +284,6 @@ int main(int ac, char** av)
   bano_base_t base;
   bano_base_info_t binfo;
   bano_loop_info_t linfo;
-  bano_socket_info_t sinfo;
   cmdline_info_t cinfo;
   int err = -1;
 
@@ -309,17 +308,6 @@ int main(int ac, char** av)
   {
     BANO_PERROR();
     goto on_error_1;
-  }
-
-  bano_init_socket_info(&sinfo);
-  sinfo.type = BANO_SOCKET_TYPE_SNRF;
-  sinfo.u.snrf.dev_path = "/dev/ttyUSB0";
-  sinfo.u.snrf.addr_width = 4;
-  sinfo.u.snrf.addr_val = BANO_DEFAULT_BASE_ADDR;
-  if (bano_add_socket(&base, &sinfo))
-  {
-    BANO_PERROR();
-    goto on_error_2;
   }
 
   bano_init_loop_info(&linfo);
