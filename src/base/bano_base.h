@@ -119,6 +119,7 @@ typedef struct
   bano_list_t sockets;
   bano_list_t timers;
   bano_cipher_t cipher;
+  uint32_t addr;
 } bano_base_t;
 
 
@@ -127,8 +128,10 @@ typedef struct
 typedef struct
 {
 #define BANO_BASE_FLAG_CONF (1 << 0)
+#define BANO_BASE_FLAG_ADDR (1 << 1)
   uint32_t flags;
   const char* conf_path;
+  uint32_t addr;
 } bano_base_info_t;
 
 

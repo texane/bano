@@ -160,7 +160,19 @@ static int apply_base_pair(bano_list_item_t* it, void* p)
   struct apply_data* const ad = p;
   bano_base_t* const base = ad->base;
 
-  if (bano_string_cmp_cstr(&pair->key, "cipher_alg") == 0)
+  if (bano_string_cmp_cstr(&pair->key, "addr") == 0)
+  {
+    if (bano_string_cmp_cstr(&pair->val, "default") == 0)
+    {
+      base->addr = BANO_DEFAULT_BASE_ADDR;
+    }
+    else if (bano_string_to_uint32(&pair->val, &base->addr))
+    {
+      BANO_PERROR();
+      ad->err = -1;
+    }
+  }
+  else if (bano_string_cmp_cstr(&pair->key, "cipher_alg") == 0)
   {
     if (bano_string_cmp_cstr(&pair->val, "none") == 0)
     {
@@ -202,8 +214,7 @@ static int apply_socket_pair(bano_list_item_t* it, void* p)
       sinfo->type = BANO_SOCKET_TYPE_SNRF;
       sinfo->u.snrf.dev_path = "/dev/ttyUSB0";
       sinfo->u.snrf.addr_width = 4;
-      /* TODO: should be base->addr */
-      sinfo->u.snrf.addr_val = BANO_DEFAULT_BASE_ADDR;
+      sinfo->u.snrf.addr_val = ad->base->addr;
     }
   }
   else if (bano_string_cmp_cstr(&pair->key, "dev_path") == 0)
@@ -351,6 +362,9 @@ int bano_open(bano_base_t* base, const bano_base_info_t* info)
   bano_timer_init(&base->timers);
 
   bano_cipher_init(&base->cipher, &bano_cipher_info_none);
+
+  if (info->flags & BANO_BASE_FLAG_ADDR) base->addr = info->addr;
+  else base->addr = BANO_DEFAULT_BASE_ADDR;
 
   if (info->flags & BANO_BASE_FLAG_CONF)
   {
