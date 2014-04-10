@@ -90,6 +90,9 @@ typedef struct bano_io
 
 typedef struct bano_node
 {
+  /* valid: BANO_NODE_FLAG_CIPHER */
+  uint32_t flags;
+
   uint32_t addr;
   struct bano_socket* socket;
   bano_list_t posted_ios;
@@ -102,6 +105,7 @@ typedef struct bano_node_info
 #define BANO_NODE_FLAG_ADDR (1 << 0)
 #define BANO_NODE_FLAG_SEED (1 << 1)
 #define BANO_NODE_FLAG_NODL_ID (1 << 2)
+#define BANO_NODE_FLAG_CIPHER (1 << 3)
 #define BANO_NODE_FLAG_SOCKET (1 << 4)
   uint32_t flags;
   uint32_t addr;

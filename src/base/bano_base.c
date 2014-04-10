@@ -56,6 +56,7 @@ static bano_node_t* alloc_node(void)
 {
   bano_node_t* const node = malloc(sizeof(bano_node_t));
   if (node == NULL) return NULL;
+  node->flags = 0;
   bano_list_init(&node->posted_ios);
   bano_list_init(&node->pending_ios);
   return node;
@@ -249,7 +250,7 @@ static int apply_node_pair(bano_list_item_t* it, void* p)
     if (bano_string_to_uint32(&pair->val, &ninfo->addr))
     {
       BANO_PERROR();
-      ad->err = -1;
+      goto on_error;
     }
   }
   else if (bano_string_cmp_cstr(&pair->key, "seed") == 0)
@@ -258,7 +259,7 @@ static int apply_node_pair(bano_list_item_t* it, void* p)
     if (bano_string_to_uint32(&pair->val, &ninfo->seed))
     {
       BANO_PERROR();
-      ad->err = -1;
+      goto on_error;
     }
   }
   else if (bano_string_cmp_cstr(&pair->key, "nodl_id") == 0)
@@ -266,16 +267,31 @@ static int apply_node_pair(bano_list_item_t* it, void* p)
     if (bano_string_to_uint32(&pair->val, &ninfo->nodl_id))
     {
       BANO_PERROR();
-      ad->err = -1;
+      goto on_error;
     }
+  }
+  else if (bano_string_cmp_cstr(&pair->key, "cipher") == 0)
+  {
+    unsigned int is_true;
+    if (bano_string_to_bool(&pair->val, &is_true))
+    {
+      BANO_PERROR();
+      goto on_error;
+    }
+    if (is_true) ninfo->flags |= BANO_NODE_FLAG_CIPHER;
+    else ninfo->flags &= ~BANO_NODE_FLAG_CIPHER;
   }
   else
   {
     BANO_PERROR();
-    ad->err = -1;
+    goto on_error;
   }
 
-  return ad->err;
+  return 0;
+
+ on_error:
+  ad->err = -1;
+  return -1;
 }
 
 static int apply_struct(bano_list_item_t* it, void* p)
@@ -440,6 +456,11 @@ int bano_add_node(bano_base_t* base, const bano_node_info_t* info)
   {
     BANO_PERROR();
     goto on_error_0;
+  }
+
+  if (info->flags & BANO_NODE_FLAG_CIPHER)
+  {
+    node->flags |= BANO_NODE_FLAG_CIPHER;
   }
 
   node->addr = info->addr;
@@ -749,7 +770,7 @@ static int post_io(bano_list_item_t* li, void* p)
 
   memcpy(&enc_msg, &io->msg, sizeof(enc_msg));
 
-  if (pid->base->cipher.alg != BANO_CIPHER_ALG_NONE)
+  if (pid->node->flags & BANO_NODE_FLAG_CIPHER)
   {
     bano_cipher_enc(&pid->base->cipher, ((uint8_t*)&enc_msg) + 1);
     enc_msg.hdr.flags |= BANO_MSG_FLAG_ENC;
