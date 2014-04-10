@@ -1,2 +1,23 @@
 [ jnode based server ]
 https://blog.codecentric.de/en/2013/03/home-automation-with-angularjs-and-node-js-on-a-raspberry-pi/
+
+
+[ todo ]
+
+[[ nodl ]]
+instantiate nodl db
+ -> load nodl directory
+ -> when a new node is detected, associate with nodl
+ -> maintain per node information
+
+[[ http server ]]
+implement from state
+instantiate html
+
+[[ security ]]
+security:
+enlarge message size to 17
+use the very first field to pass OP -> this free one byte, used for what is next
+add ENCRYPTED to flags
+the message [1:17] is now encrypted with the master key
+the padding can be used as a new uint32_t field -> seed, for security
