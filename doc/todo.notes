@@ -24,6 +24,11 @@ load nodl directory
 when a new node is detected, associate with nodl
 maintain per node information
 
+[ security token ]
+uint32 token is currently unused. should be used to prevent
+replay attacks. then update protocol doc (common network master
+key ...).
+
 [ http server ]
 implement from state
 instantiate html
