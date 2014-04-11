@@ -410,7 +410,7 @@ uint8_t bano_wait_event(bano_msg_t* msg)
       /* reenable interrupts */
       nrf_enable_rx_irq();
 
-      cipher_dec((uint8_t*)msg);
+      cipher_dec(((uint8_t*)msg) + 1);
 
       ev |= BANO_EV_MSG;
 
