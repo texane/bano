@@ -323,7 +323,12 @@ uint8_t bano_fini(void)
 static inline void send_msg(bano_msg_t* msg)
 {
   msg->hdr.saddr = uint32_to_le(BANO_CONFIG_NODE_ADDR);
-  cipher_enc((uint8_t*)msg);
+
+#if (BANO_CONFIG_CIPHER_ALG != BANO_CIPHER_ALG_NONE)
+  cipher_enc(((uint8_t*)msg) + 1);
+  msg->hdr.flags |= BANO_FLAG_ENC;
+#endif
+
   nrf_send_payload_zero((uint8_t*)msg);
 }
 
