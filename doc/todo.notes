@@ -1,24 +1,35 @@
-[ todos ]
+[ make the alarm node PCB ]
 
-. make the alarm node PCB
+[ make the NRF USB dongle PCB ]
+should be at the same time a USB dongle, and a SPI cape
 
-. make the NRF USB dongle PCB
--> should be at the same time a USB dongle, and a SPI cape
-
-. implement a led based client for tests
-
-. implement base to client GET operation
-
-. implement default keys ?
+[ implement default keys ]
 -> the nodl_id is required. but the node may want to send it as
 a separate message to avoid the need for being in listen mode.
 for instance, the alarm node will send its nodl_id at the same
 time as the alarm status.
 
-. implement nodl parser. use alarm as test case. should allow
-to associate a nodl_id with node key set with. on the bano_node,
-the nodl_id is set in the bano_info structure and then retrieved
-using a default node key.
+[ implement nodl parser ]
+use alarm as test case. should allow to associate a nodl_id with
+node key set with. on the bano_node, the nodl_id is set in the
+bano_info structure and then retrieved using a default node key.
 
-. measure how much power needed to send a message, deduce node
+[ node power measurment ]
+measure how much power needed to send a message, deduce node
 current consumption profile. use UIL
+
+[ nodl ]
+instantiate nodl db
+load nodl directory
+when a new node is detected, associate with nodl
+maintain per node information
+
+[ http server ]
+implement from state
+instantiate html
+
+[ message checks ]
+if node->flags & cipher and decoded or clear message flags
+are not consistent, error.
+
+[ base dynamic nodes ]
