@@ -107,9 +107,10 @@ selected:
 \subsection{Message format}
 
 \paragraph{}
-A message consists of a 128 bits sequence (16 bytes). Any field larger than 1
+A message consists of a 135 bits sequence (17 bytes). Any field larger than 1
 byte uses the little endian encoding. A header is always present and its format
 is common to all the messages. The payload contents vary according to the operation.
+If applicable, OP and FLAGS field are left unencrypted.
 
 \paragraph{}
 \begin{figure}[!h]
@@ -124,30 +125,29 @@ is common to all the messages. The payload contents vary according to the operat
 \item \textit{OP}, 2 bits\\
 One of the following message operation:
 \begin{itemize}
-\item BANO\_OP\_GET (0x0): get a value given a key,
-\item BANO\_OP\_SET (0x1): set a value given a key.
+\item BANO\_MSG\_OP\_GET (0x0): get a value given a key,
+\item BANO\_MSG\_OP\_SET (0x1): set a value given a key.
 \end{itemize}
 \item \textit{FLAGS}, 6 bits\\
 A combination of the following flags:
 \begin{itemize}
-\item BANO\_FLAG\_REPLY ($1<<0$): this message replies or ack a
-previous operation,
-\item BANO\_FLAG\_ERR ($1<<1$): error during operation execution.
+\item BANO\_MSG\_FLAG\_REPLY ($1<<0$): replies or ack a previous
+operation,
+\item BANO\_MSG\_FLAG\_ERR ($1<<1$): error during operation execution,
+\item BANO\_MSG\_FLAG\_ENC ($1<<2$): message contents are encrypted.
 \end{itemize}
 \item \textit{SADDR}, 32 bits\\
 The source address (sender node or base).
-\item \textit{AUX}, 24 bits\\
-Auxiliary data. Usage of this field is left to the application.
 \item \textit{CSUM}, 16 bits\\
-2 bytes checksum covering all the message bytes. During computation,
-the CSUM field is considered zero. The use of a checksum is optional.
+Checksum covering all the message bytes. Considered 0 during computation.
+The use of a checksum is optional.
+\item \textit{TOKEN}, 32 bits\\
+Encryption token, if message contents are encrypted.
 \item \textit{KEY}, 16 bits\\
 The message target key.
 \item \textit{VALUE}, 32 bits\\
 The message target value. The protocol does not specify a format for
 values. For instance, it can be used to transmit integer or real values.
-\item \textit{PAD}, 32 bits\\
-Padding. Contents are undefined.
 \end{itemize}
 
 \paragraph{}
