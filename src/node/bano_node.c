@@ -326,7 +326,7 @@ static inline void send_msg(bano_msg_t* msg)
 
 #if (BANO_CONFIG_CIPHER_ALG != BANO_CIPHER_ALG_NONE)
   cipher_enc(((uint8_t*)msg) + 1);
-  msg->hdr.flags |= BANO_FLAG_ENC;
+  msg->hdr.flags |= BANO_MSG_FLAG_ENC;
 #endif
 
   nrf_send_payload_zero((uint8_t*)msg);
@@ -334,7 +334,7 @@ static inline void send_msg(bano_msg_t* msg)
 
 static inline void make_set_msg(bano_msg_t* msg, uint16_t key, uint32_t val)
 {
-  msg->hdr.op = BANO_OP_SET;
+  msg->hdr.op = BANO_MSG_OP_SET;
   msg->hdr.flags = 0;
   msg->u.set.key = uint16_to_le(key);
   msg->u.set.val = uint32_to_le(val);
@@ -342,7 +342,7 @@ static inline void make_set_msg(bano_msg_t* msg, uint16_t key, uint32_t val)
 
 static inline void make_get_msg(bano_msg_t* msg, uint16_t key)
 {
-  msg->hdr.op = BANO_OP_GET;
+  msg->hdr.op = BANO_MSG_OP_GET;
   msg->hdr.flags = 0;
   msg->u.get.key = uint16_to_le(key);
 }
@@ -505,7 +505,7 @@ uint8_t bano_loop(void)
     {
       const uint8_t op = msg.hdr.op;
 
-      if (op == BANO_OP_SET)
+      if (op == BANO_MSG_OP_SET)
       {
 	/* TODO: handle default keys */
 
@@ -513,13 +513,13 @@ uint8_t bano_loop(void)
 	uint32_t val = le_to_uint32(msg.u.set.val);
 	const uint8_t flags = bano_set_handler(key, val);
 
-	if (flags & BANO_FLAG_REPLY)
+	if (flags & BANO_MSG_FLAG_REPLY)
 	{
 	  msg.hdr.flags = flags;
 	  send_msg(&msg);
 	}
       }
-      else if (op == BANO_OP_GET)
+      else if (op == BANO_MSG_OP_GET)
       {
 	/* TODO: handle default keys */
 
@@ -527,7 +527,7 @@ uint8_t bano_loop(void)
 	const uint16_t key = le_to_uint16(msg.u.get.key);
 	const uint8_t flags = bano_get_handler(key, &val);
 	make_set_msg(&msg, key, val);
-	msg.hdr.flags = BANO_FLAG_REPLY | flags;
+	msg.hdr.flags = BANO_MSG_FLAG_REPLY | flags;
 	send_msg(&msg);
       }
     }

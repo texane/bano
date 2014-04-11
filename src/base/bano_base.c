@@ -493,7 +493,7 @@ static int cmp_pending_io(bano_list_item_t* li, void* p)
 
   if (node->addr != answ_msg->hdr.saddr) return 0;
 
-  if (pend_msg->hdr.op == BANO_OP_SET)
+  if (pend_msg->hdr.op == BANO_MSG_OP_SET)
   {
     /* not the value asked for */
     if (pend_msg->u.set.val != answ_msg->u.set.val)
@@ -542,7 +542,7 @@ static bano_io_t* find_pending_io(bano_node_t* node, const bano_msg_t* answ_msg)
 static int handle_set_msg
 (prw_msg_data_t* prwmd, const bano_msg_t* msg, bano_node_t* node)
 {
-  if (msg->hdr.flags & BANO_FLAG_REPLY)
+  if (msg->hdr.flags & BANO_MSG_FLAG_REPLY)
   {
     /* this is a reply, check pending messages */
 
@@ -551,7 +551,7 @@ static int handle_set_msg
     {
       if (io->compl_fn != NULL)
       {
-	if ((msg->hdr.flags & BANO_FLAG_ERR) == 0)
+	if ((msg->hdr.flags & BANO_MSG_FLAG_ERR) == 0)
 	{
 	  io->compl_err = 0;
 	  io->compl_val = le_to_uint32(msg->u.set.val);
@@ -625,7 +625,7 @@ static int handle_msg
   bano_node_t* node;
   int err = 0;
 
-  if (msg->hdr.flags & BANO_FLAG_ENC)
+  if (msg->hdr.flags & BANO_MSG_FLAG_ENC)
   {
     bano_cipher_dec(&prwmd->base->cipher, ((uint8_t*)msg) + 1);
   }
@@ -660,11 +660,11 @@ static int handle_msg
 
   switch (msg->hdr.op)
   {
-  case BANO_OP_SET:
+  case BANO_MSG_OP_SET:
     err = handle_set_msg(prwmd, msg, node);
     break ;
 
-  case BANO_OP_GET:
+  case BANO_MSG_OP_GET:
     err = handle_get_msg(prwmd, msg, node);
     break ;
 
@@ -752,7 +752,7 @@ static int post_io(bano_list_item_t* li, void* p)
   if (pid->base->cipher.alg != BANO_CIPHER_ALG_NONE)
   {
     bano_cipher_enc(&pid->base->cipher, ((uint8_t*)&enc_msg) + 1);
-    enc_msg.hdr.flags |= BANO_FLAG_ENC;
+    enc_msg.hdr.flags |= BANO_MSG_FLAG_ENC;
   }
 
   if (bano_socket_write(pid->node->socket, pid->node->addr, &enc_msg))
@@ -1017,7 +1017,7 @@ bano_io_t* bano_alloc_get_io
   io->retry_ms = 2000;
   io->retry_count = 3;
 
-  io->msg.hdr.op = BANO_OP_GET;
+  io->msg.hdr.op = BANO_MSG_OP_GET;
   io->msg.hdr.flags = 0;
   io->msg.hdr.saddr = 0;
   io->msg.u.get.key = key;
@@ -1050,7 +1050,7 @@ bano_io_t* bano_alloc_set_io
     io->retry_count = 3;
   }
 
-  io->msg.hdr.op = BANO_OP_SET;
+  io->msg.hdr.op = BANO_MSG_OP_SET;
   io->msg.hdr.flags = 0;
   io->msg.hdr.saddr = 0;
   io->msg.u.set.key = key;

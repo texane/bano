@@ -4,12 +4,12 @@
 
 #include <stdint.h>
 
-#define BANO_OP_SET 0
-#define BANO_OP_GET 1
+#define BANO_MSG_OP_SET 0
+#define BANO_MSG_OP_GET 1
 
-#define BANO_FLAG_REPLY (1 << 0)
-#define BANO_FLAG_ERR (1 << 1)
-#define BANO_FLAG_ENC (1 << 2)
+#define BANO_MSG_FLAG_REPLY (1 << 0)
+#define BANO_MSG_FLAG_ERR (1 << 1)
+#define BANO_MSG_FLAG_ENC (1 << 2)
 
 typedef struct bano_msg_hdr
 {
