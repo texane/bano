@@ -648,7 +648,8 @@ static int handle_msg
 
   if (msg->hdr.flags & BANO_MSG_FLAG_ENC)
   {
-    bano_cipher_dec(&prwmd->base->cipher, ((uint8_t*)msg) + 1);
+    uint8_t* const p = ((uint8_t*)msg) + BANO_MSG_ENC_OFF;
+    bano_cipher_dec(&prwmd->base->cipher, p);
   }
 
   saddr = le_to_uint32(msg->hdr.saddr);
@@ -772,7 +773,8 @@ static int post_io(bano_list_item_t* li, void* p)
 
   if (pid->node->flags & BANO_NODE_FLAG_CIPHER)
   {
-    bano_cipher_enc(&pid->base->cipher, ((uint8_t*)&enc_msg) + 1);
+    uint8_t* const p = ((uint8_t*)&enc_msg) + BANO_MSG_ENC_OFF;
+    bano_cipher_enc(&pid->base->cipher, p);
     enc_msg.hdr.flags |= BANO_MSG_FLAG_ENC;
   }
 

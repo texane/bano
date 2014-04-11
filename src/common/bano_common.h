@@ -33,7 +33,12 @@ typedef struct bano_msg_set
 
 typedef struct bano_msg
 {
+  /* total message size */
 #define BANO_MSG_SIZE 17
+
+  /* encryption offset */
+#define BANO_MSG_ENC_OFF 1
+
   bano_msg_hdr_t hdr;
   union
   {

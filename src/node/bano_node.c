@@ -325,7 +325,7 @@ static inline void send_msg(bano_msg_t* msg)
   msg->hdr.saddr = uint32_to_le(BANO_CONFIG_NODE_ADDR);
 
 #if (BANO_CONFIG_CIPHER_ALG != BANO_CIPHER_ALG_NONE)
-  cipher_enc(((uint8_t*)msg) + 1);
+  cipher_enc(((uint8_t*)msg) + BANO_MSG_ENC_OFF);
   msg->hdr.flags |= BANO_MSG_FLAG_ENC;
 #endif
 
@@ -410,7 +410,7 @@ uint8_t bano_wait_event(bano_msg_t* msg)
       /* reenable interrupts */
       nrf_enable_rx_irq();
 
-      cipher_dec(((uint8_t*)msg) + 1);
+      cipher_dec(((uint8_t*)msg) + BANO_MSG_ENC_OFF);
 
       ev |= BANO_EV_MSG;
 
