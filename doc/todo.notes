@@ -1,3 +1,8 @@
+[ http server ]
+select one standalone or embedded
+if possible reuse existing software
+define an interface between bano base and the server
+
 [ node, more BANO_CONFIG_xxx to reduce size ]
 features should be statically disablable, via BANO_CONFIG_xxx
 
@@ -40,10 +45,6 @@ maintain per node information
 uint32 token is currently unused. should be used to prevent
 replay attacks. then update protocol doc (common network master
 key ...).
-
-[ http server ]
-implement from state
-instantiate html
 
 [ message checks ]
 if node->flags & cipher and decoded or clear message flags
