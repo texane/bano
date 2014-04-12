@@ -16,6 +16,8 @@ typedef struct bano_httpd
 
   struct bano_base* base;
 
+  volatile unsigned int is_done;
+
   /* message passing interface */
   int req_pipe[2];
   pthread_mutex_t rep_lock;

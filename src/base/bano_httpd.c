@@ -6,7 +6,7 @@
 #include "mongoose.h"
 
 
-static int ev_handler(struct mg_connection* conn, enum mg_event ev)
+static int on_event(struct mg_connection* conn, enum mg_event ev)
 {
   /* bano_httpd_t* const httpd = conn->server_param; */
   int err = MG_TRUE;
@@ -38,10 +38,12 @@ static void* server_thread_entry(void* p)
 {
   bano_httpd_t* const httpd = p;
 
-  while (1)
+  while (httpd->is_done == 0)
   {
     mg_poll_server((struct mg_server*)httpd->server, 1000000);
   }
+
+  httpd->is_done = 0;
 
   return NULL;
 }
@@ -52,6 +54,7 @@ int bano_httpd_init(bano_httpd_t* httpd, const bano_httpd_info_t* info)
   uint16_t port;
 
   httpd->base = info->base;
+  httpd->is_done = 0;
 
   if (pipe(httpd->req_pipe))
   {
@@ -71,7 +74,7 @@ int bano_httpd_init(bano_httpd_t* httpd, const bano_httpd_info_t* info)
     goto on_error_2;
   }
 
-  httpd->server = mg_create_server((void*)httpd, ev_handler);
+  httpd->server = mg_create_server((void*)httpd, on_event);
   if (httpd->server == NULL)
   {
     BANO_PERROR();
@@ -82,7 +85,7 @@ int bano_httpd_init(bano_httpd_t* httpd, const bano_httpd_info_t* info)
   else port = 80;
   sprintf(buf, "%hd", port);
   mg_set_option(httpd->server, "listening_port", buf);
-  mg_start_thread(server_thread_entry, httpd->server);
+  mg_start_thread(server_thread_entry, httpd);
 
   return 0;
 
@@ -99,7 +102,9 @@ int bano_httpd_init(bano_httpd_t* httpd, const bano_httpd_info_t* info)
 
 int bano_httpd_fini(bano_httpd_t* httpd)
 {
+  httpd->is_done = 1;
   mg_wakeup_server(httpd->server);
+  while (httpd->is_done == 1) usleep(100000);
   mg_destroy_server(&httpd->server);
 
   pthread_cond_destroy(&httpd->rep_cond);

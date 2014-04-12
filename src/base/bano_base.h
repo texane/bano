@@ -137,6 +137,7 @@ typedef struct bano_base
   uint32_t addr;
 
 #ifdef BANO_CONFIG_HTTPD
+  unsigned int is_httpd;
   bano_httpd_t httpd;
 #endif /* BANO_CONFIG_HTTPD */
 

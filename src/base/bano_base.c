@@ -409,6 +409,8 @@ static int apply_struct(bano_list_item_t* it, void* p)
       ad->err = -1;
       goto on_error;
     }
+
+    ad->base->is_httpd = 1;
   }
 #endif /* BANO_CONFIG_HTTPD */
 
@@ -439,6 +441,10 @@ static int apply_conf(bano_base_t* base, const char* conf_path)
 
 int bano_open(bano_base_t* base, const bano_base_info_t* info)
 {
+#ifdef BANO_CONFIG_HTTPD
+  base->is_httpd = 0;
+#endif /* BANO_CONFIG_HTTPD */
+
   bano_list_init(&base->nodes);
   bano_list_init(&base->sockets);
   bano_timer_init(&base->timers);
@@ -460,6 +466,9 @@ int bano_open(bano_base_t* base, const bano_base_info_t* info)
   return 0;
 
  on_error_0:
+#ifdef BANO_CONFIG_HTTPD
+  if (base->is_httpd) bano_httpd_fini(&base->httpd);
+#endif /* BANO_CONFIG_HTTPD */
   bano_list_fini(&base->nodes, free_node_item, NULL);
   bano_list_fini(&base->sockets, free_socket_item, NULL);
   bano_timer_fini(&base->timers);
@@ -469,7 +478,7 @@ int bano_open(bano_base_t* base, const bano_base_info_t* info)
 int bano_close(bano_base_t* base)
 {
 #ifdef BANO_CONFIG_HTTPD
-  bano_httpd_fini(&base->httpd);
+  if (base->is_httpd) bano_httpd_fini(&base->httpd);
 #endif /* BANO_CONFIG_HTTPD */
   bano_timer_fini(&base->timers);
   bano_list_fini(&base->nodes, free_node_item, NULL);
