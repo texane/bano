@@ -5,6 +5,10 @@
 #include <stdint.h>
 #include "bano_perror.h"
 
+#ifdef BANO_CONFIG_HTTPD
+#include "bano_httpd.h"
+#endif /* BANO_CONFIG_HTTPD */
+
 
 /* fwd decls */
 
@@ -49,6 +53,11 @@ typedef struct bano_socket_info
   union
   {
     bano_snrf_info_t snrf;
+
+#ifdef BANO_CONFIG_HTTPD
+    bano_httpd_t* httpd;
+#endif /* BANO_CONFIG_HTTPD */
+
   } u;
 
 } bano_socket_info_t;
@@ -57,6 +66,10 @@ typedef struct bano_socket_info
 /* exported */
 
 int bano_socket_snrf_open(bano_socket_t*, const bano_snrf_info_t*);
+
+#ifdef BANO_CONFIG_HTTPD
+int bano_socket_httpd_open(bano_socket_t*, bano_httpd_t*);
+#endif /* BANO_CONFIG_HTTPD */
 
 /* static inline */
 

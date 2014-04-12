@@ -14,9 +14,9 @@ $(REPO_DIR)/bano/src/base/bano_dict.c \
 $(REPO_DIR)/bano/src/base/bano_cipher.c \
 $(REPO_DIR)/bano/src/base/bano_socket_snrf.c
 
-OBJS := $(SRCS:.c=.o)
-
-CFLAGS += -I$(REPO_DIR)/bano/src/common -I$(REPO_DIR)/bano/src/base -I.
+CFLAGS += -I.
+CFLAGS += -I$(REPO_DIR)/bano/src/common
+CFLAGS += -I$(REPO_DIR)/bano/src/base
 CFLAGS += -DBANO_CONFIG_PERROR
 
 SNRF_DIR := $(REPO_DIR)/nrf/snrf
@@ -24,6 +24,17 @@ CFLAGS += -I$(REPO_DIR)/nrf/snrf/src/host
 CFLAGS += -I$(REPO_DIR)/nrf/snrf/src/common
 LFLAGS += -L$(REPO_DIR)/nrf/snrf/src/host
 LIBS += -lsnrf
+
+# httpd server
+# use mongoose version 35bd2b603251b40d7dce606b565d39f6a6b6d8f2
+MG_DIR ?= $(REPO_DIR)/mongoose
+SRCS += $(MG_DIR)/mongoose.c
+SRCS += $(REPO_DIR)/bano/src/base/bano_httpd.c
+SRCS += $(REPO_DIR)/bano/src/base/bano_socket_httpd.c
+CFLAGS += -DBANO_CONFIG_HTTPD -I$(MG_DIR) -pthread
+LIBS += -lpthread
+
+OBJS := $(SRCS:.c=.o)
 
 all: a.out
 
