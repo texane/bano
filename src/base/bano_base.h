@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <time.h>
 #include "bano_list.h"
+#include "bano_dict.h"
 #include "bano_timer.h"
 #include "bano_socket.h"
 #include "bano_cipher.h"
@@ -100,7 +101,7 @@ typedef struct bano_node
   bano_list_t posted_ios;
   bano_list_t pending_ios;
 
-  bano_list_t keyval_pairs;
+  bano_dict_t keyval_pairs;
 
   /* TODO: bano_nodl_t* nodl; */
 

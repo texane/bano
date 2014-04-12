@@ -83,18 +83,27 @@ int bano_dict_init(bano_dict_t* d)
 
 static int fini_pair_item(bano_list_item_t* it, void* p)
 {
+  uintptr_t* const args = (uintptr_t*)p;
+  bano_list_fn_t fn = (bano_list_fn_t)args[0];
+
+  if (fn != NULL) fn(it, (void*)args[1]);
   free(it->data);
+
   return 0;
 }
 
-int bano_dict_fini(bano_dict_t* d)
+int bano_dict_fini(bano_dict_t* d, bano_list_fn_t fn, void* p)
 {
   const size_t n = get_nlist(d);
+  uintptr_t args[2];
   size_t i;
+
+  args[0] = (uintptr_t)fn;
+  args[1] = (uintptr_t)p;
 
   for (i = 0; i != n; ++i)
   {
-    bano_list_fini(&d->lists[i], fini_pair_item, NULL);
+    bano_list_fini(&d->lists[i], fini_pair_item, (void*)args);
   }
 
   free(d->lists);
