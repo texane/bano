@@ -4,6 +4,7 @@
 
 #include <stdint.h>
 #include <pthread.h>
+#include <sys/types.h>
 #include "mongoose.h"
 
 
@@ -13,16 +14,12 @@ struct bano_base;
 typedef struct bano_httpd
 {
   struct mg_server* server;
-
   struct bano_base* base;
-
   volatile unsigned int is_done;
-
   /* message passing interface */
-  int req_pipe[2];
-  pthread_mutex_t rep_lock;
-  pthread_cond_t rep_cond;
-
+  int msg_pipe[2];
+  pthread_mutex_t compl_lock;
+  pthread_cond_t compl_cond;
 } bano_httpd_t;
 
 
@@ -30,15 +27,33 @@ typedef struct bano_httpd_info
 {
 #define BANO_HTTPD_FLAG_PORT (1 << 0)
   uint32_t flags;
-
   struct bano_base* base;
   uint16_t port;
-
 } bano_httpd_info_t;
+
+
+typedef struct bano_httpd_msg
+{
+  enum
+  {
+    BANO_HTTPD_MSG_OP_GET = 0,
+    BANO_HTTPD_MSG_OP_SET,
+    BANO_HTTPD_MSG_OP_INVALID
+  } op;
+  uint32_t naddr;
+  uint16_t key;
+  uint32_t val;
+  bano_httpd_t* httpd;
+  struct mg_connection* conn;
+  volatile int* compl_err;
+  unsigned int is_header;
+} bano_httpd_msg_t;
 
 
 int bano_httpd_init(bano_httpd_t*, const bano_httpd_info_t*);
 int bano_httpd_fini(bano_httpd_t*);
+int bano_httpd_write(bano_httpd_msg_t*, const uint8_t*, size_t);
+int bano_httpd_complete(bano_httpd_msg_t*, int);
 
 static inline void bano_init_httpd_info
 (bano_httpd_info_t* info, struct bano_base* base)

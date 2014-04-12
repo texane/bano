@@ -43,7 +43,7 @@ static int do_close(void* p)
 
 static int do_get_fd(void* p)
 {
-  return ((socket_httpd_t*)p)->httpd->req_pipe[0];
+  return ((socket_httpd_t*)p)->httpd->msg_pipe[0];
 }
 
 

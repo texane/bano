@@ -31,21 +31,31 @@ int bano_string_to_bool(const bano_string_t* s, unsigned int* b)
   return 0;
 }
 
+static const int get_base(const char* s)
+{
+  if (!(s[0] && s[1])) return 10;
+  if (!((s[0] == '0') && (s[1] == 'x'))) return 10;
+  return 16;
+}
+
 int bano_string_to_uint16(const bano_string_t* s, uint16_t* x)
 {
-  int base = 10; 
-  if ((s->size > 2) && (s->data[0] == '0') && (s->data[1] == 'x'))
-    base = 16;
-  *x = (uint16_t)strtoul((char*)s->data, NULL, base);
+  uint32_t xx;
+  if (bano_string_to_uint32(s, &xx)) return -1;
+  *x = (uint16_t)xx;
   return 0;
 }
 
 int bano_string_to_uint32(const bano_string_t* s, uint32_t* x)
 {
-  int base = 10; 
-  if ((s->size > 2) && (s->data[0] == '0') && (s->data[1] == 'x'))
-    base = 16;
-  *x = (uint32_t)strtoul((char*)s->data, NULL, base);
+  char buf[32];
+
+  if (s->size >= sizeof(buf)) return -1;
+  memcpy(buf, s->data, s->size);
+  buf[s->size] = 0;
+
+  *x = (uint32_t)strtoul(buf, NULL, get_base(buf));
+
   return 0;
 }
 
