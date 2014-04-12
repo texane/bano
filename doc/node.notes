@@ -22,11 +22,3 @@ www.ti.com/lit/ds/symlink/cc1101.pdf
 
 [ 2.4 GHz module ]
 http://www.nordicsemi.com/eng/Products/2.4GHz-RF/nRF24L01P
-
-[ TODO ]
-. bano_node should have its own repository
-. features should be statically disablable, via BANO_CONFIG_xxx
-. nrf905 support, ie. move transport layer into nrf_xxx wrappers
-. node should be able to disable features in its own handlers.
-for instance, the alarm may want to wait for 1 message (one for
-the key), and THEN no longer listen at all

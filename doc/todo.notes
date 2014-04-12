@@ -1,3 +1,15 @@
+[ node, more BANO_CONFIG_xxx to reduce size ]
+features should be statically disablable, via BANO_CONFIG_xxx
+
+[ node, dynamic feature disabling ]
+node should be able to disable features in its own handlers.
+for instance, the alarm may want to wait for 1 message (one for
+the key), and THEN no longer listen at all
+
+[ node, per message encryption ]
+for GET handler, BANO_MSG_FLAG_ENC could be returned enabling
+message encryption. For timer handlers, add bano_make_set_enc_msg
+
 [ make the alarm node PCB ]
 
 [ make the NRF USB dongle PCB ]
