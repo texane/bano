@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include <unistd.h>
 #include <pthread.h>
 #include "bano_perror.h"
@@ -15,8 +16,25 @@ static int on_event(struct mg_connection* conn, enum mg_event ev)
   {
   case MG_REQUEST:
     {
+      char key[32];
+      char val[32];
+
+      if (mg_get_var(conn, "key", key, sizeof(key)) == -1)
+      {
+	/* TODO: no contents */
+      }
+
+      if (mg_get_var(conn, "val", val, sizeof(val)) == -1)
+      {
+	/* TODO: no contents */
+      }
+
       mg_send_header(conn, "Content-Type", "text/plain");
-      mg_printf_data(conn, "This is a reply from server");
+      mg_printf_data(conn, "This is a reply from server\n");
+      mg_printf_data(conn, "uri: %s\n", conn->uri);
+      mg_printf_data(conn, "key: %s\n", key);
+      mg_printf_data(conn, "val: %s\n", val);
+
       break ;
     }
   case MG_AUTH:
