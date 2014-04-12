@@ -50,6 +50,14 @@ static int free_io_item(bano_list_item_t* li, void* p)
   return 0;
 }
 
+/* pair routines */
+
+static int free_pair_item(bano_list_item_t* li, void* p)
+{
+  free(li->data);
+  return 0;
+}
+
 /* node related routines */
 
 static bano_node_t* alloc_node(void)
@@ -59,6 +67,7 @@ static bano_node_t* alloc_node(void)
   node->flags = 0;
   bano_list_init(&node->posted_ios);
   bano_list_init(&node->pending_ios);
+  bano_list_init(&node->keyval_pairs);
   return node;
 }
 
@@ -66,6 +75,7 @@ static void free_node(bano_node_t* node)
 {
   bano_list_fini(&node->posted_ios, free_io_item, NULL);
   bano_list_fini(&node->pending_ios, free_io_item, NULL);
+  bano_list_fini(&node->keyval_pairs, free_pair_item, NULL);
   free(node);
 }
 

@@ -35,7 +35,7 @@ int bano_list_foreach_at(bano_list_item_t* it, bano_list_fn_t fn, void* p)
   for (pos = it; pos != NULL; pos = next)
   {
     next = pos->next;
-    if (fn(pos, p)) break ;
+    if (fn(pos, p)) return -1;
   }
 
   return 0;

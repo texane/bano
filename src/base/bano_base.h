@@ -94,10 +94,16 @@ typedef struct bano_node
   uint32_t flags;
 
   uint32_t addr;
-  struct bano_socket* socket;
+
+  bano_socket_t* socket;
+
   bano_list_t posted_ios;
   bano_list_t pending_ios;
+
+  bano_list_t keyval_pairs;
+
   /* TODO: bano_nodl_t* nodl; */
+
 } bano_node_t;
 
 typedef struct bano_node_info

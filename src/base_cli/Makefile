@@ -10,6 +10,7 @@ $(REPO_DIR)/bano/src/base/bano_string.c \
 $(REPO_DIR)/bano/src/base/bano_parser.c \
 $(REPO_DIR)/bano/src/base/bano_timer.c \
 $(REPO_DIR)/bano/src/base/bano_list.c \
+$(REPO_DIR)/bano/src/base/bano_dict.c \
 $(REPO_DIR)/bano/src/base/bano_cipher.c \
 $(REPO_DIR)/bano/src/base/bano_socket_snrf.c
 
