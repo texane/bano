@@ -1,2 +1,22 @@
+[ http server reflexions ]
+
+[[ user interface ]]
+
+the node browser UI reports the following node information:
+
+. base administration section
+.. addr [ set ]
+.. cipher_alg [ set ]
+.. cipher_key [ set ]
+
+. node info section
+.. addr = addr
+.. nodl = name if present, or id
+.. key_name or key_id = key_editable_formated_value [ set | get ]
+.. key_name or key_id = key_editable_formated_value [ set | get ]
+.. key_name or key_id = key_formated_value [ refresh ]
+
+...
+
 [ jnode based server ]
 https://blog.codecentric.de/en/2013/03/home-automation-with-angularjs-and-node-js-on-a-raspberry-pi/

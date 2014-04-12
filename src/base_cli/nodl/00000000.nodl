@@ -2,6 +2,12 @@
 # TODO: .include xtea.nodl
 # TODO: .include common.nodl
 
+# general nodl information
+nodl
+{
+name = led
+}
+
 # security
 secu
 {
@@ -11,6 +17,7 @@ cipher_alg = xtea
 # control the led status
 keyval
 {
+name = led_status
 key = 0x0000
 fmt = uint32
 get = yes
@@ -21,6 +28,7 @@ ack = yes
 # periodically sent key
 keyval
 {
+name = magic_value
 key = 0x0001
 fmt = uint32
 }

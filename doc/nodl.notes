@@ -18,3 +18,12 @@ non critical data (for instance temperature sensor).
 a NODL file database can be query using a NODL identifier. The
 identifier can be retrieved by querying the node BANO_KEY_NODL_ID
 key, or entered manually if the node is passive.
+
+example nodl file:
+
+keyval
+{
+ key =
+ fmt = {bool,uint8,uint16,uint32,float32,fixedN:M,bits}
+ comments =
+}
