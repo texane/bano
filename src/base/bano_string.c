@@ -31,6 +31,15 @@ int bano_string_to_bool(const bano_string_t* s, unsigned int* b)
   return 0;
 }
 
+int bano_string_to_uint16(const bano_string_t* s, uint16_t* x)
+{
+  int base = 10; 
+  if ((s->size > 2) && (s->data[0] == '0') && (s->data[1] == 'x'))
+    base = 16;
+  *x = (uint16_t)strtoul((char*)s->data, NULL, base);
+  return 0;
+}
+
 int bano_string_to_uint32(const bano_string_t* s, uint32_t* x)
 {
   int base = 10; 

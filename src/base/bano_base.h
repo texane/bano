@@ -11,6 +11,10 @@
 #include "bano_cipher.h"
 #include "../common/bano_common.h"
 
+#ifdef BANO_CONFIG_HTTPD
+#include "bano_httpd.h"
+#endif /* BANO_CONFIG_HTTPD */
+
 
 /* forward decls */
 
@@ -124,13 +128,18 @@ typedef struct bano_node_info
 
 /* base context */
 
-typedef struct
+typedef struct bano_base
 {
   bano_list_t nodes;
   bano_list_t sockets;
   bano_list_t timers;
   bano_cipher_t cipher;
   uint32_t addr;
+
+#ifdef BANO_CONFIG_HTTPD
+  bano_httpd_t httpd;
+#endif /* BANO_CONFIG_HTTPD */
+
 } bano_base_t;
 
 

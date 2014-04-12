@@ -1,57 +1,111 @@
+#include <stdio.h>
+#include <unistd.h>
+#include <pthread.h>
 #include "bano_perror.h"
 #include "bano_httpd.h"
 #include "mongoose.h"
 
 
-#if 0 /* TODO */
+static int ev_handler(struct mg_connection* conn, enum mg_event ev)
+{
+  /* bano_httpd_t* const httpd = conn->server_param; */
+  int err = MG_TRUE;
 
-// Start a browser and hit refresh couple of times. The replies will
-// come from both server instances.
-static int ev_handler(struct mg_connection *conn, enum mg_event ev) {
-  if (ev == MG_REQUEST) {
-    mg_send_header(conn, "Content-Type", "text/plain");
-    mg_printf_data(conn, "This is a reply from server instance # %s",
-                   (char *) conn->server_param);
-    return MG_TRUE;
-  } else if (ev == MG_AUTH) {
-    return MG_TRUE;
-  } else {
-    return MG_FALSE;
+  switch (ev)
+  {
+  case MG_REQUEST:
+    {
+      mg_send_header(conn, "Content-Type", "text/plain");
+      mg_printf_data(conn, "This is a reply from server");
+      break ;
+    }
+  case MG_AUTH:
+    {
+      break ;
+    }
+
+  default:
+    {
+      err = MG_FALSE;
+      break ;
+    }
   }
+
+  return err;
 }
 
-static void *serve(void *server) {
-  for (;;) mg_poll_server((struct mg_server *) server, 1000);
+static void* server_thread_entry(void* p)
+{
+  bano_httpd_t* const httpd = p;
+
+  while (1)
+  {
+    mg_poll_server((struct mg_server*)httpd->server, 1000000);
+  }
+
   return NULL;
 }
 
-int main(void) {
-  struct mg_server *server1, *server2;
-
-  server1 = mg_create_server((void *) "1", ev_handler);
-  server2 = mg_create_server((void *) "2", ev_handler);
-
-  // Make both server1 and server2 listen on the same socket
-  mg_set_option(server1, "listening_port", "8080");
-  mg_set_listening_socket(server2, mg_get_listening_socket(server1));
-
-  // server1 goes to separate thread, server 2 runs in main thread.
-  // IMPORTANT: NEVER LET DIFFERENT THREADS HANDLE THE SAME SERVER.
-  mg_start_thread(serve, server1);
-  mg_start_thread(serve, server2);
-  getchar();
-
-  return 0;
-}
-
-#endif /* TODO */
-
 int bano_httpd_init(bano_httpd_t* httpd, const bano_httpd_info_t* info)
 {
+  char buf[32];
+  uint16_t port;
+
+  httpd->base = info->base;
+
+  if (pipe(httpd->req_pipe))
+  {
+    BANO_PERROR();
+    goto on_error_0;
+  }
+
+  if (pthread_mutex_init(&httpd->rep_lock, NULL))
+  {
+    BANO_PERROR();
+    goto on_error_1;
+  }
+
+  if (pthread_cond_init(&httpd->rep_cond, NULL))
+  {
+    BANO_PERROR();
+    goto on_error_2;
+  }
+
+  httpd->server = mg_create_server((void*)httpd, ev_handler);
+  if (httpd->server == NULL)
+  {
+    BANO_PERROR();
+    goto on_error_3;
+  }
+
+  if (info->flags & BANO_HTTPD_FLAG_PORT) port = info->port;
+  else port = 80;
+  sprintf(buf, "%hd", port);
+  mg_set_option(httpd->server, "listening_port", buf);
+  mg_start_thread(server_thread_entry, httpd->server);
+
   return 0;
+
+ on_error_3:
+  pthread_cond_destroy(&httpd->rep_cond);
+ on_error_2:
+  pthread_mutex_destroy(&httpd->rep_lock);
+ on_error_1:
+  close(httpd->req_pipe[0]);
+  close(httpd->req_pipe[1]);
+ on_error_0:
+  return -1;
 }
 
 int bano_httpd_fini(bano_httpd_t* httpd)
 {
+  mg_wakeup_server(httpd->server);
+  mg_destroy_server(&httpd->server);
+
+  pthread_cond_destroy(&httpd->rep_cond);
+  pthread_mutex_destroy(&httpd->rep_lock);
+  close(httpd->req_pipe[0]);
+  close(httpd->req_pipe[1]);
+
   return 0;
 }

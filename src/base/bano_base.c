@@ -14,6 +14,10 @@
 #include "bano_perror.h"
 #include "../common/bano_common.h"
 
+#ifdef BANO_CONFIG_HTTPD
+#include "bano_httpd.h"
+#endif /* BANO_CONFIG_HTTPD */
+
 
 /* conversion routines */
 
@@ -162,6 +166,9 @@ struct apply_data
   {
     bano_socket_info_t socket_info;
     bano_node_info_t node_info;
+#ifdef BANO_CONFIG_HTTPD
+    bano_httpd_info_t httpd_info;
+#endif /* BANO_CONFIG_HTTPD */
   } u;
 
 };
@@ -305,6 +312,36 @@ static int apply_node_pair(bano_list_item_t* it, void* p)
   return -1;
 }
 
+#ifdef BANO_CONFIG_HTTPD
+static int apply_httpd_pair(bano_list_item_t* it, void* p)
+{
+  const bano_parser_pair_t* const pair = it->data;
+  struct apply_data* const ad = p;
+  bano_httpd_info_t* const info = &ad->u.httpd_info;
+
+  if (bano_string_cmp_cstr(&pair->key, "port") == 0)
+  {
+    info->flags |= BANO_HTTPD_FLAG_PORT;
+    if (bano_string_to_uint16(&pair->val, &info->port))
+    {
+      BANO_PERROR();
+      goto on_error;
+    }
+  }
+  else
+  {
+    BANO_PERROR();
+    goto on_error;
+  }
+
+  return 0;
+
+ on_error:
+  ad->err = -1;
+  return -1;
+}
+#endif /* BANO_CONFIG_HTTPD */
+
 static int apply_struct(bano_list_item_t* it, void* p)
 {
   bano_parser_struct_t* const strukt = it->data;
@@ -356,6 +393,24 @@ static int apply_struct(bano_list_item_t* it, void* p)
       goto on_error;
     }
   }
+#ifdef BANO_CONFIG_HTTPD
+  else if (bano_string_cmp_cstr(&strukt->name, "http_server") == 0)
+  {
+    bano_httpd_info_t* const info = &ad->u.httpd_info;
+
+    bano_init_httpd_info(info, ad->base);
+    bano_parser_foreach_pair(strukt, apply_httpd_pair, ad);
+
+    if (ad->err) goto on_error;
+
+    if (bano_httpd_init(&ad->base->httpd, info))
+    {
+      BANO_PERROR();
+      ad->err = -1;
+      goto on_error;
+    }
+  }
+#endif /* BANO_CONFIG_HTTPD */
 
  on_error:
   return ad->err;
@@ -413,6 +468,7 @@ int bano_open(bano_base_t* base, const bano_base_info_t* info)
 
 int bano_close(bano_base_t* base)
 {
+  bano_httpd_fini(&base->httpd);
   bano_timer_fini(&base->timers);
   bano_list_fini(&base->nodes, free_node_item, NULL);
   bano_list_fini(&base->sockets, free_socket_item, base);

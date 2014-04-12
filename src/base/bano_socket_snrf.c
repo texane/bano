@@ -7,7 +7,7 @@
 #include "snrf_common.h"
 
 
-static int do_read(void* p, struct bano_msg* bano_msg)
+static int do_read(void* p, bano_msg_t* bano_msg)
 {
   /* return 0 on success, bano_msg filled */
   /* return -1 on error */
@@ -38,7 +38,7 @@ static int do_read(void* p, struct bano_msg* bano_msg)
   return err;
 }
 
-static int do_peek(void* p, struct bano_msg* bano_msg)
+static int do_peek(void* p, bano_msg_t* bano_msg)
 {
   snrf_handle_t* const snrf = p;
   snrf_msg_t snrf_msg;
