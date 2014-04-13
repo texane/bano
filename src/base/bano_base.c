@@ -751,6 +751,7 @@ static int gen_pair_html(bano_list_item_t* it, void* p)
   off += snprintf(buf + off, size - off, "<form action='/' method='get'>\n");
   off += snprintf(buf + off, size - off, "<input type='hidden' name='naddr' value='0x%08x' />\n", naddr);
   off += snprintf(buf + off, size - off, "<input type='hidden' name='key' value='0x%04x' />\n", key);
+  off += snprintf(buf + off, size - off, "<input type='hidden' name='is_ack' value='1' />\n");
   off += snprintf(buf + off, size - off, "0x%04x = <input type='text' name='val' value='0x%08x' />\n", key, val);
   off += snprintf(buf + off, size - off, "<input type='submit' name='op' value='set' />\n");
   off += snprintf(buf + off, size - off, "<input type='submit' name='op' value='get' />\n");
