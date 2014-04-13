@@ -727,6 +727,7 @@ static int handle_bano_msg
 
 struct gen_html_data
 {
+  bano_node_t* node;
   char* buf;
   size_t size;
   size_t off;
@@ -741,11 +742,18 @@ static int gen_pair_html(bano_list_item_t* it, void* p)
   char* const buf = ghd->buf;
   const size_t size = ghd->size;
 
+  const uint32_t naddr = bano_node_get_addr(ghd->node);
   const uint16_t key = (uint16_t)pair->key;
   const uint32_t val = (uint32_t)pair->val;
 
   off += snprintf(buf + off, size - off, "<li>");
-  off += snprintf(buf + off, size - off, "%04x = %08x\n", key, val);
+  off += snprintf(buf + off, size - off, "<form action='/' method='get'>\n");
+  off += snprintf(buf + off, size - off, "<input type='hidden' name='naddr' value='0x%08x' />\n", naddr);
+  off += snprintf(buf + off, size - off, "<input type='hidden' name='key' value='0x%04x' />\n", key);
+  off += snprintf(buf + off, size - off, "0x%04x = <input type='text' name='val' value='0x%08x' />\n", key, val);
+  off += snprintf(buf + off, size - off, "<input type='submit' name='op' value='set' />\n");
+  off += snprintf(buf + off, size - off, "<input type='submit' name='op' value='get' />\n");
+  off += snprintf(buf + off, size - off, "</form>\n");
   off += snprintf(buf + off, size - off, "</li>\n");
 
   ghd->off = off;
@@ -760,11 +768,13 @@ static int gen_node_html(bano_list_item_t* it, void* p)
   size_t off = ghd->off;
   char* const buf = ghd->buf;
   const size_t size = ghd->size;
+  const uint32_t naddr = bano_node_get_addr(node);
 
   off += snprintf(buf + off, size - off, "<li>\n");
-  off += snprintf(buf + off, size - off, "0x%08x\n", bano_node_get_addr(node));
+  off += snprintf(buf + off, size - off, "0x%08x\n", naddr);
   off += snprintf(buf + off, size - off, "<ul>\n");
 
+  ghd->node = node;
   ghd->off = off;
   bano_dict_foreach(&node->keyval_pairs, gen_pair_html, ghd);
   off = ghd->off;
