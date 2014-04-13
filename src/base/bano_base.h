@@ -98,9 +98,9 @@ typedef struct bano_base
   bano_list_t nodes;
   bano_list_t sockets;
   bano_list_t timers;
+  bano_dict_t nodls;
   bano_cipher_t cipher;
   uint32_t addr;
-
 #ifdef BANO_CONFIG_HTTPD
   unsigned int is_httpd;
   bano_httpd_t httpd;

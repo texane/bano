@@ -1,12 +1,14 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <dirent.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/select.h>
 #include <sys/time.h>
 #include "bano_base.h"
 #include "bano_node.h"
+#include "bano_nodl.h"
 #include "bano_socket.h"
 #include "bano_timer.h"
 #include "bano_list.h"
@@ -42,6 +44,13 @@ static inline uint32_t le_to_uint32(uint32_t x)
 }
 
 /* list item freeing routines */
+
+static int free_nodl_item(bano_list_item_t* li, void* p)
+{
+  bano_dict_pair_t* const pair = li->data;
+  bano_nodl_free((bano_nodl_t*)pair->val);
+  return 0;
+}
 
 static int free_node_item(bano_list_item_t* li, void* p)
 {
@@ -89,9 +98,239 @@ struct apply_data
 #ifdef BANO_CONFIG_HTTPD
     bano_httpd_info_t httpd_info;
 #endif /* BANO_CONFIG_HTTPD */
+    bano_nodl_t* nodl;
+    bano_nodl_keyval_t* kv;
   } u;
 
 };
+
+static int apply_nodl_keyval_pair(bano_list_item_t* it, void* p)
+{
+  const bano_parser_pair_t* const pair = it->data;
+  struct apply_data* const ad = p;
+  bano_nodl_keyval_t* const kv = ad->u.kv;
+  unsigned int is_true;
+  size_t size;
+
+  if (bano_string_cmp_cstr(&pair->key, "name") == 0)
+  {
+    size = pair->val.size;
+    if (size >= sizeof(kv->name)) size = sizeof(kv->name) - 1;
+    memcpy(kv->name, pair->val.data, size);
+    kv->name[size] = 0;
+  }
+  else if (bano_string_cmp_cstr(&pair->key, "key") == 0)
+  {
+    if (bano_string_to_uint16(&pair->val, &kv->key))
+    {
+      BANO_PERROR();
+      goto on_error;
+    }
+  }
+  else if (bano_string_cmp_cstr(&pair->key, "fmt") == 0)
+  {
+    if (bano_string_cmp_cstr(&pair->val, "bool") == 0)
+    {
+      kv->flags |= BANO_NODL_FLAG_FMT_BOOL;
+    }
+    else if (bano_string_cmp_cstr(&pair->val, "uint8") == 0)
+    {
+      kv->flags |= BANO_NODL_FLAG_FMT_UINT8;
+    }
+    if (bano_string_cmp_cstr(&pair->val, "uint16") == 0)
+    {
+      kv->flags |= BANO_NODL_FLAG_FMT_UINT16;
+    }
+    if (bano_string_cmp_cstr(&pair->val, "uint32") == 0)
+    {
+      kv->flags |= BANO_NODL_FLAG_FMT_UINT32;
+    }
+    else
+    {
+      BANO_PERROR();
+      goto on_error;
+    }
+  }
+  else if (bano_string_cmp_cstr(&pair->key, "get") == 0)
+  {
+    if (bano_string_to_bool(&pair->val, &is_true))
+    {
+      BANO_PERROR();
+      goto on_error;
+    }
+    if (is_true) kv->flags |= BANO_NODL_FLAG_GET;
+    else kv->flags &= ~BANO_NODL_FLAG_GET;
+  }
+  else if (bano_string_cmp_cstr(&pair->key, "set") == 0)
+  {
+    if (bano_string_to_bool(&pair->val, &is_true))
+    {
+      BANO_PERROR();
+      goto on_error;
+    }
+    if (is_true) kv->flags |= BANO_NODL_FLAG_SET;
+    else kv->flags &= ~BANO_NODL_FLAG_SET;
+  }
+  else if (bano_string_cmp_cstr(&pair->key, "ack") == 0)
+  {
+    if (bano_string_to_bool(&pair->val, &is_true))
+    {
+      BANO_PERROR();
+      goto on_error;
+    }
+    if (is_true) kv->flags |= BANO_NODL_FLAG_ACK;
+    else kv->flags &= ~BANO_NODL_FLAG_ACK;
+  }
+  else
+  {
+  on_error:
+    BANO_PERROR();
+    ad->err = -1;
+  }
+
+  return ad->err;
+}
+
+static int apply_nodl_struct(bano_list_item_t* it, void* p)
+{
+  bano_parser_struct_t* const strukt = it->data;
+  struct apply_data* const ad = p;
+  bano_nodl_t* const nodl = ad->u.nodl;
+  bano_nodl_keyval_t* kv;
+
+  if (bano_string_cmp_cstr(&strukt->name, "keyval") == 0)
+  {
+    struct apply_data kv_ad;
+
+    if (bano_nodl_keyval_alloc(&kv))
+    {
+      BANO_PERROR();
+      ad->err = -1;
+      goto on_error;
+    }
+
+    kv_ad.u.kv = kv;
+    kv_ad.err = 0;
+    bano_parser_foreach_pair(strukt, apply_nodl_keyval_pair, &kv_ad);
+    if (kv_ad.err)
+    {
+      BANO_PERROR();
+      bano_nodl_keyval_free(kv);
+      ad->err = -1;
+      goto on_error;
+    }
+
+    if (*kv->name == 0) sprintf(kv->name, "0x%08x", kv->key);
+
+    bano_dict_add(&nodl->keyvals, kv->key, (uintptr_t)kv);
+  }
+
+ on_error:
+  return ad->err;
+}
+
+static int load_nodl_file(bano_nodl_t* nodl, const char* filename)
+{
+  bano_parser_t parser;
+  struct apply_data ad;
+
+  if (bano_parser_load_file(&parser, filename))
+  {
+    BANO_PERROR();
+    return -1;
+  }
+
+  ad.parser = &parser;
+  ad.u.nodl = nodl;
+  ad.err = 0;
+  bano_parser_foreach_struct(&parser, apply_nodl_struct, &ad);
+
+  bano_parser_fini(&parser);
+
+  return ad.err;
+}
+
+static unsigned int is_hex(char c)
+{
+  return ((c >= '0') && (c <= '9')) || ((c >= 'a') && (c <= 'f'));
+}
+
+static int load_nodl_dir(bano_dict_t* nodls, const bano_string_t* dirname)
+{
+  char* filename;
+  DIR* dir;
+  struct dirent* dirent;
+  bano_nodl_t* nodl;
+  uint32_t nodl_id;
+  int err = -1;
+  size_t i;
+
+  /* pattern: dirname/00000000.nodl */
+  filename = malloc((dirname->size + 32) * sizeof(char));
+  if (filename == NULL)
+  {
+    BANO_PERROR();
+    goto on_error_0;
+  }
+
+  memcpy(filename, dirname->data, dirname->size);
+  filename[dirname->size] = 0;
+
+  dir = opendir(filename);
+  if (dir == NULL)
+  {
+    BANO_PERROR();
+    goto on_error_1;
+  }
+
+  filename[dirname->size] = '/';
+
+  while (1)
+  {
+  next_dirent:
+    dirent = readdir(dir);
+    if (dirent == NULL) break ;
+
+    for (i = 0; i != 8; ++i)
+    {
+      if (is_hex(dirent->d_name[i]) == 0) goto next_dirent;
+      filename[dirname->size + 1 + i] = dirent->d_name[i];
+    }
+
+#define NODL_SUFFIX_STR ".nodl"
+#define NODL_SUFFIX_LEN (sizeof(NODL_SUFFIX_STR) - 1)
+    if (strcmp(dirent->d_name + 8, NODL_SUFFIX_STR)) goto next_dirent;
+    strcpy(filename + dirname->size + 1 + 8, NODL_SUFFIX_STR);
+
+    if (bano_nodl_alloc(&nodl))
+    {
+      BANO_PERROR();
+      goto on_error_1;
+    }
+
+    if (load_nodl_file(nodl, filename))
+    {
+      BANO_PERROR();
+      bano_nodl_free(nodl);
+      goto next_dirent;
+    }
+
+    nodl_id = (uint32_t)strtoul(dirent->d_name, NULL, 16);
+    if (bano_dict_add(nodls, nodl_id, (uintptr_t)nodl))
+    {
+      BANO_PERROR();
+      bano_nodl_free(nodl);
+      goto on_error_1;
+    }
+  }
+
+  err = 0;
+
+ on_error_1:
+  closedir(dir);
+ on_error_0:
+  return err;
+}
 
 static int apply_base_pair(bano_list_item_t* it, void* p)
 {
@@ -106,6 +345,14 @@ static int apply_base_pair(bano_list_item_t* it, void* p)
       base->addr = BANO_DEFAULT_BASE_ADDR;
     }
     else if (bano_string_to_uint32(&pair->val, &base->addr))
+    {
+      BANO_PERROR();
+      ad->err = -1;
+    }
+  }
+  else if (bano_string_cmp_cstr(&pair->key, "nodl_dir") == 0)
+  {
+    if (load_nodl_dir(&base->nodls, &pair->val))
     {
       BANO_PERROR();
       ad->err = -1;
@@ -368,6 +615,7 @@ int bano_open(bano_base_t* base, const bano_base_info_t* info)
   bano_list_init(&base->nodes);
   bano_list_init(&base->sockets);
   bano_timer_init(&base->timers);
+  bano_dict_init(&base->nodls);
 
   bano_cipher_init(&base->cipher, &bano_cipher_info_none);
 
@@ -389,6 +637,7 @@ int bano_open(bano_base_t* base, const bano_base_info_t* info)
 #ifdef BANO_CONFIG_HTTPD
   if (base->is_httpd) bano_httpd_fini(&base->httpd);
 #endif /* BANO_CONFIG_HTTPD */
+  bano_dict_fini(&base->nodls, free_nodl_item, NULL);
   bano_list_fini(&base->nodes, free_node_item, NULL);
   bano_list_fini(&base->sockets, free_socket_item, NULL);
   bano_timer_fini(&base->timers);
@@ -400,6 +649,7 @@ int bano_close(bano_base_t* base)
 #ifdef BANO_CONFIG_HTTPD
   if (base->is_httpd) bano_httpd_fini(&base->httpd);
 #endif /* BANO_CONFIG_HTTPD */
+  bano_dict_fini(&base->nodls, free_nodl_item, NULL);
   bano_timer_fini(&base->timers);
   bano_list_fini(&base->nodes, free_node_item, NULL);
   bano_list_fini(&base->sockets, free_socket_item, base);

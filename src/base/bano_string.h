@@ -14,6 +14,7 @@ typedef struct bano_string
 
 
 int bano_string_init(bano_string_t*);
+int bano_string_init_with_data(bano_string_t*, const void*, size_t);
 int bano_string_to_bool(const bano_string_t*, unsigned int*);
 int bano_string_to_uint16(const bano_string_t*, uint16_t*);
 int bano_string_to_uint32(const bano_string_t*, uint32_t*);

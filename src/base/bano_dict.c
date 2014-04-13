@@ -62,9 +62,14 @@ static bano_list_item_t* find_pair(bano_dict_t* d, uint32_t k)
 int bano_dict_init(bano_dict_t* d)
 {
   /* default list count is 8 */
+  return bano_dict_init_with_nlist(d, 3);
+}
 
-  static const size_t log2_nlist = 3;
-  static const size_t nlist = 1 << log2_nlist;
+int bano_dict_init_with_nlist(bano_dict_t* d, size_t log2_nlist)
+{
+  /* default list count is 8 */
+
+  const size_t nlist = 1 << log2_nlist;
   size_t i;
 
   d->log2_nlist = log2_nlist;

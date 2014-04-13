@@ -11,8 +11,14 @@
 
 int bano_string_init(bano_string_t* string)
 {
-  string->data = NULL;
-  string->size = 0;
+  return bano_string_init_with_data(string, NULL, 0);
+}
+
+int bano_string_init_with_data
+(bano_string_t* string, const void* data, size_t size)
+{
+  string->data = data;
+  string->size = size;
   return 0;
 }
 
