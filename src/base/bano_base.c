@@ -449,6 +449,7 @@ static int apply_node_pair(bano_list_item_t* it, void* p)
   }
   else if (bano_string_cmp_cstr(&pair->key, "nodl_id") == 0)
   {
+    ninfo->flags |= BANO_NODE_FLAG_NODL_ID;
     if (bano_string_to_uint32(&pair->val, &ninfo->nodl_id))
     {
       BANO_PERROR();
@@ -699,6 +700,12 @@ int bano_add_node(bano_base_t* base, const bano_node_info_t* info)
     goto on_error_0;
   }
 
+  if ((info->flags & BANO_NODE_FLAG_NODL_ID) == 0)
+  {
+    BANO_PERROR();
+    goto on_error_0;
+  }
+
   if (bano_node_alloc(&node))
   {
     BANO_PERROR();
@@ -712,6 +719,12 @@ int bano_add_node(bano_base_t* base, const bano_node_info_t* info)
 
   node->addr = info->addr;
   node->socket = info->socket;
+
+  if (bano_dict_get(&base->nodls, info->nodl_id, (uintptr_t*)&node->nodl))
+  {
+    BANO_PERROR();
+    goto on_error_1;
+  }
 
   if (bano_list_add_tail(&base->nodes, node))
   {
@@ -987,24 +1000,33 @@ struct gen_html_data
 static int gen_pair_html(bano_list_item_t* it, void* p)
 {
   bano_dict_pair_t* const pair = it->data;
+  bano_nodl_keyval_t* const kv = (bano_nodl_keyval_t*)pair->val;
   struct gen_html_data* const ghd = p;
 
   size_t off = ghd->off;
   char* const buf = ghd->buf;
   const size_t size = ghd->size;
+  bano_node_t* const node = ghd->node;
 
-  const uint32_t naddr = bano_node_get_addr(ghd->node);
-  const uint16_t key = (uint16_t)pair->key;
-  const uint32_t val = (uint32_t)pair->val;
+  const uint32_t naddr = bano_node_get_addr(node);
+  const char* name = kv->name;
+  const uint16_t key = kv->key;
+  const unsigned int is_ack = (kv->flags & BANO_NODL_FLAG_ACK) ? 1 : 0;
+  const unsigned int is_set = (kv->flags & BANO_NODL_FLAG_SET) ? 1 : 0;
+  const unsigned int is_get = (kv->flags & BANO_NODL_FLAG_GET) ? 1 : 0;
+
+  uintptr_t val;
+
+  if (bano_dict_get(&node->keyval_pairs, key, &val)) val = 0xffffffff;
 
   off += snprintf(buf + off, size - off, "<li>");
   off += snprintf(buf + off, size - off, "<form action='/' method='get'>\n");
   off += snprintf(buf + off, size - off, "<input type='hidden' name='naddr' value='0x%08x' />\n", naddr);
   off += snprintf(buf + off, size - off, "<input type='hidden' name='key' value='0x%04x' />\n", key);
-  off += snprintf(buf + off, size - off, "<input type='hidden' name='is_ack' value='1' />\n");
-  off += snprintf(buf + off, size - off, "0x%04x = <input type='text' name='val' value='0x%08x' />\n", key, val);
-  off += snprintf(buf + off, size - off, "<input type='submit' name='op' value='set' />\n");
-  off += snprintf(buf + off, size - off, "<input type='submit' name='op' value='get' />\n");
+  off += snprintf(buf + off, size - off, "<input type='hidden' name='is_ack' value='%u' />\n", is_ack);
+  off += snprintf(buf + off, size - off, "%s = <input type='text' name='val' value='0x%08x' />\n", name, (uint32_t)val);
+  if (is_set) off += snprintf(buf + off, size - off, "<input type='submit' name='op' value='set' />\n");
+  if (is_get) off += snprintf(buf + off, size - off, "<input type='submit' name='op' value='get' />\n");
   off += snprintf(buf + off, size - off, "</form>\n");
   off += snprintf(buf + off, size - off, "</li>\n");
 
@@ -1028,7 +1050,7 @@ static int gen_node_html(bano_list_item_t* it, void* p)
 
   ghd->node = node;
   ghd->off = off;
-  bano_dict_foreach(&node->keyval_pairs, gen_pair_html, ghd);
+  bano_dict_foreach(&node->nodl->keyvals, gen_pair_html, ghd);
   off = ghd->off;
 
   off += snprintf(buf + off, size - off, "</ul>\n");

@@ -8,6 +8,7 @@
 
 
 struct bano_socket;
+struct bano_nodl;
 
 
 typedef struct bano_node
@@ -17,14 +18,13 @@ typedef struct bano_node
 
   uint32_t addr;
 
-  bano_socket_t* socket;
+  struct bano_socket* socket;
+  struct bano_nodl* nodl;
 
   bano_list_t posted_ios;
   bano_list_t pending_ios;
 
   bano_dict_t keyval_pairs;
-
-  /* TODO: bano_nodl_t* nodl; */
 
 } bano_node_t;
 
@@ -52,9 +52,9 @@ static inline uint32_t bano_node_get_addr(const bano_node_t* node)
   return node->addr;
 }
 
-static inline void bano_init_node_info(bano_node_info_t* i)
+static inline void bano_init_node_info(bano_node_info_t* info)
 {
-  i->flags = 0;
+  info->flags = 0;
 }
 
 
