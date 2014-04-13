@@ -27,6 +27,7 @@ int bano_dict_init(bano_dict_t*);
 int bano_dict_fini(bano_dict_t*, bano_list_fn_t, void*);
 int bano_dict_add(bano_dict_t*, uint32_t, uintptr_t);
 int bano_dict_set(bano_dict_t*, uint32_t, uintptr_t);
+int bano_dict_set_or_add(bano_dict_t*, uint32_t, uintptr_t);
 int bano_dict_get(bano_dict_t*, uint32_t, uintptr_t*);
 int bano_dict_foreach(bano_dict_t*, bano_list_fn_t, void*);
 

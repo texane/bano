@@ -152,6 +152,12 @@ int bano_dict_set(bano_dict_t* d, uint32_t k, uintptr_t v)
   return 0;
 }
 
+int bano_dict_set_or_add(bano_dict_t* d, uint32_t k, uintptr_t v)
+{
+  if (bano_dict_set(d, k, v)) return bano_dict_add(d, k, v);
+  return 0;
+}
+
 int bano_dict_get(bano_dict_t* d, uint32_t k, uintptr_t* v)
 {
   bano_list_item_t* const it = find_pair(d, k);
