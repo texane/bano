@@ -709,6 +709,47 @@ static int handle_bano_msg
 
 #ifdef BANO_CONFIG_HTTPD
 
+/* html generator */
+
+struct gen_html_data
+{
+  char* buf;
+  size_t size;
+  size_t off;
+};
+
+static int gen_node_html(bano_list_item_t* it, void* p)
+{
+  bano_node_t* const node = it->data;
+  struct gen_html_data* const ghd = p;
+  const size_t off = ghd->off;
+  char* const buf = ghd->buf + off;
+  const size_t size = ghd->size - off;
+
+  ghd->off += snprintf(buf, size, "0x%08x<br/>", bano_node_get_addr(node));
+  
+  return 0;
+}
+
+static size_t gen_base_html(bano_base_t* base, char* buf, size_t size)
+{
+  struct gen_html_data ghd;
+  size_t off = 0;
+
+  off += snprintf(buf + off, size - off, "<html><body>");
+
+  ghd.buf = buf;
+  ghd.size = size;
+  ghd.off = off;
+  bano_list_foreach(&base->nodes, gen_node_html, &ghd);
+
+  off = ghd.off;
+  off += snprintf(buf + off, size - off, "</body></html>");
+
+  return off;
+}
+
+
 /* httpd message handler */
 
 struct httpd_op_data
@@ -720,19 +761,31 @@ struct httpd_op_data
 static void complete_httpd_msg
 (bano_httpd_msg_t* msg, bano_base_t* base, int err)
 {
-#define HTML_HEADER "<html><body>"
-#define HTML_FOOTER "</body></html>"
+  /* generate html and complete */
 
-  static char html_data[4096];
-  size_t html_size;
+#define HTML_ERR_STR "<html><body> base error </body></html>"
+  static const char* error_buf = HTML_ERR_STR;
+  static const size_t error_size = sizeof(HTML_ERR_STR) - 1;
 
-  html_size = 0;
+  char* buf;
+  size_t size;
 
-  html_size += sprintf(html_data + html_size, "%s", HTML_HEADER);
-  html_size += sprintf(html_data + html_size, "TODO (%d)", err);
-  html_size += sprintf(html_data + html_size, "%s", HTML_FOOTER);
+  size  = 8 * 1024;
+  buf = malloc(size);
 
-  bano_httpd_complete_msg(msg, 0, html_data, html_size);
+  if (buf == NULL)
+  {
+    BANO_PERROR();
+    buf = (char*)error_buf;
+    size = error_size;
+    goto on_error;
+  }
+
+  size = gen_base_html(base, buf, size);
+
+ on_error:
+  bano_httpd_complete_msg(msg, 0, buf, size);
+  if (buf != error_buf) free(buf);
 }
 
 static int on_httpd_io_compl(bano_io_t* io, void* p)
