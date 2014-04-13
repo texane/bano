@@ -806,6 +806,7 @@ struct httpd_op_data
 {
   bano_base_t* base;
   bano_httpd_msg_t* msg;
+  /* FIXME: msg no mor available at completion */
   bano_httpd_msg_t msg_stor;
 };
 
@@ -895,6 +896,7 @@ static int handle_httpd_msg
       }
 
       hod->base = prwmd->base;
+      /* FIXME: msg no mor available at completion */
       memcpy(&hod->msg_stor, msg, sizeof(bano_httpd_msg_t));
       hod->msg = &hod->msg_stor;
 
