@@ -45,15 +45,13 @@ typedef struct bano_httpd_msg
   uint32_t val;
   bano_httpd_t* httpd;
   struct mg_connection* conn;
-  volatile int* compl_err;
-  unsigned int is_header;
+  int* compl_err;
 } bano_httpd_msg_t;
 
 
 int bano_httpd_init(bano_httpd_t*, const bano_httpd_info_t*);
 int bano_httpd_fini(bano_httpd_t*);
-int bano_httpd_write(bano_httpd_msg_t*, const uint8_t*, size_t);
-int bano_httpd_complete(bano_httpd_msg_t*, int);
+int bano_httpd_complete_msg(bano_httpd_msg_t*, int, const void*, size_t);
 
 static inline void bano_init_httpd_info
 (bano_httpd_info_t* info, struct bano_base* base)

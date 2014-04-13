@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <pthread.h>
+#include "bano_base.h"
 #include "bano_perror.h"
 #include "bano_socket.h"
 #include "bano_httpd.h"
@@ -39,7 +40,7 @@ static int on_event(struct mg_connection* conn, enum mg_event ev)
     {
       static const int invalid_compl_err = 0xdeadbeef;
       bano_httpd_t* const httpd = conn->server_param;
-      int compl_err = invalid_compl_err;
+      volatile int compl_err = invalid_compl_err;
       bano_httpd_msg_t msg;
       char buf[32];
 
@@ -59,8 +60,7 @@ static int on_event(struct mg_connection* conn, enum mg_event ev)
 
       msg.httpd = httpd;
       msg.conn = conn;
-      msg.compl_err = &compl_err;
-      msg.is_header = 0;
+      msg.compl_err = (int*)&compl_err;
 
       if (write(httpd->msg_pipe[1], &msg, sizeof(msg)) != sizeof(msg))
       {
@@ -71,8 +71,9 @@ static int on_event(struct mg_connection* conn, enum mg_event ev)
       }
 
       /* wait for message completion */
+
       pthread_mutex_lock(&httpd->compl_lock);
-      while (*msg.compl_err == invalid_compl_err)
+      while (compl_err == invalid_compl_err)
       {
 	pthread_cond_wait(&httpd->compl_cond, &httpd->compl_lock);
       }
@@ -80,6 +81,7 @@ static int on_event(struct mg_connection* conn, enum mg_event ev)
 
       break ;
     }
+
   case MG_AUTH:
     {
       break ;
@@ -112,14 +114,13 @@ static void* server_thread_entry(void* p)
 int bano_httpd_init(bano_httpd_t* httpd, const bano_httpd_info_t* info)
 {
   bano_socket_info_t socket_info;
-  bano_socket_t* socket;
   char buf[32];
   uint16_t port;
 
   bano_socket_init_info(&socket_info);
   socket_info.type = BANO_SOCKET_TYPE_HTTPD;
   socket_info.u.httpd = httpd;
-  if (bano_socket_alloc(&socket, &socket_info))
+  if (bano_add_socket(info->base, &socket_info))
   {
     BANO_PERROR();
     goto on_error_0;
@@ -169,7 +170,6 @@ int bano_httpd_init(bano_httpd_t* httpd, const bano_httpd_info_t* info)
   close(httpd->msg_pipe[0]);
   close(httpd->msg_pipe[1]);
  on_error_1:
-  bano_socket_free(socket, info->base);
  on_error_0:
   return -1;
 }
@@ -189,27 +189,14 @@ int bano_httpd_fini(bano_httpd_t* httpd)
   return 0;
 }
 
-int bano_httpd_write(bano_httpd_msg_t* msg, const uint8_t* data, size_t size)
+int bano_httpd_complete_msg
+(bano_httpd_msg_t* msg, int err, const void* data, size_t size)
 {
-  if (msg->is_header == 0)
-  {
-    msg->is_header = 1;
-    mg_send_header(msg->conn, "Content-Type", "text/html");
-  }
+  mg_send_header(msg->conn, "Content-Type", "text/html");
+  mg_send_data(msg->conn, data, size);
 
-  if (mg_write(msg->conn, data, size) != size)
-  {
-    BANO_PERROR();
-    return -1;
-  }
-
-  return 0;
-}
-
-int bano_httpd_complete(bano_httpd_msg_t* msg, int err)
-{
   pthread_mutex_lock(&msg->httpd->compl_lock);
-  *msg->compl_err = err;
+  *((volatile int*)msg->compl_err) = err;
   pthread_cond_signal(&msg->httpd->compl_cond);
   pthread_mutex_unlock(&msg->httpd->compl_lock);
   return 0;

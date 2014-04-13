@@ -707,12 +707,19 @@ static int handle_httpd_msg
   /* TODO */
 
   bano_httpd_msg_t* const msg = m;
+  size_t len;
+  static char buf[1024];
 
-#define HTTPD_MSG_CONTENTS "<html><body>TODO</body></html>"
-#define HTTPD_MSG_SIZE (sizeof(HTTPD_MSG_CONTENTS) - 1)
+#define HTTPD_MSG_HEADER "<html><body>"
+#define HTTPD_MSG_FOOTER "</body></html>"
 
-  bano_httpd_write(msg, (const uint8_t*)HTTPD_MSG_CONTENTS, HTTPD_MSG_SIZE);
-  bano_httpd_complete(msg, 0);
+  len = 0;
+
+  len += sprintf(buf + len, "%s", HTTPD_MSG_HEADER);
+  len += sprintf(buf + len, "key == %u", msg->key);
+  len += sprintf(buf + len, "%s", HTTPD_MSG_FOOTER);
+
+  bano_httpd_complete_msg(msg, 0, buf, len);
 
   return 0;
 }

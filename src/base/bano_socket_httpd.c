@@ -29,7 +29,7 @@ static int do_read(void* p, void* m)
 
 static int do_peek(void* p, void* m)
 {
-  return 0;
+  return -1;
 }
 
 static int do_close(void* p)
