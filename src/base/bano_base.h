@@ -129,6 +129,7 @@ int bano_open(bano_base_t*, const bano_base_info_t*);
 int bano_close(bano_base_t*);
 int bano_add_socket(bano_base_t*, const bano_socket_info_t*);
 int bano_add_node(bano_base_t*, const bano_node_info_t*);
+int bano_find_node_by_addr(bano_base_t*, uint32_t, bano_node_t**);
 int bano_start_loop(bano_base_t*, const bano_loop_info_t*);
 bano_io_t* bano_alloc_get_io(uint16_t, bano_compl_fn_t, void*);
 bano_io_t* bano_alloc_set_io

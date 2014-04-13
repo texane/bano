@@ -43,6 +43,7 @@ typedef struct bano_httpd_msg
   uint32_t naddr;
   uint16_t key;
   uint32_t val;
+  uint32_t is_ack;
   bano_httpd_t* httpd;
   struct mg_connection* conn;
   int* compl_err;

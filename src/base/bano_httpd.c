@@ -58,6 +58,9 @@ static int on_event(struct mg_connection* conn, enum mg_event ev)
       mg_get_var(conn, "val", buf, sizeof(buf));
       str_to_uint32(buf, &msg.val);
 
+      mg_get_var(conn, "is_ack", buf, sizeof(buf));
+      str_to_uint32(buf, &msg.is_ack);
+
       msg.httpd = httpd;
       msg.conn = conn;
       msg.compl_err = (int*)&compl_err;

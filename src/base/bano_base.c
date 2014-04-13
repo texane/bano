@@ -476,6 +476,37 @@ int bano_add_node(bano_base_t* base, const bano_node_info_t* info)
   return -1;
 }
 
+
+static int cmp_node_addr(bano_list_item_t* li, void* p)
+{
+  const bano_node_t* const node = li->data;
+  const uint32_t addr = (uint32_t)((uintptr_t*)p)[0];
+
+  if (node->addr != addr) return 0;
+
+  /* node found */
+  ((uintptr_t*)p)[1] = (uintptr_t)node;
+  return -1;
+}
+
+static bano_node_t* find_node_by_addr(bano_list_t* nodes, uint32_t addr)
+{
+  uintptr_t data[2];
+
+  data[0] = (uintptr_t)addr;
+  data[1] = (uintptr_t)NULL;
+  bano_list_foreach(nodes, cmp_node_addr, data);
+
+  return (bano_node_t*)data[1];
+}
+
+int bano_find_node_by_addr
+(bano_base_t* base, uint32_t addr, bano_node_t** nodep)
+{
+  *nodep = find_node_by_addr(&base->nodes, addr);
+  return *nodep == NULL ? -1 : 0;
+}
+
 int bano_post_io(bano_base_t* base, bano_node_t* node, bano_io_t* io)
 {
   if (bano_list_add_tail(&node->posted_ios, io))
@@ -611,29 +642,6 @@ static int handle_get_msg
   return 0;
 }
 
-static int cmp_node_addr(bano_list_item_t* li, void* p)
-{
-  const bano_node_t* const node = li->data;
-  const uint32_t addr = (uint32_t)((uintptr_t*)p)[0];
-
-  if (node->addr != addr) return 0;
-
-  /* node found */
-  ((uintptr_t*)p)[1] = (uintptr_t)node;
-  return -1;
-}
-
-static bano_node_t* find_node_by_addr(bano_list_t* nodes, uint32_t addr)
-{
-  uintptr_t data[2];
-
-  data[0] = (uintptr_t)addr;
-  data[1] = (uintptr_t)NULL;
-  bano_list_foreach(nodes, cmp_node_addr, data);
-
-  return (bano_node_t*)data[1];
-}
-
 typedef int (*msg_handler_t)(prw_msg_data_t*, bano_socket_t*, void*);
 
 static int handle_bano_msg
@@ -701,30 +709,137 @@ static int handle_bano_msg
 
 #ifdef BANO_CONFIG_HTTPD
 
+/* httpd message handler */
+
+struct httpd_op_data
+{
+  bano_base_t* base;
+  bano_httpd_msg_t* msg;
+};
+
+static void complete_httpd_msg
+(bano_httpd_msg_t* msg, bano_base_t* base, int err)
+{
+#define HTML_HEADER "<html><body>"
+#define HTML_FOOTER "</body></html>"
+
+  static char html_data[4096];
+  size_t html_size;
+
+  html_size = 0;
+
+  html_size += sprintf(html_data + html_size, "%s", HTML_HEADER);
+  html_size += sprintf(html_data + html_size, "TODO (%d)", err);
+  html_size += sprintf(html_data + html_size, "%s", HTML_FOOTER);
+
+  bano_httpd_complete_msg(msg, 0, html_data, html_size);
+}
+
+static int on_httpd_io_compl(bano_io_t* io, void* p)
+{
+  struct httpd_op_data* const hod = p;
+  int err;
+
+  if (io->compl_err != BANO_IO_ERR_SUCCESS)
+  {
+    BANO_PERROR();
+    err = -1;
+  }
+  else
+  {
+    err = 0;
+  }
+
+  complete_httpd_msg(hod->msg, hod->base, err);
+
+  free(hod);
+
+  return 0;
+}
+
 static int handle_httpd_msg
 (prw_msg_data_t* prwmd, bano_socket_t* socket, void* m)
 {
-  /* TODO */
-
   bano_httpd_msg_t* const msg = m;
-  size_t len;
-  static char buf[1024];
+  int err = 0;
 
-#define HTTPD_MSG_HEADER "<html><body>"
-#define HTTPD_MSG_FOOTER "</body></html>"
+  switch (msg->op)
+  {
+  case BANO_HTTPD_MSG_OP_GET:
+  case BANO_HTTPD_MSG_OP_SET:
+    {
+      const uint32_t naddr = msg->naddr;
+      const uint16_t key = msg->key;
+      const uint32_t val = msg->val;
+      const unsigned int is_ack = (unsigned int)msg->is_ack;
 
-  len = 0;
+      struct httpd_op_data* hod;
+      bano_node_t* node;
+      bano_io_t* io;
 
-  len += sprintf(buf + len, "%s", HTTPD_MSG_HEADER);
-  len += sprintf(buf + len, "key == %u", msg->key);
-  len += sprintf(buf + len, "%s", HTTPD_MSG_FOOTER);
+      if (bano_find_node_by_addr(prwmd->base, naddr, &node))
+      {
+	BANO_PERROR();
+	goto on_error_0;
+      }
 
-  bano_httpd_complete_msg(msg, 0, buf, len);
+      hod = malloc(sizeof(struct httpd_op_data));
+      if (hod == NULL)
+      {
+	BANO_PERROR();
+	goto on_error_0;
+      }
+
+      hod->base = prwmd->base;
+      hod->msg = msg;
+
+      if (msg->op == BANO_HTTPD_MSG_OP_SET)
+      {
+	io = bano_alloc_set_io(key, val, is_ack, on_httpd_io_compl, hod);
+      }
+      else
+      {
+	io = bano_alloc_get_io(key, on_httpd_io_compl, hod);
+      }
+
+      if (io == NULL)
+      {
+	BANO_PERROR();
+	goto on_error_1;
+      }
+
+      if (bano_post_io(prwmd->base, node, io))
+      {
+	BANO_PERROR();
+	goto on_error_2;
+      }
+
+      break ;
+
+    on_error_2:
+      free(io);
+    on_error_1:
+      free(hod);
+    on_error_0:
+      err = -1;
+      goto on_invalid_op;
+      break ;
+    }
+
+  case BANO_HTTPD_MSG_OP_INVALID:
+  default:
+    {
+    on_invalid_op:
+      complete_httpd_msg(msg, prwmd->base, err);
+      break ;
+    }
+  }
 
   return 0;
 }
 
 #endif /* BANO_CONFIG_HTTPD */
+
 
 /* event loop, process pending messages */
 
