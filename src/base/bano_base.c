@@ -403,6 +403,7 @@ int bano_close(bano_base_t* base)
   bano_timer_fini(&base->timers);
   bano_list_fini(&base->nodes, free_node_item, NULL);
   bano_list_fini(&base->sockets, free_socket_item, base);
+
   return 0;
 }
 

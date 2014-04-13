@@ -18,7 +18,6 @@ static int free_io_item(bano_list_item_t* li, void* p)
 
 static int free_pair_item(bano_list_item_t* li, void* p)
 {
-  free(li->data);
   return 0;
 }
 
