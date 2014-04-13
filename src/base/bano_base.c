@@ -593,6 +593,16 @@ static int handle_set_msg
   const uint16_t key = le_to_uint16(msg->u.set.key);
   const uint32_t val = le_to_uint32(msg->u.set.val);
 
+  /* add to node pairs before possibly completing (generating html ...) */
+
+  if ((msg->hdr.flags & BANO_MSG_FLAG_ERR) == 0)
+  {
+    if (bano_dict_set_or_add(&node->keyval_pairs, key, val))
+    {
+      BANO_PERROR();
+    }
+  }
+
   if (msg->hdr.flags & BANO_MSG_FLAG_REPLY)
   {
     /* this is a reply, check pending messages */
@@ -627,16 +637,6 @@ static int handle_set_msg
     io.msg.u.set.key = msg->u.set.key;
     io.msg.u.set.val = msg->u.set.val;
     prwmd->linfo->set_fn(prwmd->linfo->user_data, node, &io);
-  }
-
-  /* add to node pairs */
-
-  if ((msg->hdr.flags & BANO_MSG_FLAG_ERR) == 0)
-  {
-    if (bano_dict_set_or_add(&node->keyval_pairs, key, val))
-    {
-      BANO_PERROR();
-    }
   }
 
   return 0;
@@ -806,6 +806,7 @@ struct httpd_op_data
 {
   bano_base_t* base;
   bano_httpd_msg_t* msg;
+  bano_httpd_msg_t msg_stor;
 };
 
 static void complete_httpd_msg
@@ -843,8 +844,6 @@ static int on_httpd_io_compl(bano_io_t* io, void* p)
   struct httpd_op_data* const hod = p;
   int err;
 
-  printf("%s\n", __FUNCTION__); fflush(stdout);
-
   if (io->compl_err != BANO_IO_ERR_SUCCESS)
   {
     BANO_PERROR();
@@ -855,11 +854,7 @@ static int on_httpd_io_compl(bano_io_t* io, void* p)
     err = 0;
   }
 
-  printf("%s %u\n", __FUNCTION__, __LINE__); fflush(stdout);
-
   complete_httpd_msg(hod->msg, hod->base, err);
-
-  printf("%s %u\n", __FUNCTION__, __LINE__); fflush(stdout);
 
   free(hod);
 
@@ -900,7 +895,8 @@ static int handle_httpd_msg
       }
 
       hod->base = prwmd->base;
-      hod->msg = msg;
+      memcpy(&hod->msg_stor, msg, sizeof(bano_httpd_msg_t));
+      hod->msg = &hod->msg_stor;
 
       if (msg->op == BANO_HTTPD_MSG_OP_SET)
       {
@@ -1099,7 +1095,8 @@ static int post_io(bano_list_item_t* li, void* p)
   }
   else
   {
-    /* destroy the io */
+    /* complete and destroy the io */
+    if (io->compl_fn != NULL) io->compl_fn(io, io->compl_data);
     bano_free_io(io);
   }
 
@@ -1331,7 +1328,7 @@ bano_io_t* bano_alloc_get_io
 
   bano_init_common_io(io, fn, data);
 
-    /* default values: wait for 2s, retry 3 times */
+  /* default values: wait for 2s, retry 3 times */
   io->flags |= BANO_IO_FLAG_REPLY;
   io->retry_ms = 2000;
   io->retry_count = 3;
