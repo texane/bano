@@ -5,6 +5,7 @@
 #include <string.h>
 #include <pthread.h>
 #include "bano_perror.h"
+#include "bano_socket.h"
 #include "bano_httpd.h"
 #include "mongoose.h"
 
@@ -65,7 +66,7 @@ static int on_event(struct mg_connection* conn, enum mg_event ev)
       {
 	BANO_PERROR();
 	mg_send_header(conn, "Content-Type", "text/plain");
-	mg_printf_data(conn, "fatal error\n");
+	mg_printf_data(conn, "base communication error\n");
 	break ;
       }
 
@@ -110,8 +111,19 @@ static void* server_thread_entry(void* p)
 
 int bano_httpd_init(bano_httpd_t* httpd, const bano_httpd_info_t* info)
 {
+  bano_socket_info_t socket_info;
+  bano_socket_t* socket;
   char buf[32];
   uint16_t port;
+
+  bano_socket_init_info(&socket_info);
+  socket_info.type = BANO_SOCKET_TYPE_HTTPD;
+  socket_info.u.httpd = httpd;
+  if (bano_socket_alloc(&socket, &socket_info))
+  {
+    BANO_PERROR();
+    goto on_error_0;
+  }
 
   httpd->base = info->base;
   httpd->is_done = 0;
@@ -119,26 +131,26 @@ int bano_httpd_init(bano_httpd_t* httpd, const bano_httpd_info_t* info)
   if (pipe(httpd->msg_pipe))
   {
     BANO_PERROR();
-    goto on_error_0;
+    goto on_error_1;
   }
 
   if (pthread_mutex_init(&httpd->compl_lock, NULL))
   {
     BANO_PERROR();
-    goto on_error_1;
+    goto on_error_2;
   }
 
   if (pthread_cond_init(&httpd->compl_cond, NULL))
   {
     BANO_PERROR();
-    goto on_error_2;
+    goto on_error_3;
   }
 
   httpd->server = mg_create_server((void*)httpd, on_event);
   if (httpd->server == NULL)
   {
     BANO_PERROR();
-    goto on_error_3;
+    goto on_error_4;
   }
 
   if (info->flags & BANO_HTTPD_FLAG_PORT) port = info->port;
@@ -149,13 +161,15 @@ int bano_httpd_init(bano_httpd_t* httpd, const bano_httpd_info_t* info)
 
   return 0;
 
- on_error_3:
+ on_error_4:
   pthread_cond_destroy(&httpd->compl_cond);
- on_error_2:
+ on_error_3:
   pthread_mutex_destroy(&httpd->compl_lock);
- on_error_1:
+ on_error_2:
   close(httpd->msg_pipe[0]);
   close(httpd->msg_pipe[1]);
+ on_error_1:
+  bano_socket_free(socket, info->base);
  on_error_0:
   return -1;
 }

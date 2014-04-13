@@ -51,7 +51,7 @@ static int on_node_print(void* p, bano_node_t* node, unsigned int reason)
 
   printf("-- node\n");
   printf(". reason: 0x%08x\n", reason);
-  printf(". addr  : 0x%08x\n", bano_get_node_addr(node));
+  printf(". addr  : 0x%08x\n", bano_node_get_addr(node));
   printf("\n");
 
   return 0;
@@ -95,7 +95,7 @@ static int on_node_get(void* p, bano_node_t* node, unsigned int reason)
 
   printf("%s\n", __FUNCTION__);
 
-  if (bano_get_node_addr(node) != naddr)
+  if (bano_node_get_addr(node) != naddr)
   {
     BANO_PERROR();
     return 0;
@@ -170,7 +170,7 @@ static int on_node_set(void* p, bano_node_t* node, unsigned int reason)
 
   printf("%s\n", __FUNCTION__);
 
-  if (bano_get_node_addr(node) != naddr) return 0;
+  if (bano_node_get_addr(node) != naddr) return 0;
 
   if (reason != BANO_NODE_REASON_NEW)
   {

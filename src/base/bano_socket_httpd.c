@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <unistd.h>
 #include "bano_perror.h"
 #include "bano_socket.h"
 #include "bano_httpd.h"
@@ -11,28 +12,24 @@ typedef struct socket_httpd
 } socket_httpd_t;
 
 
-static int do_read(void* p, bano_msg_t* bano_msg)
+static int do_read(void* p, void* m)
 {
-  BANO_PERROR();
-  return -1;
+  socket_httpd_t* const socket = p;
+  bano_httpd_msg_t* const msg = m;
+  const int fd = socket->httpd->msg_pipe[0];
+
+  if (read(fd, msg, sizeof(bano_httpd_msg_t)) != sizeof(bano_httpd_msg_t))
+  {
+    BANO_PERROR();
+    return -1;
+  }
+
+  return 0;
 }
 
-static int do_peek(void* p, bano_msg_t* bano_msg)
+static int do_peek(void* p, void* m)
 {
-  BANO_PERROR();
-  return -1;
-}
-
-static int do_write(void* p, uint32_t addr, const bano_msg_t* m)
-{
-  BANO_PERROR();
-  return -1;
-}
-
-static int do_ctl(void* p, unsigned int k, unsigned int v)
-{
-  BANO_PERROR();
-  return -1;
+  return 0;
 }
 
 static int do_close(void* p)
@@ -60,8 +57,6 @@ int bano_socket_httpd_open(bano_socket_t* socket, bano_httpd_t* httpd)
 
   socket->read_fn = do_read;
   socket->peek_fn = do_peek;
-  socket->write_fn = do_write;
-  socket->ctl_fn = do_ctl;
   socket->close_fn = do_close;
   socket->get_fd_fn = do_get_fd;
   socket->data = hs;

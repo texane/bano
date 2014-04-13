@@ -1,19 +1,20 @@
 #include <stdlib.h>
 #include <string.h>
-#include "../common/bano_common.h"
 #include "bano_socket.h"
 #include "bano_perror.h"
+#include "../common/bano_common.h"
 #include "snrf.h"
 #include "snrf_common.h"
 
 
-static int do_read(void* p, bano_msg_t* bano_msg)
+static int do_read(void* p, void* m)
 {
   /* return 0 on success, bano_msg filled */
   /* return -1 on error */
   /* return -2 if message partially read or not of interest */
 
   snrf_handle_t* const snrf = p;
+  bano_msg_t* const bano_msg = m;
   snrf_msg_t snrf_msg;
   int err;
 
@@ -38,9 +39,10 @@ static int do_read(void* p, bano_msg_t* bano_msg)
   return err;
 }
 
-static int do_peek(void* p, bano_msg_t* bano_msg)
+static int do_peek(void* p, void* m)
 {
   snrf_handle_t* const snrf = p;
+  bano_msg_t* const bano_msg = m;
   snrf_msg_t snrf_msg;
 
   while (snrf_get_pending_msg(snrf, &snrf_msg) == 0)
@@ -55,7 +57,7 @@ static int do_peek(void* p, bano_msg_t* bano_msg)
   return -1;
 }
 
-static int do_write(void* p, uint32_t addr, const bano_msg_t* m)
+static int do_write(void* p, uint32_t addr, const void* m)
 {
   snrf_handle_t* const snrf = p;
   int err = -1;

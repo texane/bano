@@ -8,6 +8,7 @@
 #include "bano_dict.h"
 #include "bano_timer.h"
 #include "bano_socket.h"
+#include "bano_node.h"
 #include "bano_cipher.h"
 #include "../common/bano_common.h"
 
@@ -18,7 +19,6 @@
 
 /* forward decls */
 
-struct bano_node;
 struct bano_io;
 struct bano_socket;
 struct bano_socket_info;
@@ -26,13 +26,13 @@ struct bano_socket_info;
 
 /* functions pointer defs */
 
-typedef int (*bano_set_fn_t)(void*, struct bano_node*, struct bano_io*);
-typedef int (*bano_get_fn_t)(void*, struct bano_node*, struct bano_io*);
+typedef int (*bano_set_fn_t)(void*, bano_node_t*, struct bano_io*);
+typedef int (*bano_get_fn_t)(void*, bano_node_t*, struct bano_io*);
 typedef int (*bano_timer_fn_t)(void*);
 typedef int (*bano_compl_fn_t)(struct bano_io*, void*);
 #define BANO_NODE_REASON_NEW 0
 #define BANO_NODE_REASON_UNREACH 1
-typedef int (*bano_node_fn_t)(void*, struct bano_node*, unsigned int);
+typedef int (*bano_node_fn_t)(void*, bano_node_t*, unsigned int);
 
 
 /* loop infos */
@@ -61,7 +61,7 @@ typedef struct
 
 typedef struct bano_io
 {
-  struct bano_node* node;
+  bano_node_t* node;
 
   /* io flags */
 #define BANO_IO_FLAG_REPLY (1 << 0)
@@ -89,41 +89,6 @@ typedef struct bano_io
   bano_msg_t msg;
 
 } bano_io_t;
-
-
-/* node context */
-
-typedef struct bano_node
-{
-  /* valid: BANO_NODE_FLAG_CIPHER */
-  uint32_t flags;
-
-  uint32_t addr;
-
-  bano_socket_t* socket;
-
-  bano_list_t posted_ios;
-  bano_list_t pending_ios;
-
-  bano_dict_t keyval_pairs;
-
-  /* TODO: bano_nodl_t* nodl; */
-
-} bano_node_t;
-
-typedef struct bano_node_info
-{
-#define BANO_NODE_FLAG_ADDR (1 << 0)
-#define BANO_NODE_FLAG_SEED (1 << 1)
-#define BANO_NODE_FLAG_NODL_ID (1 << 2)
-#define BANO_NODE_FLAG_CIPHER (1 << 3)
-#define BANO_NODE_FLAG_SOCKET (1 << 4)
-  uint32_t flags;
-  uint32_t addr;
-  uint32_t seed;
-  uint32_t nodl_id;
-  bano_socket_t* socket;
-} bano_node_info_t;
 
 
 /* base context */
@@ -174,11 +139,6 @@ int bano_post_io(bano_base_t*, bano_node_t*, bano_io_t*);
 
 /* static inlined */
 
-static inline uint32_t bano_get_node_addr(bano_node_t* node)
-{
-  return node->addr;
-}
-
 static inline void bano_init_base_info(bano_base_info_t* i)
 {
   i->flags = 0;
@@ -192,16 +152,6 @@ static inline void bano_init_loop_info(bano_loop_info_t* i)
   i->get_fn = NULL;
   i->node_fn = NULL;
   i->timer_fn = NULL;
-}
-
-static inline void bano_init_socket_info(bano_socket_info_t* i)
-{
-  i->type = BANO_SOCKET_TYPE_INVALID;
-}
-
-static inline void bano_init_node_info(bano_node_info_t* i)
-{
-  i->flags = 0;
 }
 
 static inline void bano_set_io_error(bano_io_t* io, unsigned int err)

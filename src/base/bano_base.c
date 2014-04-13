@@ -6,17 +6,17 @@
 #include <sys/select.h>
 #include <sys/time.h>
 #include "bano_base.h"
+#include "bano_node.h"
 #include "bano_socket.h"
 #include "bano_timer.h"
 #include "bano_list.h"
 #include "bano_dict.h"
-#include "bano_parser.h"
-#include "bano_perror.h"
-#include "../common/bano_common.h"
-
 #ifdef BANO_CONFIG_HTTPD
 #include "bano_httpd.h"
 #endif /* BANO_CONFIG_HTTPD */
+#include "bano_parser.h"
+#include "bano_perror.h"
+#include "../common/bano_common.h"
 
 
 /* conversion routines */
@@ -41,100 +41,20 @@ static inline uint32_t le_to_uint32(uint32_t x)
   return x;
 }
 
-/* io related routines */
-
-static void free_io(bano_io_t* io)
-{
-  free(io);
-}
-
-static int free_io_item(bano_list_item_t* li, void* p)
-{
-  bano_io_t* const io = li->data;
-  free_io(io);
-  return 0;
-}
-
-/* pair routines */
-
-static int free_pair_item(bano_list_item_t* li, void* p)
-{
-  free(li->data);
-  return 0;
-}
-
-/* node related routines */
-
-static bano_node_t* alloc_node(void)
-{
-  bano_node_t* const node = malloc(sizeof(bano_node_t));
-  if (node == NULL) return NULL;
-  node->flags = 0;
-  bano_list_init(&node->posted_ios);
-  bano_list_init(&node->pending_ios);
-  bano_dict_init(&node->keyval_pairs);
-  return node;
-}
-
-static void free_node(bano_node_t* node)
-{
-  bano_list_fini(&node->posted_ios, free_io_item, NULL);
-  bano_list_fini(&node->pending_ios, free_io_item, NULL);
-  bano_dict_fini(&node->keyval_pairs, free_pair_item, NULL);
-  free(node);
-}
+/* list item freeing routines */
 
 static int free_node_item(bano_list_item_t* li, void* p)
 {
   bano_node_t* const node = li->data;
-  free_node(node);
+  bano_node_free(node);
   return 0;
-}
-
-/* socket related routines */
-
-static bano_socket_t* alloc_socket(const bano_socket_info_t* si)
-{
-  bano_socket_t* const s = malloc(sizeof(bano_socket_t));
-
-  if (s == NULL) return NULL;
-
-  bano_socket_init(s);
-
-  switch (si->type)
-  {
-  case BANO_SOCKET_TYPE_SNRF:
-    {
-      if (bano_socket_snrf_open(s, &si->u.snrf))
-	goto on_error;
-      break ;
-    }
-
-  default:
-    {
-    on_error:
-      BANO_PERROR();
-      free(s);
-      return NULL;
-      break ;
-    }
-  }
-
-  return s;
-}
-
-static void free_socket(bano_socket_t* socket, bano_base_t* base)
-{
-  bano_list_foreach(&base->nodes, free_node_item, base);
-  bano_socket_close(socket);
-  free(socket);
 }
 
 static int free_socket_item(bano_list_item_t* li, void* p)
 {
   bano_socket_t* const socket = li->data;
   bano_base_t* const base = p;
-  free_socket(socket, base);
+  bano_socket_free(socket, base);
   return 0;
 }
 
@@ -356,7 +276,7 @@ static int apply_struct(bano_list_item_t* it, void* p)
   {
     bano_socket_info_t* const sinfo = &ad->u.socket_info;
 
-    bano_init_socket_info(sinfo);
+    bano_socket_init_info(sinfo);
     bano_parser_foreach_pair(strukt, apply_socket_pair, ad);
 
     if (ad->err) goto on_error;
@@ -490,8 +410,7 @@ int bano_add_socket(bano_base_t* base, const bano_socket_info_t* si)
 {
   bano_socket_t* s;
 
-  s = alloc_socket(si);
-  if (s == NULL)
+  if (bano_socket_alloc(&s, si))
   {
     BANO_PERROR();
     goto on_error_0;
@@ -508,7 +427,7 @@ int bano_add_socket(bano_base_t* base, const bano_socket_info_t* si)
   return 0;
 
  on_error_1:
-  free_socket(s, base);
+  bano_socket_free(s, base);
  on_error_0:
   return -1;
 }
@@ -529,8 +448,7 @@ int bano_add_node(bano_base_t* base, const bano_node_info_t* info)
     goto on_error_0;
   }
 
-  node = alloc_node();
-  if (node == NULL)
+  if (bano_node_alloc(&node))
   {
     BANO_PERROR();
     goto on_error_0;
@@ -553,7 +471,7 @@ int bano_add_node(bano_base_t* base, const bano_node_info_t* info)
   return 0;
 
  on_error_1:
-  free_node(node);
+  bano_node_free(node);
  on_error_0:
   return -1;
 }
@@ -663,7 +581,7 @@ static int handle_set_msg
       }
 
       bano_timer_del(&prwmd->base->timers, io->timer);
-      free_io(io);
+      bano_free_io(io);
     }
   }
   else if (prwmd->linfo->set_fn != NULL)
@@ -716,10 +634,13 @@ static bano_node_t* find_node_by_addr(bano_list_t* nodes, uint32_t addr)
   return (bano_node_t*)data[1];
 }
 
-static int handle_msg
-(prw_msg_data_t* prwmd, bano_socket_t* socket, bano_msg_t* msg)
+typedef int (*msg_handler_t)(prw_msg_data_t*, bano_socket_t*, void*);
+
+static int handle_bano_msg
+(prw_msg_data_t* prwmd, bano_socket_t* socket, void* m)
 {
   const bano_loop_info_t* const linfo = prwmd->linfo;
+  bano_msg_t* const msg = m;
   uint32_t saddr;
   bano_node_t* node;
   int err = 0;
@@ -735,8 +656,7 @@ static int handle_msg
   if (node == NULL)
   {
     /* new node */
-    node = alloc_node();
-    if (node == NULL)
+    if (bano_node_alloc(&node))
     {
       BANO_PERROR();
       return -1;
@@ -748,7 +668,7 @@ static int handle_msg
     if (bano_list_add_tail(&prwmd->base->nodes, node))
     {
       BANO_PERROR();
-      free_node(node);
+      bano_node_free(node);
       return -1;
     }
 
@@ -778,17 +698,61 @@ static int handle_msg
   return err;
 }
 
+
+#ifdef BANO_CONFIG_HTTPD
+
+static int handle_httpd_msg
+(prw_msg_data_t* prwmd, bano_socket_t* socket, void* m)
+{
+  /* TODO */
+
+  bano_httpd_msg_t* const msg = m;
+
+#define HTTPD_MSG_CONTENTS "<html><body>TODO</body></html>"
+#define HTTPD_MSG_SIZE (sizeof(HTTPD_MSG_CONTENTS) - 1)
+
+  bano_httpd_write(msg, (const uint8_t*)HTTPD_MSG_CONTENTS, HTTPD_MSG_SIZE);
+  bano_httpd_complete(msg, 0);
+
+  return 0;
+}
+
+#endif /* BANO_CONFIG_HTTPD */
+
 /* event loop, process pending messages */
 
 static int peek_msg(bano_list_item_t* li, void* p)
 {
   bano_socket_t* const socket = li->data;
   struct prw_msg_data* const prwmd = p;
-  bano_msg_t msg;
+#ifdef BANO_CONFIG_HTTPD
+  bano_httpd_msg_t httpd_msg;
+#endif /* BANO_CONFIG_HTTPD */
+  bano_msg_t bano_msg;
+  void* msg;
+  msg_handler_t handle_msg;
 
-  while (bano_socket_peek(socket, &msg) == 0)
+  if (socket->type == BANO_SOCKET_TYPE_SNRF)
   {
-    handle_msg(prwmd, socket, &msg);
+    msg = &bano_msg;
+    handle_msg = handle_bano_msg;
+  }
+#ifdef BANO_CONFIG_HTTPD
+  else if (socket->type == BANO_SOCKET_TYPE_HTTPD)
+  {
+    msg = &httpd_msg;
+    handle_msg = handle_httpd_msg;
+  }
+#endif /* BANO_CONFIG_HTTPD */
+  else
+  {
+    BANO_PERROR();
+    return 0;
+  }
+
+  while (bano_socket_peek(socket, msg) == 0)
+  {
+    handle_msg(prwmd, socket, msg);
   }
 
   return 0;
@@ -802,7 +766,12 @@ static int read_msg(bano_list_item_t* li, void* p)
   const int fd = bano_socket_get_fd(socket);
   struct prw_msg_data* const prwmd = p;
   int err;
-  bano_msg_t msg;
+#ifdef BANO_CONFIG_HTTPD
+  bano_httpd_msg_t httpd_msg;
+#endif /* BANO_CONFIG_HTTPD */
+  bano_msg_t bano_msg;
+  void* msg;
+  msg_handler_t handle_msg;
 
   if (FD_ISSET(fd, prwmd->fds) == 0) return 0;
 
@@ -812,7 +781,25 @@ static int read_msg(bano_list_item_t* li, void* p)
   /* TODO: between end of file, wouldblock ... */
   /* TODO: for now, assume closed on error */
 
-  err = bano_socket_read(socket, &msg);
+  if (socket->type == BANO_SOCKET_TYPE_SNRF)
+  {
+    msg = &bano_msg;
+    handle_msg = handle_bano_msg;
+  }
+#ifdef BANO_CONFIG_HTTPD
+  else if (socket->type == BANO_SOCKET_TYPE_HTTPD)
+  {
+    msg = &httpd_msg;
+    handle_msg = handle_httpd_msg;
+  }
+#endif /* BANO_CONFIG_HTTPD */
+  else
+  {
+    BANO_PERROR();
+    return 0;
+  }
+
+  err = bano_socket_read(socket, msg);
   if (err == -2)
   {
     /* msg partially filled, redo select */
@@ -822,12 +809,12 @@ static int read_msg(bano_list_item_t* li, void* p)
   if (err)
   {
     BANO_PERROR();
-    free_socket(socket, prwmd->base);
+    bano_socket_free(socket, prwmd->base);
     bano_list_del(&prwmd->base->sockets, li);
     return 0;
   }
 
-  handle_msg(prwmd, socket, &msg);
+  handle_msg(prwmd, socket, msg);
 
   return 0;
 }
@@ -859,7 +846,7 @@ static int post_io(bano_list_item_t* li, void* p)
   if (bano_socket_write(pid->node->socket, pid->node->addr, &enc_msg))
   {
     BANO_PERROR();
-    free_socket(pid->node->socket, pid->base);
+    bano_socket_free(pid->node->socket, pid->base);
     bano_list_del(&pid->base->sockets, li);
     return 0;
   }
@@ -882,7 +869,7 @@ static int post_io(bano_list_item_t* li, void* p)
   else
   {
     /* destroy the io */
-    free_io(io);
+    bano_free_io(io);
   }
 
   /* destroy list item */
@@ -1044,7 +1031,7 @@ int bano_start_loop(bano_base_t* base, const bano_loop_info_t* linfo)
 	      io->compl_err = BANO_IO_ERR_TIMEOUT;
 	      io->compl_fn(io, io->compl_data);
 	    }
-	    free_io(io);
+	    bano_free_io(io);
 	  }
 	  else
 	  {
@@ -1162,5 +1149,5 @@ bano_io_t* bano_alloc_set_io
 
 void bano_free_io(bano_io_t* io)
 {
-  free_io(io);
+  free(io);
 }

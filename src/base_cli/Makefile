@@ -6,12 +6,14 @@ REPO_DIR ?= $(HOME)/repo
 SRCS := \
 main.c \
 $(REPO_DIR)/bano/src/base/bano_base.c \
+$(REPO_DIR)/bano/src/base/bano_node.c \
 $(REPO_DIR)/bano/src/base/bano_string.c \
 $(REPO_DIR)/bano/src/base/bano_parser.c \
 $(REPO_DIR)/bano/src/base/bano_timer.c \
 $(REPO_DIR)/bano/src/base/bano_list.c \
 $(REPO_DIR)/bano/src/base/bano_dict.c \
 $(REPO_DIR)/bano/src/base/bano_cipher.c \
+$(REPO_DIR)/bano/src/base/bano_socket.c \
 $(REPO_DIR)/bano/src/base/bano_socket_snrf.c
 
 CFLAGS += -I.

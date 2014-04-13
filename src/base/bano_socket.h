@@ -5,23 +5,35 @@
 #include <stdint.h>
 #include "bano_perror.h"
 
-#ifdef BANO_CONFIG_HTTPD
-#include "bano_httpd.h"
-#endif /* BANO_CONFIG_HTTPD */
-
 
 /* fwd decls */
 
-struct bano_msg;
+struct bano_base;
 struct bano_node;
+#ifdef BANO_CONFIG_HTTPD
+struct bano_httpd;
+#endif /* BANO_CONFIG_HTTPD */
 
 /* socket abstraction layer */
 
+typedef enum
+{
+  BANO_SOCKET_TYPE_SNRF = 0,
+
+#ifdef BANO_CONFIG_HTTPD
+  BANO_SOCKET_TYPE_HTTPD,
+#endif /* BANO_CONFIG_HTTPD */
+
+  BANO_SOCKET_TYPE_INVALID
+} bano_socket_type_t;
+
+
 typedef struct bano_socket
 {
-  int (*read_fn)(void*, struct bano_msg*);
-  int (*peek_fn)(void*, struct bano_msg*);
-  int (*write_fn)(void*, uint32_t, const struct bano_msg*);
+  bano_socket_type_t type;
+  int (*read_fn)(void*, void*);
+  int (*peek_fn)(void*, void*);
+  int (*write_fn)(void*, uint32_t, const void*);
   int (*ctl_fn)(void*, unsigned int, unsigned int);
   int (*close_fn)(void*);
   int (*get_fd_fn)(void*);
@@ -29,13 +41,7 @@ typedef struct bano_socket
 } bano_socket_t;
 
 
-/* per socket type information */
-
-typedef enum
-{
-  BANO_SOCKET_TYPE_SNRF = 0,
-  BANO_SOCKET_TYPE_INVALID
-} bano_socket_type_t;
+/* socket info */
 
 typedef struct
 {
@@ -43,8 +49,6 @@ typedef struct
   size_t addr_width;
   uint32_t addr_val;
 } bano_snrf_info_t;
-
-/* socket info */
 
 typedef struct bano_socket_info
 {
@@ -55,7 +59,7 @@ typedef struct bano_socket_info
     bano_snrf_info_t snrf;
 
 #ifdef BANO_CONFIG_HTTPD
-    bano_httpd_t* httpd;
+    struct bano_httpd* httpd;
 #endif /* BANO_CONFIG_HTTPD */
 
   } u;
@@ -65,75 +69,25 @@ typedef struct bano_socket_info
 
 /* exported */
 
+int bano_socket_alloc(bano_socket_t**, const bano_socket_info_t*);
+int bano_socket_free(bano_socket_t*, struct bano_base*);
 int bano_socket_snrf_open(bano_socket_t*, const bano_snrf_info_t*);
-
 #ifdef BANO_CONFIG_HTTPD
-int bano_socket_httpd_open(bano_socket_t*, bano_httpd_t*);
+int bano_socket_httpd_open(bano_socket_t*, struct bano_httpd*);
 #endif /* BANO_CONFIG_HTTPD */
 
-/* static inline */
-
-static int bano_socket_unimpl_read(void* p, struct bano_msg* m)
-{
-  BANO_PERROR();
-  return -1;
-}
-
-static int bano_socket_unimpl_peek(void* p, struct bano_msg* m)
-{
-  BANO_PERROR();
-  return -1;
-}
-
-static int bano_socket_unimpl_write
-(void* p, uint32_t x, const struct bano_msg* m)
-{
-  BANO_PERROR();
-  return -1;
-}
-
-static int bano_socket_unimpl_ctl(void* p, unsigned int k, unsigned int v)
-{
-  BANO_PERROR();
-  return -1;
-}
-
-static int bano_socket_unimpl_close(void* p)
-{
-  BANO_PERROR();
-  return -1;
-}
-
-static int bano_socket_unimpl_get_fd(void* p)
-{
-  BANO_PERROR();
-  return -1;
-}
-
-static inline int bano_socket_init(bano_socket_t* s)
-{
-  s->read_fn = bano_socket_unimpl_read;
-  s->peek_fn = bano_socket_unimpl_peek;
-  s->write_fn = bano_socket_unimpl_write;
-  s->ctl_fn = bano_socket_unimpl_ctl;
-  s->close_fn = bano_socket_unimpl_close;
-  s->get_fd_fn = bano_socket_unimpl_get_fd;
-  s->data = NULL;
-  return 0;
-}
-
-static inline int bano_socket_read(bano_socket_t* s, struct bano_msg* m)
+static inline int bano_socket_read(bano_socket_t* s, void* m)
 {
   return s->read_fn(s->data, m);
 }
 
-static inline int bano_socket_peek(bano_socket_t* s, struct bano_msg* m)
+static inline int bano_socket_peek(bano_socket_t* s, void* m)
 {
   return s->peek_fn(s->data, m);
 }
 
 static inline int bano_socket_write
-(bano_socket_t* s, uint32_t addr, const struct bano_msg* m)
+(bano_socket_t* s, uint32_t addr, const void* m)
 {
   return s->write_fn(s->data, addr, m);
 }
@@ -152,6 +106,11 @@ static inline int bano_socket_close(bano_socket_t* s)
 static inline int bano_socket_get_fd(bano_socket_t* s)
 {
   return s->get_fd_fn(s->data);
+}
+
+static inline void bano_socket_init_info(bano_socket_info_t* i)
+{
+  i->type = BANO_SOCKET_TYPE_INVALID;
 }
 
 
