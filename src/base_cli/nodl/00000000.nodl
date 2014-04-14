@@ -25,10 +25,20 @@ set = yes
 ack = yes
 }
 
+# set the magic key
+keyval
+{
+name = magic_seed
+key = 0x0001
+fmt = uint32
+set = yes
+get = yes
+}
+
 # periodically sent key
 keyval
 {
 name = magic_value
-key = 0x0001
+key = 0x0002
 fmt = uint32
 }
