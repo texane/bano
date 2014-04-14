@@ -15,6 +15,7 @@
 #include "bano_dict.h"
 #ifdef BANO_CONFIG_HTTPD
 #include "bano_httpd.h"
+#include "bano_html.h"
 #endif /* BANO_CONFIG_HTTPD */
 #include "bano_parser.h"
 #include "bano_perror.h"
@@ -992,9 +993,7 @@ static int handle_bano_msg
 struct gen_html_data
 {
   bano_node_t* node;
-  char* buf;
-  size_t size;
-  size_t off;
+  bano_html_t* html;
 };
 
 static int gen_pair_html(bano_list_item_t* it, void* p)
@@ -1002,10 +1001,7 @@ static int gen_pair_html(bano_list_item_t* it, void* p)
   bano_dict_pair_t* const pair = it->data;
   bano_nodl_keyval_t* const kv = (bano_nodl_keyval_t*)pair->val;
   struct gen_html_data* const ghd = p;
-
-  size_t off = ghd->off;
-  char* const buf = ghd->buf;
-  const size_t size = ghd->size;
+  bano_html_t* const html = ghd->html;
   bano_node_t* const node = ghd->node;
 
   const uint32_t naddr = bano_node_get_addr(node);
@@ -1014,23 +1010,21 @@ static int gen_pair_html(bano_list_item_t* it, void* p)
   const unsigned int is_ack = (kv->flags & BANO_NODL_FLAG_ACK) ? 1 : 0;
   const unsigned int is_set = (kv->flags & BANO_NODL_FLAG_SET) ? 1 : 0;
   const unsigned int is_get = (kv->flags & BANO_NODL_FLAG_GET) ? 1 : 0;
-
   uintptr_t val;
 
   if (bano_dict_get(&node->keyval_pairs, key, &val)) val = 0xffffffff;
 
-  off += snprintf(buf + off, size - off, "<li>");
-  off += snprintf(buf + off, size - off, "<form action='/' method='get'>\n");
-  off += snprintf(buf + off, size - off, "<input type='hidden' name='naddr' value='0x%08x' />\n", naddr);
-  off += snprintf(buf + off, size - off, "<input type='hidden' name='key' value='0x%04x' />\n", key);
-  off += snprintf(buf + off, size - off, "<input type='hidden' name='is_ack' value='%u' />\n", is_ack);
-  off += snprintf(buf + off, size - off, "%s = <input type='text' name='val' value='0x%08x' />\n", name, (uint32_t)val);
-  if (is_set) off += snprintf(buf + off, size - off, "<input type='submit' name='op' value='set' />\n");
-  if (is_get) off += snprintf(buf + off, size - off, "<input type='submit' name='op' value='get' />\n");
-  off += snprintf(buf + off, size - off, "</form>\n");
-  off += snprintf(buf + off, size - off, "</li>\n");
-
-  ghd->off = off;
+  bano_html_printf(html, "<li>");
+  bano_html_printf(html, "<form action='/' method='get'>\n");
+  bano_html_printf(html, "<input type='hidden' name='naddr' value='0x%08x' />\n", naddr);
+  bano_html_printf(html, "<input type='hidden' name='key' value='0x%04x' />\n", key);
+  bano_html_printf(html, "<input type='hidden' name='is_ack' value='%u' />\n", is_ack);
+  bano_html_printf(html, "%s = ", name);
+  bano_html_printf(html, "<input type='text' name='val' value='0x%08x' />\n", (uint32_t)val);
+  if (is_set) bano_html_printf(html, "<input type='submit' name='op' value='set' />\n");
+  if (is_get) bano_html_printf(html, "<input type='submit' name='op' value='get' />\n");
+  bano_html_printf(html, "</form>\n");
+  bano_html_printf(html, "</li>\n");
 
   return 0;
 }
@@ -1039,48 +1033,36 @@ static int gen_node_html(bano_list_item_t* it, void* p)
 {
   bano_node_t* const node = it->data;
   struct gen_html_data* const ghd = p;
-  size_t off = ghd->off;
-  char* const buf = ghd->buf;
-  const size_t size = ghd->size;
+  bano_html_t* const html = ghd->html;
   const uint32_t naddr = bano_node_get_addr(node);
 
-  off += snprintf(buf + off, size - off, "<li>\n");
-  off += snprintf(buf + off, size - off, "0x%08x\n", naddr);
-  off += snprintf(buf + off, size - off, "<ul>\n");
+  bano_html_printf(html, "<li>\n");
+  bano_html_printf(html, "0x%08x\n", naddr);
+  bano_html_printf(html, "<ul>\n");
 
   ghd->node = node;
-  ghd->off = off;
   bano_dict_foreach(&node->nodl->keyvals, gen_pair_html, ghd);
-  off = ghd->off;
 
-  off += snprintf(buf + off, size - off, "</ul>\n");
-  off += snprintf(buf + off, size - off, "</li>\n");
-
-  ghd->off = off;
+  bano_html_printf(html, "</ul>\n");
+  bano_html_printf(html, "</li>\n");
   
   return 0;
 }
 
-static size_t gen_base_html(bano_base_t* base, char* buf, size_t size)
+static void gen_base_html(bano_base_t* base, bano_html_t* html)
 {
   struct gen_html_data ghd;
-  size_t off = 0;
 
-  off += snprintf(buf + off, size - off, "<html><body>\n");
+  bano_html_printf(html, "<html><body>\n");
 
   /* node related html */
 
-  off += snprintf(buf + off, size - off, "<ul>\n");
-  ghd.buf = buf;
-  ghd.size = size;
-  ghd.off = off;
+  bano_html_printf(html, "<ul>\n");
+  ghd.html = html;
   bano_list_foreach(&base->nodes, gen_node_html, &ghd);
-  off = ghd.off;
-  off += snprintf(buf + off, size - off, "</ul>\n");
+  bano_html_printf(html, "</ul>\n");
 
-  off += snprintf(buf + off, size - off, "</body></html>\n");
-
-  return off;
+  bano_html_printf(html, "</body></html>\n");
 }
 
 
@@ -1102,26 +1084,27 @@ static void complete_httpd_msg
 #define HTML_ERR_STR "<html><body> base error </body></html>"
   static const char* error_buf = HTML_ERR_STR;
   static const size_t error_size = sizeof(HTML_ERR_STR) - 1;
-
-  char* buf;
+  const char* data;
   size_t size;
+  bano_html_t html;
 
-  size  = 8 * 1024;
-  buf = malloc(size);
+  bano_html_init(&html);
+  gen_base_html(base, &html);
 
-  if (buf == NULL)
+  if (bano_html_is_err(&html) == 0)
   {
-    BANO_PERROR();
-    buf = (char*)error_buf;
+    data = bano_html_get_data(&html);
+    size = bano_html_get_size(&html);
+  }
+  else
+  {
+    data = error_buf;
     size = error_size;
-    goto on_error;
   }
 
-  size = gen_base_html(base, buf, size);
+  bano_httpd_complete_msg(msg, 0, data, size);
 
- on_error:
-  bano_httpd_complete_msg(msg, 0, buf, size);
-  if (buf != error_buf) free(buf);
+  bano_html_fini(&html);
 }
 
 static int on_httpd_io_compl(bano_io_t* io, void* p)

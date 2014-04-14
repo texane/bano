@@ -34,6 +34,7 @@ MG_DIR ?= $(REPO_DIR)/mongoose
 SRCS += $(MG_DIR)/mongoose.c
 SRCS += $(REPO_DIR)/bano/src/base/bano_httpd.c
 SRCS += $(REPO_DIR)/bano/src/base/bano_socket_httpd.c
+SRCS += $(REPO_DIR)/bano/src/base/bano_html.c
 CFLAGS += -DBANO_CONFIG_HTTPD -I$(MG_DIR) -pthread
 LIBS += -lpthread
 
