@@ -1,5 +1,3 @@
-[ node: BANO_MSG_FLAG_ACK as returned value ]
-
 [ bug: SET message not applied ]
 
 [ base: bano html stream ]
