@@ -1056,11 +1056,15 @@ static void gen_base_html(bano_base_t* base, bano_html_t* html)
   bano_html_printf(html, "<html><body>\n");
 
   /* node related html */
-
   bano_html_printf(html, "<ul>\n");
   ghd.html = html;
   bano_list_foreach(&base->nodes, gen_node_html, &ghd);
   bano_html_printf(html, "</ul>\n");
+
+  /* refresh the page */
+  bano_html_printf(html, "<form action='/' method='get'>\n");
+  bano_html_printf(html, "<input type='submit' value='refresh' />\n");
+  bano_html_printf(html, "</form>\n");
 
   bano_html_printf(html, "</body></html>\n");
 }
