@@ -1,7 +1,5 @@
 [ bug: SET message not applied ]
 
-[ base: bano html stream ]
-
 [ node, more BANO_CONFIG_xxx to reduce size ]
 features should be statically disablable, via BANO_CONFIG_xxx
 
