@@ -1,53 +1,38 @@
-[ http server ]
-select one standalone or embedded
-if possible reuse existing software
-define an interface between bano base and the server
+[ node: BANO_MSG_FLAG_ACK as returned value ]
+
+[ bug: SET message not applied ]
+
+[ base: bano html stream ]
 
 [ node, more BANO_CONFIG_xxx to reduce size ]
 features should be statically disablable, via BANO_CONFIG_xxx
 
-[ node, dynamic feature disabling ]
+[ node: dynamic feature disabling ]
 node should be able to disable features in its own handlers.
 for instance, the alarm may want to wait for 1 message (one for
 the key), and THEN no longer listen at all
 
-[ node, per message encryption ]
+[ node: per message encryption ]
 for GET handler, BANO_MSG_FLAG_ENC could be returned enabling
 message encryption. For timer handlers, add bano_make_set_enc_msg
 
-[ make the alarm node PCB ]
+[ node: make the alarm node PCB ]
+think larger, used for prototyping
 
-[ make the NRF USB dongle PCB ]
+[ node: make the NRF USB dongle PCB ]
 should be at the same time a USB dongle, and a SPI cape
 
-[ implement default keys ]
--> the nodl_id is required. but the node may want to send it as
-a separate message to avoid the need for being in listen mode.
-for instance, the alarm node will send its nodl_id at the same
-time as the alarm status.
-
-[ implement nodl parser ]
-use alarm as test case. should allow to associate a nodl_id with
-node key set with. on the bano_node, the nodl_id is set in the
-bano_info structure and then retrieved using a default node key.
-
-[ node power measurment ]
+[ node: power measurment ]
 measure how much power needed to send a message, deduce node
 current consumption profile. use UIL
 
-[ nodl ]
-instantiate nodl db
-load nodl directory
-when a new node is detected, associate with nodl
-maintain per node information
-
-[ security token ]
+[ proto: security token ]
 uint32 token is currently unused. should be used to prevent
 replay attacks. then update protocol doc (common network master
 key ...).
 
-[ message checks ]
+[ base: message checks ]
 if node->flags & cipher and decoded or clear message flags
 are not consistent, error.
 
-[ base dynamic nodes ]
+[ base: dynamic nodes ]

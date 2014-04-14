@@ -35,6 +35,7 @@ int bano_node_alloc(bano_node_t** nodep)
   }
 
   node->flags = 0;
+  node->nodl = NULL;
   bano_list_init(&node->posted_ios);
   bano_list_init(&node->pending_ios);
   bano_dict_init(&node->keyval_pairs);
