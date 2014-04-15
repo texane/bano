@@ -1659,8 +1659,10 @@ bano_io_t* bano_alloc_get_io
 
   /* default values: wait for 2s, retry 3 times */
   io->flags |= BANO_IO_FLAG_REPLY;
-  io->retry_ms = 2000;
-  io->retry_count = 3;
+#define BANO_RETRY_MS 1700
+#define BANO_RETRY_COUNT 3
+  io->retry_ms = BANO_RETRY_MS;
+  io->retry_count = BANO_RETRY_COUNT;
 
   io->msg.hdr.op = BANO_MSG_OP_GET;
   io->msg.hdr.flags = 0;
@@ -1691,8 +1693,8 @@ bano_io_t* bano_alloc_set_io
   {
     /* default values: wait for 2s, retry 3 times */
     io->flags |= BANO_IO_FLAG_REPLY;
-    io->retry_ms = 2000;
-    io->retry_count = 3;
+    io->retry_ms = BANO_RETRY_MS;
+    io->retry_count = BANO_RETRY_COUNT;
   }
 
   io->msg.hdr.op = BANO_MSG_OP_SET;
