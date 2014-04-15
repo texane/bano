@@ -17,6 +17,7 @@ typedef struct bano_html
 int bano_html_init(bano_html_t*);
 void bano_html_fini(bano_html_t*);
 int bano_html_printf(bano_html_t*, const char*, ...);
+int bano_html_include(bano_html_t*, const char*);
 
 static inline const char* bano_html_get_data(bano_html_t* html)
 {

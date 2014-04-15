@@ -1010,21 +1010,30 @@ static int gen_pair_html(bano_list_item_t* it, void* p)
   const unsigned int is_ack = (kv->flags & BANO_NODL_FLAG_ACK) ? 1 : 0;
   const unsigned int is_set = (kv->flags & BANO_NODL_FLAG_SET) ? 1 : 0;
   const unsigned int is_get = (kv->flags & BANO_NODL_FLAG_GET) ? 1 : 0;
-  uintptr_t val;
+  uintptr_t tmp;
+  uint32_t val;
 
-  if (bano_dict_get(&node->keyval_pairs, key, &val)) val = 0xffffffff;
+  if (bano_dict_get(&node->keyval_pairs, key, &tmp)) tmp = 0xffffffff;
+  val = (uint32_t)tmp;
 
-  bano_html_printf(html, "<li>");
-  bano_html_printf(html, "<form action='/' method='get'>\n");
-  bano_html_printf(html, "<input type='hidden' name='naddr' value='0x%08x' />\n", naddr);
-  bano_html_printf(html, "<input type='hidden' name='key' value='0x%04x' />\n", key);
-  bano_html_printf(html, "<input type='hidden' name='is_ack' value='%u' />\n", is_ack);
-  bano_html_printf(html, "<div id='bano_key'> %s </div>", name);
-  bano_html_printf(html, "<input type='text' name='val' value='0x%08x' %s/>\n", (uint32_t)val, is_set ? "" : "readonly");
-  if (is_set) bano_html_printf(html, "<input type='submit' name='op' value='set' />\n");
-  if (is_get) bano_html_printf(html, "<input type='submit' name='op' value='get' />\n");
-  bano_html_printf(html, "</form>\n");
-  bano_html_printf(html, "</li>\n");
+  if (is_set || is_get)
+  {
+    /* generate post form */
+
+    bano_html_printf(html, "<form action='/?naddr=0x%08x&key=0x%04x&is_ack=%u' method='post'>\n", naddr, key, is_ack);
+    bano_html_printf(html, "<div class='bano_key'> %s </div>", name);
+    bano_html_printf(html, "<input type='text' name='val' value='0x%08x' />\n", val);
+    if (is_set) bano_html_printf(html, "<input type='submit' name='op' value='set' />\n");
+    if (is_get) bano_html_printf(html, "<input type='submit' name='op' value='get' />\n");
+    bano_html_printf(html, "</form>\n");
+  }
+  else
+  {
+    /* readonly variable */
+    bano_html_printf(html, "<div class='bano_key'> %s </div>", name);
+    bano_html_printf(html, "<div class='bano_val'> 0x%08x </div>", val);
+    bano_html_printf(html, "<br/>\n");
+  }
 
   return 0;
 }
@@ -1036,52 +1045,51 @@ static int gen_node_html(bano_list_item_t* it, void* p)
   bano_html_t* const html = ghd->html;
   const uint32_t naddr = bano_node_get_addr(node);
 
-  bano_html_printf(html, "<li>\n");
-  bano_html_printf(html, "0x%08x\n", naddr);
-  bano_html_printf(html, "<ul>\n");
+  bano_html_printf(html, "<div class='bano_box bano_node'>\n");
+
+  /* address */
+  bano_html_printf(html, "<div class='bano_key'> address </div>");
+  bano_html_printf(html, "<div class='bano_val'> 0x%08x </div>", naddr);
+  bano_html_printf(html, "<br/>\n");
 
   ghd->node = node;
   bano_dict_foreach(&node->nodl->keyvals, gen_pair_html, ghd);
 
-  bano_html_printf(html, "</ul>\n");
-  bano_html_printf(html, "</li>\n");
+  bano_html_printf(html, "</div>\n");
+  bano_html_printf(html, "<br/>\n");
   
   return 0;
 }
 
-static void gen_base_html(bano_base_t* base, bano_html_t* html)
+static void gen_base_html(bano_base_t* base, bano_html_t* html, int err)
 {
   struct gen_html_data ghd;
+  const char* const s = err ? "error" : "success";
 
+  bano_html_init(html);
   bano_html_printf(html, "<html><body>\n");
 
   /* css */
   bano_html_printf(html, "<style media='screen' type='text/css'>\n");
-  bano_html_printf(html, "input[type=text], input[type=submit]\n");
-  bano_html_printf(html, "{\n");
-  bano_html_printf(html, " border-color: black;\n");
-  bano_html_printf(html, " border-style: solid;\n");
-  bano_html_printf(html, " border-width: 1px;\n");
-  bano_html_printf(html, " font-family: helvetica, arial, sans serif;\n");
-  bano_html_printf(html, "}\n");
-
-  bano_html_printf(html, "#bano_key\n");
-  bano_html_printf(html, "{\n");
-  bano_html_printf(html, " display: inline;\n");
-  bano_html_printf(html, "}\n");
-
+  bano_html_include(html, "./conf/bano.css");
   bano_html_printf(html, "</style>\n");
 
-  /* node related html */
-  bano_html_printf(html, "<ul>\n");
+  /* nodes html */
   ghd.html = html;
   bano_list_foreach(&base->nodes, gen_node_html, &ghd);
-  bano_html_printf(html, "</ul>\n");
+
+  /* status html */
+  bano_html_printf(html, "<div class='bano_box bano_status bano_status_%s'>\n", s);
+  bano_html_printf(html, "status: %s (%d)\n", s, err);
+  bano_html_printf(html, "</div>\n");
+  bano_html_printf(html, "<br/>\n");
 
   /* refresh the page */
+  bano_html_printf(html, "<div class='bano_box bano_refresh'>\n");
   bano_html_printf(html, "<form action='/' method='get'>\n");
   bano_html_printf(html, "<input type='submit' value='refresh' />\n");
   bano_html_printf(html, "</form>\n");
+  bano_html_printf(html, "</div>\n");
 
   bano_html_printf(html, "</body></html>\n");
 }
@@ -1109,8 +1117,7 @@ static void complete_httpd_msg
   size_t size;
   bano_html_t html;
 
-  bano_html_init(&html);
-  gen_base_html(base, &html);
+  gen_base_html(base, &html, err);
 
   if (bano_html_is_err(&html) == 0)
   {

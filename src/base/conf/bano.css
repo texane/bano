@@ -1,0 +1,84 @@
+form
+{
+ margin: 0;
+}
+
+input[type=text]
+{
+ width: 120px;
+ border-color: black;
+ border-style: solid;
+ border-width: 1px;
+}
+
+input[type=submit]
+{
+ display: inline-block;
+ width: 50px;
+ border-color: black;
+ border-style: solid;
+ border-width: 1px;
+ font-family: helvetica, arial, sans serif;
+}
+
+.bano_box
+{
+ width: 360px;
+}
+
+.bano_node
+{
+ display: inline-block;
+ border-color: #8090ff;
+ background-color: #e0f0ff;
+ border-style: solid;
+ border-width: 1px;
+ padding: 15px;
+ margin: 4px;
+}
+
+.bano_key
+{
+ display: inline;
+ width: 130px;
+ float: left;
+ margin: 0;
+}
+
+.bano_val
+{
+ display: inline-block;
+ width: 120px;
+ float: left;
+ margin: 0;
+}
+
+.bano_refresh
+{
+ display: inline-block;
+ border-style: solid;
+ border-width: 1px;
+ padding: 15px;
+ margin: 4px;
+}
+
+.bano_status
+{
+ display: inline-block;
+ border-style: solid;
+ border-width: 1px;
+ padding: 15px;
+ margin: 4px;
+}
+
+.bano_status_success
+{
+ border-color: #80ff90;
+ background-color: #e0fff0;
+}
+
+.bano_status_error
+{
+ border-color: #ff8090;
+ background-color: #ffe0f0;
+}
