@@ -303,7 +303,7 @@ int main(int ac, char** av)
 
   bano_init_base_info(&binfo);
   binfo.flags |= BANO_BASE_FLAG_CONF;
-  binfo.conf_path = "./conf/base_cli.conf";
+  binfo.conf_path = "./conf/base.conf";
   if (bano_open(&base, &binfo))
   {
     BANO_PERROR();
