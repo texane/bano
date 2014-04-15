@@ -1369,6 +1369,8 @@ static int post_io(bano_list_item_t* li, void* p)
 
   if (bano_socket_write(pid->node->socket, pid->node->addr, &enc_msg))
   {
+    /* TODO: call completion function if one */
+
     BANO_PERROR();
     bano_socket_free(pid->node->socket, pid->base);
     bano_list_del(&pid->base->sockets, li);
@@ -1393,7 +1395,11 @@ static int post_io(bano_list_item_t* li, void* p)
   else
   {
     /* complete and destroy the io */
-    if (io->compl_fn != NULL) io->compl_fn(io, io->compl_data);
+    if (io->compl_fn != NULL)
+    {
+      io->compl_err = 0;
+      io->compl_fn(io, io->compl_data);
+    }
     bano_free_io(io);
   }
 
