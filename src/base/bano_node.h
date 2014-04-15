@@ -13,10 +13,12 @@ struct bano_nodl;
 
 typedef struct bano_node
 {
-  /* valid: BANO_NODE_FLAG_CIPHER */
+  /* valid: BANO_NODE_FLAG_CIPHER,NAME */
   uint32_t flags;
 
   uint32_t addr;
+
+  char name[32];
 
   struct bano_socket* socket;
   struct bano_nodl* nodl;
@@ -36,8 +38,10 @@ typedef struct bano_node_info
 #define BANO_NODE_FLAG_NODL_ID (1 << 2)
 #define BANO_NODE_FLAG_CIPHER (1 << 3)
 #define BANO_NODE_FLAG_SOCKET (1 << 4)
+#define BANO_NODE_FLAG_NAME (1 << 5)
   uint32_t flags;
   uint32_t addr;
+  char name[32];
   uint32_t seed;
   uint32_t nodl_id;
   struct bano_socket* socket;
@@ -50,6 +54,12 @@ void bano_node_free(bano_node_t*);
 static inline uint32_t bano_node_get_addr(const bano_node_t* node)
 {
   return node->addr;
+}
+
+static inline const char* bano_node_get_name(const bano_node_t* node)
+{
+  if (node->flags & BANO_NODE_FLAG_NAME) return node->name;
+  return "none";
 }
 
 static inline void bano_init_node_info(bano_node_info_t* info)

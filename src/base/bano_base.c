@@ -439,6 +439,20 @@ static int apply_node_pair(bano_list_item_t* it, void* p)
       goto on_error;
     }
   }
+  else if (bano_string_cmp_cstr(&pair->key, "name") == 0)
+  {
+    const size_t size = pair->val.size;
+
+    if (size >= sizeof(ninfo->name))
+    {
+      BANO_PERROR();
+      goto on_error;
+    }
+
+    memcpy(ninfo->name, pair->val.data, size);
+    ninfo->name[size] = 0;
+    ninfo->flags |= BANO_NODE_FLAG_NAME;
+  }
   else if (bano_string_cmp_cstr(&pair->key, "seed") == 0)
   {
     ninfo->flags |= BANO_NODE_FLAG_SEED;
@@ -716,6 +730,12 @@ int bano_add_node(bano_base_t* base, const bano_node_info_t* info)
   if (info->flags & BANO_NODE_FLAG_CIPHER)
   {
     node->flags |= BANO_NODE_FLAG_CIPHER;
+  }
+
+  if (info->flags & BANO_NODE_FLAG_NAME)
+  {
+    node->flags |= BANO_NODE_FLAG_NAME;
+    strcpy(node->name, info->name);
   }
 
   node->addr = info->addr;
@@ -1044,8 +1064,14 @@ static int gen_node_html(bano_list_item_t* it, void* p)
   struct gen_html_data* const ghd = p;
   bano_html_t* const html = ghd->html;
   const uint32_t naddr = bano_node_get_addr(node);
+  const char* const name = bano_node_get_name(node);
 
   bano_html_printf(html, "<div class='bano_box bano_node'>\n");
+
+  /* name */
+  bano_html_printf(html, "<div class='bano_key'> name </div>");
+  bano_html_printf(html, "<div class='bano_val'> %s </div>", name);
+  bano_html_printf(html, "<br/>\n");
 
   /* address */
   bano_html_printf(html, "<div class='bano_key'> address </div>");
