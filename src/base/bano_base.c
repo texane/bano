@@ -1020,7 +1020,7 @@ static int gen_pair_html(bano_list_item_t* it, void* p)
   bano_html_printf(html, "<input type='hidden' name='key' value='0x%04x' />\n", key);
   bano_html_printf(html, "<input type='hidden' name='is_ack' value='%u' />\n", is_ack);
   bano_html_printf(html, "%s = ", name);
-  bano_html_printf(html, "<input type='text' name='val' value='0x%08x' />\n", (uint32_t)val);
+  bano_html_printf(html, "<input type='text' name='val' value='0x%08x' %s/>\n", (uint32_t)val, is_set ? "" : "readonly");
   if (is_set) bano_html_printf(html, "<input type='submit' name='op' value='set' />\n");
   if (is_get) bano_html_printf(html, "<input type='submit' name='op' value='get' />\n");
   bano_html_printf(html, "</form>\n");
@@ -1054,6 +1054,16 @@ static void gen_base_html(bano_base_t* base, bano_html_t* html)
   struct gen_html_data ghd;
 
   bano_html_printf(html, "<html><body>\n");
+
+  /* css */
+  bano_html_printf(html, "<style media='screen' type='text/css'>\n");
+  bano_html_printf(html, "input[type=text], input[type=submit]\n");
+  bano_html_printf(html, "{\n");
+  bano_html_printf(html, " border: 5px solid rgb(210,210,210);\n");
+  bano_html_printf(html, " padding: 5px;\n");
+  bano_html_printf(html, " background: white;\n");
+  bano_html_printf(html, "}\n");
+  bano_html_printf(html, "</style>\n");
 
   /* node related html */
   bano_html_printf(html, "<ul>\n");
