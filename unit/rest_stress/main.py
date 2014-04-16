@@ -22,10 +22,9 @@ while True:
  print(str(params))
  conn.request("GET", "/", params)
  resp = conn.getresponse()
- data = resp.read()
- (compl_err, compl_val) = string.split(data, ", ")
- compl_err = int(compl_err, 16)
- compl_val = int(compl_val, 16)
+ compl_data = eval(resp.read())
+ compl_err = compl_data[0]
+ compl_val = compl_data[1]
  if compl_err != 0: print("err=" + str(compl_err) + " at " + str(npass))
  npass = npass + 1
 
