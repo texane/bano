@@ -1,12 +1,16 @@
-[ bug: SET message not applied ]
+[ base: REST api reply format ]
+when sending an http query, the completion format can be specified.
+if fmt is unspecified or html, the full html page is returned (current
+behavior). if fmt=raw, text/plain is used and the compl_err,compl_val
+is returned.
 
-[ node, more BANO_CONFIG_xxx to reduce size ]
+[ node: more BANO_CONFIG_xxx to reduce size ]
 features should be statically disablable, via BANO_CONFIG_xxx
 
-[ node: dynamic feature disabling ]
-node should be able to disable features in its own handlers.
-for instance, the alarm may want to wait for 1 message (one for
-the key), and THEN no longer listen at all
+[ proto: security token ]
+uint32 token is currently unused. should be used to prevent
+replay attacks. then update protocol doc (common network master
+key ...).
 
 [ node: per message encryption ]
 for GET handler, BANO_MSG_FLAG_ENC could be returned enabling
@@ -22,10 +26,10 @@ should be at the same time a USB dongle, and a SPI cape
 measure how much power needed to send a message, deduce node
 current consumption profile. use UIL
 
-[ proto: security token ]
-uint32 token is currently unused. should be used to prevent
-replay attacks. then update protocol doc (common network master
-key ...).
+[ node: dynamic feature disabling ]
+node should be able to disable features in its own handlers.
+for instance, the alarm may want to wait for 1 message (one for
+the key), and THEN no longer listen at all
 
 [ base: message checks ]
 if node->flags & cipher and decoded or clear message flags
