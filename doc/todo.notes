@@ -1,8 +1,5 @@
-[ base: REST api reply format ]
-when sending an http query, the completion format can be specified.
-if fmt is unspecified or html, the full html page is returned (current
-behavior). if fmt=raw, text/plain is used and the compl_err,compl_val
-is returned.
+[ base: REST unit based tests ]
+use plain format in tests
 
 [ base: flush or reopen snrf socket in case of error ]
 in case of read error, reopen or flush the snrf socket
