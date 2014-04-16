@@ -49,6 +49,10 @@ static int on_event(struct mg_connection* conn, enum mg_event ev)
       else if (strcmp(buf, "set") == 0) msg.op = BANO_HTTPD_MSG_OP_SET;
       else msg.op = BANO_HTTPD_MSG_OP_INVALID;
 
+      mg_get_var(conn, "fmt", buf, sizeof(buf));
+      if (strcmp(buf, "plain") == 0) msg.fmt = BANO_HTTPD_MSG_FMT_PLAIN;
+      else msg.fmt = BANO_HTTPD_MSG_FMT_HTML;
+
       mg_get_var(conn, "naddr", buf, sizeof(buf));
       str_to_uint32(buf, &msg.naddr);
 
@@ -69,7 +73,7 @@ static int on_event(struct mg_connection* conn, enum mg_event ev)
       {
 	BANO_PERROR();
 	mg_send_header(conn, "Content-Type", "text/plain");
-	mg_printf_data(conn, "base communication error\n");
+	mg_printf_data(conn, "-1\n");
 	break ;
       }
 
@@ -195,7 +199,24 @@ int bano_httpd_fini(bano_httpd_t* httpd)
 int bano_httpd_complete_msg
 (bano_httpd_msg_t* msg, int err, const void* data, size_t size)
 {
-  mg_send_header(msg->conn, "Content-Type", "text/html");
+  const char* s;
+  char buf[32];
+
+  switch (msg->fmt)
+  {
+  case BANO_HTTPD_MSG_FMT_PLAIN:
+    s = "text/plain";
+    break ;
+ case BANO_HTTPD_MSG_FMT_HTML:
+  default:
+    s = "text/html";
+    break ;
+  }
+  mg_send_header(msg->conn, "Content-Type", s);
+
+  sprintf(buf, "%zu", size);
+  mg_send_header(msg->conn, "Content-Length", buf);
+
   mg_send_data(msg->conn, data, size);
 
   pthread_mutex_lock(&msg->httpd->compl_lock);

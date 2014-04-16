@@ -40,6 +40,14 @@ typedef struct bano_httpd_msg
     BANO_HTTPD_MSG_OP_SET,
     BANO_HTTPD_MSG_OP_INVALID
   } op;
+
+  enum
+  {
+    BANO_HTTPD_MSG_FMT_HTML = 0,
+    BANO_HTTPD_MSG_FMT_PLAIN,
+    BANO_HTTPD_MSG_FMT_INVALID
+  } fmt;
+
   uint32_t naddr;
   uint16_t key;
   uint32_t val;

@@ -1087,10 +1087,15 @@ static int gen_node_html(bano_list_item_t* it, void* p)
   return 0;
 }
 
-static void gen_base_html(bano_base_t* base, bano_html_t* html, int err)
+static void gen_base_html
+(
+ bano_base_t* base,
+ bano_html_t* html,
+ unsigned int compl_err, uint32_t compl_val
+)
 {
   struct gen_html_data ghd;
-  const char* const s = err ? "error" : "success";
+  const char* const s = compl_err ? "error" : "success";
 
   bano_html_init(html);
   bano_html_printf(html, "<html><body>\n");
@@ -1106,7 +1111,7 @@ static void gen_base_html(bano_base_t* base, bano_html_t* html, int err)
 
   /* status html */
   bano_html_printf(html, "<div class='bano_box bano_status bano_status_%s'>\n", s);
-  bano_html_printf(html, "status: %s (%d)\n", s, err);
+  bano_html_printf(html, "status: %s (0x%08x, 0x%08x)\n", s, compl_err, compl_val);
   bano_html_printf(html, "</div>\n");
   bano_html_printf(html, "<br/>\n");
 
@@ -1132,51 +1137,63 @@ struct httpd_op_data
 };
 
 static void complete_httpd_msg
-(bano_httpd_msg_t* msg, bano_base_t* base, int err)
+(
+ bano_httpd_msg_t* msg,
+ bano_base_t* base,
+ unsigned int compl_err, uint32_t compl_val
+)
 {
   /* generate html and complete */
 
-#define HTML_ERR_STR "<html><body> base error </body></html>"
-  static const char* error_buf = HTML_ERR_STR;
-  static const size_t error_size = sizeof(HTML_ERR_STR) - 1;
-  const char* data;
-  size_t size;
-  bano_html_t html;
-
-  gen_base_html(base, &html, err);
-
-  if (bano_html_is_err(&html) == 0)
+  switch (msg->fmt)
   {
-    data = bano_html_get_data(&html);
-    size = bano_html_get_size(&html);
-  }
-  else
-  {
-    data = error_buf;
-    size = error_size;
+  case BANO_HTTPD_MSG_FMT_PLAIN:
+    {
+      char data[32];
+      size_t size;
+    on_plain_compl:
+      size = sprintf(data, "0x%08x, 0x%08x", compl_err, compl_val);
+      bano_httpd_complete_msg(msg, 0, data, size);
+      break ;
+    }
+
+  case BANO_HTTPD_MSG_FMT_HTML:
+  default:
+    {
+      bano_html_t html;
+      gen_base_html(base, &html, compl_err, compl_val);
+      if (bano_html_is_err(&html) == 0)
+      {
+	const char* const data = bano_html_get_data(&html);
+	const size_t size = bano_html_get_size(&html);
+	bano_httpd_complete_msg(msg, 0, data, size);
+	bano_html_fini(&html);
+      }
+      else
+      {
+	bano_html_fini(&html);
+	msg->fmt = BANO_HTTPD_MSG_FMT_PLAIN;
+	compl_err = BANO_IO_ERR_FAILURE;
+	compl_val = 0;
+	goto on_plain_compl;
+      }
+
+      break ;
+    }
   }
 
-  bano_httpd_complete_msg(msg, 0, data, size);
-
-  bano_html_fini(&html);
 }
 
 static int on_httpd_io_compl(bano_io_t* io, void* p)
 {
   struct httpd_op_data* const hod = p;
-  int err;
 
   if (io->compl_err != BANO_IO_ERR_SUCCESS)
   {
     BANO_PERROR();
-    err = -1;
-  }
-  else
-  {
-    err = 0;
   }
 
-  complete_httpd_msg(hod->msg, hod->base, err);
+  complete_httpd_msg(hod->msg, hod->base, io->compl_err, io->compl_val);
 
   free(hod);
 
@@ -1187,7 +1204,7 @@ static int handle_httpd_msg
 (prw_msg_data_t* prwmd, bano_socket_t* socket, void* m)
 {
   bano_httpd_msg_t* const msg = m;
-  int err = 0;
+  uint32_t compl_err = BANO_IO_ERR_FAILURE;
 
   switch (msg->op)
   {
@@ -1249,7 +1266,6 @@ static int handle_httpd_msg
     on_error_1:
       free(hod);
     on_error_0:
-      err = -1;
       goto on_invalid_op;
       break ;
     }
@@ -1257,8 +1273,10 @@ static int handle_httpd_msg
   case BANO_HTTPD_MSG_OP_INVALID:
   default:
     {
+      /* ok if operation not specified */
+      compl_err = BANO_IO_ERR_SUCCESS;
     on_invalid_op:
-      complete_httpd_msg(msg, prwmd->base, err);
+      complete_httpd_msg(msg, prwmd->base, compl_err, 0);
       break ;
     }
   }
@@ -1640,6 +1658,7 @@ int bano_start_loop(bano_base_t* base, const bano_loop_info_t* linfo)
 static void bano_init_common_io(bano_io_t* io, bano_compl_fn_t fn, void* data)
 {
   io->flags = 0;
+  io->compl_val = 0;
   io->compl_fn = fn;
   io->compl_data = data;
 }
