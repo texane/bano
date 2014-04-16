@@ -4,6 +4,9 @@ if fmt is unspecified or html, the full html page is returned (current
 behavior). if fmt=raw, text/plain is used and the compl_err,compl_val
 is returned.
 
+[ base: flush or reopen snrf socket in case of error ]
+in case of read error, reopen or flush the snrf socket
+
 [ node: more BANO_CONFIG_xxx to reduce size ]
 features should be statically disablable, via BANO_CONFIG_xxx
 
