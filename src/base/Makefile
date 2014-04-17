@@ -53,10 +53,17 @@ a.out:	$(SNRF_DIR)/src/host/libsnrf.a $(OBJS)
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
+tar: a.out
+	@mkdir -p bano > /dev/null
+	@cp a.out bano > /dev/null
+	@cp -rf conf bano > /dev/null
+	@cp -rf nodl bano > /dev/null
+	@tar czvf bano.tar.gz bano > /dev/null
+
 clean:
 	-rm $(OBJS)
 
 fclean:	clean
 	-rm a.out
 
-.PHONY: all clean fclean $(SNRF_DIR)/src/host/libsnrf.a
+.PHONY: tar all clean fclean $(SNRF_DIR)/src/host/libsnrf.a
