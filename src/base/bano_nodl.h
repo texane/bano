@@ -28,6 +28,7 @@ typedef struct bano_nodl
 
 int bano_nodl_alloc(bano_nodl_t**);
 int bano_nodl_free(bano_nodl_t*);
+unsigned int bano_nodl_has_key(bano_nodl_t*, uint16_t);
 int bano_nodl_keyval_alloc(bano_nodl_keyval_t**);
 int bano_nodl_keyval_free(bano_nodl_keyval_t*);
 

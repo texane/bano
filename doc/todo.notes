@@ -1,5 +1,3 @@
-[ base: ignore invalid keys ]
-
 [ base, node: invalid packet contents ]
 use checksum for wireless packets
 

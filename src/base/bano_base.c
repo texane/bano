@@ -915,12 +915,23 @@ static int handle_set_msg
 
   if ((msg->hdr.flags & BANO_MSG_FLAG_ERR) == 0)
   {
+    /* if there is a nodl, check the key actually exists */
+    if (node->nodl != NULL)
+    {
+      if (bano_nodl_has_key(node->nodl, key) == 0)
+      {
+	BANO_PERROR();
+	goto on_invalid_key;
+      }
+    }
+
     if (bano_dict_set_or_add(&node->keyval_pairs, key, val))
     {
       BANO_PERROR();
     }
   }
 
+ on_invalid_key:
   if (msg->hdr.flags & BANO_MSG_FLAG_REPLY)
   {
     /* this is a reply, check pending messages */
