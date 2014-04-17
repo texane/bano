@@ -1090,7 +1090,10 @@ static int gen_node_html(bano_list_item_t* it, void* p)
   bano_html_printf(html, "<br/>\n");
 
   ghd->node = node;
-  bano_dict_foreach(&node->nodl->keyvals, gen_pair_html, ghd);
+  if (node->nodl != NULL)
+  {
+    bano_dict_foreach(&node->nodl->keyvals, gen_pair_html, ghd);
+  }
 
   bano_html_printf(html, "</div>\n");
   bano_html_printf(html, "<br/>\n");
