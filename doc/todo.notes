@@ -1,5 +1,15 @@
-[ base: flush or reopen snrf socket in case of error ]
-in case of read error, reopen or flush the snrf socket
+[ base: segfault when html generation on new nodes ]
+likely due to no nodle id or invalid node field
+
+[ base: ignore new node option ]
+
+[ base: ignore invalid keys ]
+
+[ base, node: invalid packet contents ]
+use checksum for wireless packets
+
+[ base, snrf: invalid packet contents ]
+use checksum for serial line packets
 
 [ proto: security token against reply attacks ]
 replay protection is enabled in the nodl_id, per message.
