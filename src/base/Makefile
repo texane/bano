@@ -1,4 +1,4 @@
-CC := gcc
+CC := $(CROSS_COMPILE)gcc
 CFLAGS := -Wall -O2
 
 REPO_DIR ?= $(HOME)/repo
