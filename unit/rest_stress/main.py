@@ -3,6 +3,8 @@
 import httplib
 import urllib
 import string
+import time
+import random
 
 kv = {}
 kv['naddr'] = '0x5c5f8548'
@@ -12,8 +14,9 @@ kv['op'] = 'set'
 kv['is_ack'] = 1
 kv['fmt'] = 'plain'
 
-# conn = httplib.HTTPConnection("freebox:1180")
 conn = httplib.HTTPConnection("192.168.0.11:80")
+
+random.seed(None)
 
 npass = 0
 while True:
@@ -28,5 +31,7 @@ while True:
  if compl_err: print("err=" + str(compl_err) + " at " + str(npass))
  if npass % 10 == 0: print("ok at npass = " + str(npass))
  npass = npass + 1
+ # ms = 500 + random.randint(0, 500)
+ # time.sleep(float(ms) / 1000.0)
 
 conn.close()
