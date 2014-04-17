@@ -1598,6 +1598,14 @@ int bano_start_loop(bano_base_t* base, const bano_loop_info_t* linfo)
 	goto on_loop_done;
       }
 
+      if (timer_tvp != NULL)
+      {
+	/* update the timer value. if reached, set err to handle it */
+	/* note: it relies on select updating the timer */
+	bano_timer_update(timer, timer_tvp);
+	if (timer->rel_ms == 0) err = 0;
+      }
+
       if (err == 0)
       {
 	if (timer != loop_timer)

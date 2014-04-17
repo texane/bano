@@ -1,10 +1,3 @@
-[ base: timeout not reached ]
-if node messages are received, timeouts for a given message
-is never reached as select reload the timeout without update.
-example: led node with frequent periodic message spends time
-waking the base, and a concurrent io from an http request
-never times out.
-
 [ base: flush or reopen snrf socket in case of error ]
 in case of read error, reopen or flush the snrf socket
 

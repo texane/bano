@@ -19,6 +19,7 @@ int bano_timer_fini(bano_list_t*);
 int bano_timer_add(bano_list_t*, bano_timer_t**, unsigned int);
 int bano_timer_del(bano_list_t*, bano_timer_t*);
 int bano_timer_get_next(bano_list_t*, bano_timer_t**, struct timeval*);
+int bano_timer_update(bano_timer_t*, const struct timeval*);
 
 
 #endif /* BANO_TIMER_H_INCLUDED */

@@ -120,3 +120,13 @@ int bano_timer_get_next
 
   return 0;
 }
+
+int bano_timer_update(bano_timer_t* ti, const struct timeval* tv)
+{
+  /* update the timer relative time to tv */
+
+  ti->rel_ms = tv->tv_sec * 1000;
+  ti->rel_ms += tv->tv_usec / 1000;
+
+  return 0;
+}
