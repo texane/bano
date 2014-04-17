@@ -348,7 +348,7 @@ static int apply_base_pair(bano_list_item_t* it, void* p)
     else if (bano_string_to_uint32(&pair->val, &base->addr))
     {
       BANO_PERROR();
-      ad->err = -1;
+      goto on_error;
     }
   }
   else if (bano_string_cmp_cstr(&pair->key, "nodl_dir") == 0)
@@ -356,7 +356,7 @@ static int apply_base_pair(bano_list_item_t* it, void* p)
     if (load_nodl_dir(&base->nodls, &pair->val))
     {
       BANO_PERROR();
-      ad->err = -1;
+      goto on_error;
     }
   }
   else if (bano_string_cmp_cstr(&pair->key, "cipher_alg") == 0)
@@ -372,7 +372,7 @@ static int apply_base_pair(bano_list_item_t* it, void* p)
     else
     {
       BANO_PERROR();
-      ad->err = -1;
+      goto on_error;
     }
   }
   else if (bano_string_cmp_cstr(&pair->key, "cipher_key") == 0)
@@ -380,11 +380,31 @@ static int apply_base_pair(bano_list_item_t* it, void* p)
     if (bano_string_to_cipher_key(&pair->val, base->cipher.key))
     {
       BANO_PERROR();
-      ad->err = -1;
+      goto on_error;
     }
   }
+  else if (bano_string_cmp_cstr(&pair->key, "new_nodes") == 0)
+  {
+    unsigned int x;
+    if (bano_string_to_bool(&pair->val, &x))
+    {
+      BANO_PERROR();
+      goto on_error;
+    }
+    if (x) base->flags |= BANO_BASE_FLAG_NEW_NODES;
+    else base->flags &= ~BANO_BASE_FLAG_NEW_NODES;
+  }
+  else
+  {
+    BANO_PERROR();
+    goto on_error;
+  }
 
-  return ad->err;
+  return 0;
+
+ on_error:
+  ad->err = -1;
+  return -1;
 }
 
 static int apply_socket_pair(bano_list_item_t* it, void* p)
@@ -635,6 +655,8 @@ static int apply_conf(bano_base_t* base, const char* conf_path)
 
 int bano_open(bano_base_t* base, const bano_base_info_t* info)
 {
+  base->flags = info->flags;
+
 #ifdef BANO_CONFIG_HTTPD
   base->is_httpd = 0;
 #endif /* BANO_CONFIG_HTTPD */
@@ -973,6 +995,12 @@ static int handle_bano_msg
   node = find_node_by_addr(&prwmd->base->nodes, saddr);
   if (node == NULL)
   {
+    if ((prwmd->base->flags & BANO_BASE_FLAG_NEW_NODES) == 0)
+    {
+      BANO_PERROR();
+      return 0;
+    }
+
     /* new node */
     if (bano_node_alloc(&node))
     {

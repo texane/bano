@@ -95,6 +95,8 @@ typedef struct bano_io
 
 typedef struct bano_base
 {
+  /* in BANO_BASE_FLAG_xxx */
+  uint32_t flags;
   bano_list_t nodes;
   bano_list_t sockets;
   bano_list_t timers;
@@ -115,6 +117,7 @@ typedef struct
 {
 #define BANO_BASE_FLAG_CONF (1 << 0)
 #define BANO_BASE_FLAG_ADDR (1 << 1)
+#define BANO_BASE_FLAG_NEW_NODES (1 << 2)
   uint32_t flags;
   const char* conf_path;
   uint32_t addr;

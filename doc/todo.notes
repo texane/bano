@@ -1,5 +1,3 @@
-[ base: ignore new node option ]
-
 [ base: ignore invalid keys ]
 
 [ base, node: invalid packet contents ]
