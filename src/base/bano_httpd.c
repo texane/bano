@@ -101,8 +101,8 @@ static int on_event(struct mg_connection* conn, enum mg_event ev)
 	break ;
       }
 
-      /* generated using server -A file.txt real user pass */
-      fp = fopen("./conf/httpd_auth.txt", "r");
+      /* generated using server -A file.txt mydomain.com user pass */
+      fp = fopen("./conf/httpd.auth", "r");
       if (fp == NULL)
       {
 	BANO_PERROR();
