@@ -91,6 +91,16 @@ static int on_event(struct mg_connection* conn, enum mg_event ev)
 
   case MG_AUTH:
     {
+      /* generated using server -A file.txt real user pass */
+      FILE* const fp = fopen("./conf/httpd_auth.txt", "r");
+      if (fp == NULL)
+      {
+	BANO_PERROR();
+	err = MG_FALSE;
+	break ;
+      }
+      err = mg_authorize_digest(conn, fp);
+      fclose(fp);
       break ;
     }
 

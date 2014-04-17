@@ -18,10 +18,6 @@ to pattern based attacks.
 [ node: more BANO_CONFIG_xxx to reduce size ]
 features should be statically disablable, via BANO_CONFIG_xxx
 
-[ node: per message encryption ]
-for GET handler, BANO_MSG_FLAG_ENC could be returned enabling
-message encryption. For timer handlers, add bano_make_set_enc_msg
-
 [ node: make the alarm node PCB ]
 think larger, used for prototyping
 
