@@ -1,13 +1,22 @@
 [ base: flush or reopen snrf socket in case of error ]
 in case of read error, reopen or flush the snrf socket
 
+[ proto: security token against reply attacks ]
+replay protection is enabled in the nodl_id, per message.
+it is disabled by default. to implement it, a 32 bits token
+is used as a time variable data. the base periodically sends
+a token to the node using encrypted message and randomized
+contents (for instance: packet xored with node seed and padding
+field all randomized). The token can then be used SET_TOKEN
+is an internal BANO key, node handled by the application.
+
+[ proto: security, randomized the unused field ]
+randomizing the unused fields of encrypted packets is a good
+practice as it results in different packet, thus less prone
+to pattern based attacks.
+
 [ node: more BANO_CONFIG_xxx to reduce size ]
 features should be statically disablable, via BANO_CONFIG_xxx
-
-[ proto: security token ]
-uint32 token is currently unused. should be used to prevent
-replay attacks. then update protocol doc (common network master
-key ...).
 
 [ node: per message encryption ]
 for GET handler, BANO_MSG_FLAG_ENC could be returned enabling
