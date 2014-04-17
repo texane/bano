@@ -91,14 +91,25 @@ static int on_event(struct mg_connection* conn, enum mg_event ev)
 
   case MG_AUTH:
     {
+      bano_httpd_t* const httpd = conn->server_param;
+      FILE* fp;
+
+      /* authentication disabled */
+      if ((httpd->flags & BANO_HTTPD_FLAG_AUTH) == 0)
+      {
+	err = MG_TRUE;
+	break ;
+      }
+
       /* generated using server -A file.txt real user pass */
-      FILE* const fp = fopen("./conf/httpd_auth.txt", "r");
+      fp = fopen("./conf/httpd_auth.txt", "r");
       if (fp == NULL)
       {
 	BANO_PERROR();
 	err = MG_FALSE;
 	break ;
       }
+
       err = mg_authorize_digest(conn, fp);
       fclose(fp);
       break ;
@@ -144,6 +155,7 @@ int bano_httpd_init(bano_httpd_t* httpd, const bano_httpd_info_t* info)
   }
 
   httpd->base = info->base;
+  httpd->flags = info->flags;
   httpd->is_done = 0;
 
   if (pipe(httpd->msg_pipe))

@@ -511,6 +511,17 @@ static int apply_httpd_pair(bano_list_item_t* it, void* p)
       goto on_error;
     }
   }
+  else if (bano_string_cmp_cstr(&pair->key, "auth") == 0)
+  {
+    unsigned int x;
+    if (bano_string_to_bool(&pair->val, &x))
+    {
+      BANO_PERROR();
+      goto on_error;
+    }
+    if (x) info->flags |= BANO_HTTPD_FLAG_AUTH;
+    else info->flags &= ~BANO_HTTPD_FLAG_AUTH;
+  }
   else
   {
     BANO_PERROR();

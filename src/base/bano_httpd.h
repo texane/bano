@@ -15,6 +15,8 @@ typedef struct bano_httpd
 {
   struct mg_server* server;
   struct bano_base* base;
+  /* in BANO_HTTPD_FLAG_xxx */
+  uint32_t flags;
   volatile unsigned int is_done;
   /* message passing interface */
   int msg_pipe[2];
@@ -26,6 +28,7 @@ typedef struct bano_httpd
 typedef struct bano_httpd_info
 {
 #define BANO_HTTPD_FLAG_PORT (1 << 0)
+#define BANO_HTTPD_FLAG_AUTH (1 << 1)
   uint32_t flags;
   struct bano_base* base;
   uint16_t port;
