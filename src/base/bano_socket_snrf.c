@@ -33,6 +33,7 @@ static int do_read(void* p, void* m)
     {
       BANO_PERROR();
       err = -2;
+      snrf_sync(snrf);
     }
   }
 
