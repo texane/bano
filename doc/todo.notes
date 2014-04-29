@@ -31,6 +31,11 @@ should be at the same time a USB dongle, and a SPI cape
 measure how much power needed to send a message, deduce node
 current consumption profile. use UIL
 
+[ node: imp lement recv using send + recv ]
+putting the node in rx mode increases consumed current to 12mA.
+in passive mode, the node consumes around 500uA. the rx mode could
+be implemented by using send then recv plus timeout.
+
 [ node: dynamic feature disabling ]
 node should be able to disable features in its own handlers.
 for instance, the alarm may want to wait for 1 message (one for
