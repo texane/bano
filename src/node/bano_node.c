@@ -11,10 +11,40 @@
 #include "bano_node.h"
 #define CLK_PRESCAL (256UL)
 
+/* define nrf905 and pinout */
 #define NRF_CONFIG_NRF905 1
+
+#define NRF905_IO_TXE_MASK (1 << 4)
+#define NRF905_IO_TXE_DDR DDRD
+#define NRF905_IO_TXE_PORT PORTD
+#define NRF905_IO_PWR_MASK (1 << 7)
+#define NRF905_IO_PWR_DDR DDRD
+#define NRF905_IO_PWR_PORT PORTD
+/* TRX is also known as CE */
+#define NRF905_IO_TRX_MASK (1 << 6)
+#define NRF905_IO_TRX_DDR DDRD
+#define NRF905_IO_TRX_PORT PORTD
+#define NRF905_IO_CD_MASK (1 << 0)
+#define NRF905_IO_CD_DDR DDRB
+#define NRF905_IO_CD_PIN PINB
+#define NRF905_IO_DR_MASK (1 << 2)
+#define NRF905_IO_DR_DDR DDRD
+#define NRF905_IO_DR_PIN PIND
+#define NRF905_IO_DR_PORT PORTD
+#define NRF905_IO_AM_MASK (1 << 5)
+#define NRF905_IO_AM_DDR DDRD
+#define NRF905_IO_AM_PIN PIND
+/* rx irq is dr. portd2 is pcint18, pcint mask 2 */
+#define NRF905_IO_IRQ_DDR NRF905_IO_DR_DDR
+#define NRF905_IO_IRQ_PORT NRF905_IO_DR_PORT
+#define NRF905_IO_IRQ_MASK NRF905_IO_DR_MASK
+#define NRF905_IO_IRQ_PCICR_MASK (1 << 2)
+#define NRF905_IO_IRQ_PCMSK PCMSK2
+
 #if (NRF_CONFIG_NRF24L01P == 1)
 #define NRF24L01P_PAYLOAD_WIDTH BANO_MSG_SIZE
 #endif
+
 #include "nrf/src/nrf.c"
 
 
