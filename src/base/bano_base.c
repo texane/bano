@@ -182,6 +182,16 @@ static int apply_nodl_keyval_pair(bano_list_item_t* it, void* p)
     if (is_true) kv->flags |= BANO_NODL_FLAG_ACK;
     else kv->flags &= ~BANO_NODL_FLAG_ACK;
   }
+  else if (bano_string_cmp_cstr(&pair->key, "rst") == 0)
+  {
+    if (bano_string_to_bool(&pair->val, &is_true))
+    {
+      BANO_PERROR();
+      goto on_error;
+    }
+    if (is_true) kv->flags |= BANO_NODL_FLAG_RST;
+    else kv->flags &= ~BANO_NODL_FLAG_RST;
+  }
   else
   {
   on_error:
@@ -1080,13 +1090,14 @@ static int gen_pair_html(bano_list_item_t* it, void* p)
   const unsigned int is_ack = (kv->flags & BANO_NODL_FLAG_ACK) ? 1 : 0;
   const unsigned int is_set = (kv->flags & BANO_NODL_FLAG_SET) ? 1 : 0;
   const unsigned int is_get = (kv->flags & BANO_NODL_FLAG_GET) ? 1 : 0;
+  const unsigned int is_rst = (kv->flags & BANO_NODL_FLAG_RST) ? 1 : 0;
   uintptr_t tmp;
   uint32_t val;
 
   if (bano_dict_get(&node->keyval_pairs, key, &tmp)) tmp = 0xffffffff;
   val = (uint32_t)tmp;
 
-  if (is_set || is_get)
+  if (is_set || is_get || is_rst)
   {
     /* generate post form */
 
@@ -1095,6 +1106,7 @@ static int gen_pair_html(bano_list_item_t* it, void* p)
     bano_html_printf(html, "<input type='text' name='val' value='0x%08x' />\n", val);
     if (is_set) bano_html_printf(html, "<input type='submit' name='op' value='set' />\n");
     if (is_get) bano_html_printf(html, "<input type='submit' name='op' value='get' />\n");
+    if (is_rst) bano_html_printf(html, "<input type='submit' name='op' value='rst' />\n");
     bano_html_printf(html, "</form>\n");
   }
   else
@@ -1320,6 +1332,28 @@ static int handle_httpd_msg
       free(hod);
     on_error_0:
       goto on_invalid_op;
+      break ;
+    }
+
+  case BANO_HTTPD_MSG_OP_RST:
+    {
+      const uint32_t naddr = msg->naddr;
+      const uint16_t key = msg->key;
+      bano_node_t* node;
+
+      if (bano_find_node_by_addr(prwmd->base, naddr, &node))
+      {
+	BANO_PERROR();
+	goto on_invalid_op;
+      }
+
+      if (bano_dict_set(&node->keyval_pairs, key, 0))
+      {
+	BANO_PERROR();
+	goto on_invalid_op;
+      }
+
+      complete_httpd_msg(msg, prwmd->base, 0, 0);
       break ;
     }
 

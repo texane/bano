@@ -1,0 +1,13 @@
+nodl
+{
+name = reed
+}
+
+# reed status
+keyval
+{
+name = reed_status
+key = 0x0000
+fmt = uint32
+rst = yes
+}
