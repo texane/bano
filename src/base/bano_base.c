@@ -1347,7 +1347,7 @@ static int handle_httpd_msg
 	goto on_invalid_op;
       }
 
-      if (bano_dict_set(&node->keyval_pairs, key, 0))
+      if (bano_dict_set_or_add(&node->keyval_pairs, key, 0))
       {
 	BANO_PERROR();
 	goto on_invalid_op;

@@ -1,5 +1,6 @@
 CC := $(CROSS_COMPILE)gcc
-CFLAGS := -Wall -O2
+STRIP := $(CROSS_COMPILE)strip
+CFLAGS := -Wall -O2 -static
 
 REPO_DIR ?= $(HOME)/repo
 
@@ -47,6 +48,7 @@ $(SNRF_DIR)/src/host/libsnrf.a:
 
 a.out:	$(SNRF_DIR)/src/host/libsnrf.a $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $(OBJS) $(LFLAGS) $(LIBS)
+	$(STRIP) $@
 	sudo chown root a.out
 	sudo chmod 4755 a.out
 
