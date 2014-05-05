@@ -7,7 +7,7 @@ name = reed
 keyval
 {
 name = reed_status
-key = 0x0000
+key = 0x002a
 fmt = uint32
 rst = yes
 }
