@@ -1116,8 +1116,12 @@ static int gen_pair_html(bano_list_item_t* it, void* p)
 
     bano_html_printf(html, "<form action='/?naddr=0x%08x&key=0x%04x&is_ack=%u' method='post'>\n", naddr, key, is_ack);
     bano_html_printf(html, "<div class='bano_key'> %s </div>", name);
-    if (is_dec) bano_html_printf(html, "<input type='text' name='val' value='%u' />\n", val);
-    else bano_html_printf(html, "<input type='text' name='val' value='0x%08x' />\n", val);
+
+    bano_html_printf(html, "<input type='text' name='val' value='");
+    if (is_dec) bano_html_printf(html, "%u", val);
+    else bano_html_printf(html, "0x%08x", val);
+    bano_html_printf(html, "' />\n");
+
     if (is_set) bano_html_printf(html, "<input type='submit' name='op' value='set' />\n");
     if (is_get) bano_html_printf(html, "<input type='submit' name='op' value='get' />\n");
     if (is_rst) bano_html_printf(html, "<input type='submit' name='op' value='rst' />\n");
@@ -1126,9 +1130,14 @@ static int gen_pair_html(bano_list_item_t* it, void* p)
   else
   {
     /* readonly variable */
+
     bano_html_printf(html, "<div class='bano_key'> %s </div>", name);
-    if (is_dec) bano_html_printf(html, "<div class='bano_val'> %u </div>", val);
-    else bano_html_printf(html, "<div class='bano_val'> 0x%08x </div>", val);
+
+    bano_html_printf(html, "<div class='bano_val'> ");
+    if (is_dec) bano_html_printf(html, "%u", val);
+    else bano_html_printf(html, "0x%08x", val);
+    bano_html_printf(html, " </div>", val);
+
     bano_html_printf(html, "<br/>\n");
   }
 
