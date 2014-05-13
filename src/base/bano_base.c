@@ -3,6 +3,7 @@
 #include <signal.h>
 #include <dirent.h>
 #include <string.h>
+#include <time.h>
 #include <sys/types.h>
 #include <sys/select.h>
 #include <sys/time.h>
@@ -948,7 +949,7 @@ static int handle_set_msg
   bano_node_val_t val;
 
   val.val = le_to_uint32(msg->u.set.val);
-  clock_gettime(CLOCK_REALTIME, &val.mtime);
+  val.mtime = time(NULL);
 
   /* add to node pairs before possibly completing (generating html ...) */
 
@@ -1105,6 +1106,22 @@ struct gen_html_data
   bano_html_t* html;
 };
 
+static void format_time(const time_t* tp, char* buf)
+{
+#define TIME_BUF_SIZE 32
+
+  struct tm tm;
+
+  localtime_r(tp, &tm);
+
+  snprintf
+  (
+   buf, TIME_BUF_SIZE, "%d/%d/%d:%d-%d-%d",
+   tm.tm_mday, tm.tm_mon, tm.tm_year,
+   tm.tm_hour, tm.tm_min, tm.tm_sec
+  );
+}
+
 static int gen_pair_html(bano_list_item_t* it, void* p)
 {
   bano_dict_pair_t* const pair = it->data;
@@ -1124,9 +1141,13 @@ static int gen_pair_html(bano_list_item_t* it, void* p)
   const unsigned int is_rst = (kv->flags & BANO_NODL_FLAG_RST) ? 1 : 0;
   bano_node_val_t* valp;
   uint32_t val;
+  char mtime_buf[TIME_BUF_SIZE];
 
   if (bano_dict_get(&node->keyval_pairs, key, (void**)&valp)) val = 0xffffffff;
   else val = valp->val;
+
+  if (is_mtime) format_time(&valp->mtime, mtime_buf);
+  else mtime_buf[0] = 0;
 
   if (is_set || is_get || is_rst)
   {
@@ -1140,7 +1161,7 @@ static int gen_pair_html(bano_list_item_t* it, void* p)
     else bano_html_printf(html, "0x%08x", val);
     bano_html_printf(html, "' />\n");
 
-    bano_html_printf(html, "<div class='bano_mtime'> %s </div>", "mtime_buf");
+    bano_html_printf(html, "<div class='bano_mtime'> %s </div>", mtime_buf);
 
     if (is_set) bano_html_printf(html, "<input type='submit' name='op' value='set' />\n");
     if (is_get) bano_html_printf(html, "<input type='submit' name='op' value='get' />\n");
@@ -1158,7 +1179,7 @@ static int gen_pair_html(bano_list_item_t* it, void* p)
     else bano_html_printf(html, "0x%08x", val);
     bano_html_printf(html, " </div>", val);
 
-    bano_html_printf(html, "<div class='bano_mtime'> %s </div>", "mtime_buf");
+    bano_html_printf(html, "<div class='bano_mtime'> %s </div>", mtime_buf);
 
     bano_html_printf(html, "<br/>\n");
   }
@@ -1395,7 +1416,7 @@ static int handle_httpd_msg
       }
 
       val.val = 0;
-      clock_gettime(CLOCK_REALTIME, &val.mtime);
+      val.mtime = time(NULL);
 
       if (bano_dict_set_or_add(&node->keyval_pairs, key, &val))
       {

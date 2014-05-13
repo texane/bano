@@ -17,7 +17,7 @@ typedef struct bano_node_val
   /* actual value */
   uint32_t val;
   /* last modification time */
-  struct timespec mtime;
+  time_t mtime;
 } bano_node_val_t;
 
 
