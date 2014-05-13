@@ -11,3 +11,11 @@ key = 0x002a
 fmt = uint32
 rst = yes
 }
+
+# voltage
+keyval
+{
+name = reed_voltage
+key = 0x002b
+fmt = uint32
+}
