@@ -245,7 +245,7 @@ static int apply_nodl_struct(bano_list_item_t* it, void* p)
 
     if (*kv->name == 0) sprintf(kv->name, "0x%08x", kv->key);
 
-    bano_dict_add(&nodl->keyvals, kv->key, (uintptr_t)kv);
+    bano_dict_add(&nodl->keyvals, kv->key, (void*)kv);
   }
 
  on_error:
@@ -339,7 +339,7 @@ static int load_nodl_dir(bano_dict_t* nodls, const bano_string_t* dirname)
     }
 
     nodl_id = (uint32_t)strtoul(dirent->d_name, NULL, 16);
-    if (bano_dict_add(nodls, nodl_id, (uintptr_t)nodl))
+    if (bano_dict_add(nodls, nodl_id, (void*)nodl))
     {
       BANO_PERROR();
       bano_nodl_free(nodl);
@@ -686,7 +686,7 @@ int bano_open(bano_base_t* base, const bano_base_info_t* info)
   bano_list_init(&base->nodes);
   bano_list_init(&base->sockets);
   bano_timer_init(&base->timers);
-  bano_dict_init(&base->nodls);
+  bano_dict_init(&base->nodls, sizeof(void*));
 
   bano_cipher_init(&base->cipher, &bano_cipher_info_none);
 
@@ -796,7 +796,7 @@ int bano_add_node(bano_base_t* base, const bano_node_info_t* info)
   node->addr = info->addr;
   node->socket = info->socket;
 
-  if (bano_dict_get(&base->nodls, info->nodl_id, (uintptr_t*)&node->nodl))
+  if (bano_dict_get(&base->nodls, info->nodl_id, (void**)&node->nodl))
   {
     BANO_PERROR();
     goto on_error_1;
@@ -947,7 +947,7 @@ static int handle_set_msg
       }
     }
 
-    if (bano_dict_set_or_add(&node->keyval_pairs, key, val))
+    if (bano_dict_set_or_add(&node->keyval_pairs, key, (void*)&val))
     {
       BANO_PERROR();
     }
@@ -1104,11 +1104,11 @@ static int gen_pair_html(bano_list_item_t* it, void* p)
   const unsigned int is_set = (kv->flags & BANO_NODL_FLAG_SET) ? 1 : 0;
   const unsigned int is_get = (kv->flags & BANO_NODL_FLAG_GET) ? 1 : 0;
   const unsigned int is_rst = (kv->flags & BANO_NODL_FLAG_RST) ? 1 : 0;
-  uintptr_t tmp;
+  void* valp;
   uint32_t val;
 
-  if (bano_dict_get(&node->keyval_pairs, key, &tmp)) tmp = 0xffffffff;
-  val = (uint32_t)tmp;
+  if (bano_dict_get(&node->keyval_pairs, key, &valp)) val = 0xffffffff;
+  else val = *(uint32_t*)valp;
 
   if (is_set || is_get || is_rst)
   {

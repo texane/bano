@@ -1,5 +1,7 @@
 #include <stdint.h>
 #include <stdlib.h>
+#include <stddef.h>
+#include <string.h>
 #include <sys/types.h>
 #include "bano_list.h"
 #include "bano_dict.h"
@@ -59,19 +61,20 @@ static bano_list_item_t* find_pair(bano_dict_t* d, uint32_t k)
 
 /* exported */
 
-int bano_dict_init(bano_dict_t* d)
+int bano_dict_init(bano_dict_t* d, size_t val_size)
 {
   /* default list count is 8 */
-  return bano_dict_init_with_nlist(d, 3);
+  return bano_dict_init_with_nlist(d, val_size, 3);
 }
 
-int bano_dict_init_with_nlist(bano_dict_t* d, size_t log2_nlist)
+int bano_dict_init_with_nlist(bano_dict_t* d, size_t val_size, size_t log2_nlist)
 {
   /* default list count is 8 */
 
   const size_t nlist = 1 << log2_nlist;
   size_t i;
 
+  d->val_size = val_size;
   d->log2_nlist = log2_nlist;
 
   d->lists = malloc(nlist * sizeof(bano_list_t));
@@ -116,12 +119,13 @@ int bano_dict_fini(bano_dict_t* d, bano_list_fn_t fn, void* p)
   return 0;
 }
 
-int bano_dict_add(bano_dict_t* d, uint32_t k, uintptr_t v)
+int bano_dict_add(bano_dict_t* d, uint32_t k, const void* v)
 {
+  const size_t pair_size = offsetof(bano_dict_pair_t, val) + d->val_size;
   const uint32_t h = get_hash(d, k);
   bano_dict_pair_t* p;
 
-  p = malloc(sizeof(bano_dict_pair_t));
+  p = malloc(pair_size);
   if (p == NULL)
   {
     BANO_PERROR();
@@ -129,7 +133,8 @@ int bano_dict_add(bano_dict_t* d, uint32_t k, uintptr_t v)
   }
 
   p->key = k;
-  p->val = v;
+
+  memcpy(p->val, v, d->val_size);
 
   if (bano_list_add_tail(&d->lists[h], p))
   {
@@ -145,31 +150,32 @@ int bano_dict_add(bano_dict_t* d, uint32_t k, uintptr_t v)
   return -1;
 }
 
-int bano_dict_set(bano_dict_t* d, uint32_t k, uintptr_t v)
+int bano_dict_set(bano_dict_t* d, uint32_t k, const void* v)
 {
   /* assume the key already exists */
 
   bano_list_item_t* const it = find_pair(d, k);
 
   if (it == NULL) return -1;
-  ((bano_dict_pair_t*)it->data)->val = v;
+
+  memcpy(((bano_dict_pair_t*)it->data)->val, v, d->val_size);
 
   return 0;
 }
 
-int bano_dict_set_or_add(bano_dict_t* d, uint32_t k, uintptr_t v)
+int bano_dict_set_or_add(bano_dict_t* d, uint32_t k, const void* v)
 {
   if (bano_dict_set(d, k, v)) return bano_dict_add(d, k, v);
   return 0;
 }
 
-int bano_dict_get(bano_dict_t* d, uint32_t k, uintptr_t* v)
+int bano_dict_get(bano_dict_t* d, uint32_t k, void** v)
 {
   bano_list_item_t* const it = find_pair(d, k);
 
   if (it == NULL) return -1;
 
-  *v = ((bano_dict_pair_t*)it->data)->val;
+  *v = (void*)((bano_dict_pair_t*)it->data)->val;
 
   return 0;
 }

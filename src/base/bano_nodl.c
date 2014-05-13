@@ -15,7 +15,7 @@ int bano_nodl_alloc(bano_nodl_t** nodlp)
     return -1;
   }
 
-  bano_dict_init(&(*nodlp)->keyvals);
+  bano_dict_init(&(*nodlp)->keyvals, sizeof(void*));
 
   return 0;
 }
