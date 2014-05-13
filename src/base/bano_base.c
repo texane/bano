@@ -156,7 +156,7 @@ static int apply_nodl_keyval_pair(bano_list_item_t* it, void* p)
   {
     if (bano_string_cmp_cstr(&pair->val, "dec") == 0)
     {
-      kv->flags |= BANO_NODL_FLAG_FMT_DEC;
+      kv->flags |= BANO_NODL_FLAG_BASE_DEC;
     }
     else
     {
@@ -1099,7 +1099,7 @@ static int gen_pair_html(bano_list_item_t* it, void* p)
   const uint32_t naddr = bano_node_get_addr(node);
   const char* name = kv->name;
   const uint16_t key = kv->key;
-  const unsigned int is_dec = (kv->flags & BANO_NODL_FLAG_FMT_DEC) ? 1 : 0;
+  const unsigned int is_dec = (kv->flags & BANO_NODL_FLAG_BASE_DEC) ? 1 : 0;
   const unsigned int is_ack = (kv->flags & BANO_NODL_FLAG_ACK) ? 1 : 0;
   const unsigned int is_set = (kv->flags & BANO_NODL_FLAG_SET) ? 1 : 0;
   const unsigned int is_get = (kv->flags & BANO_NODL_FLAG_GET) ? 1 : 0;
