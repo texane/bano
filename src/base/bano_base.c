@@ -158,11 +158,25 @@ static int apply_nodl_keyval_pair(bano_list_item_t* it, void* p)
     {
       kv->flags |= BANO_NODL_FLAG_BASE_DEC;
     }
+    else if (bano_string_cmp_cstr(&pair->val, "bin") == 0)
+    {
+      kv->flags |= BANO_NODL_FLAG_BASE_BIN;
+    }
     else
     {
       BANO_PERROR();
       goto on_error;
     }
+  }
+  else if (bano_string_cmp_cstr(&pair->key, "mtime") == 0)
+  {
+    if (bano_string_to_bool(&pair->val, &is_true))
+    {
+      BANO_PERROR();
+      goto on_error;
+    }
+    if (is_true) kv->flags |= BANO_NODL_FLAG_MTIME;
+    else kv->flags &= ~BANO_NODL_FLAG_MTIME;
   }
   else if (bano_string_cmp_cstr(&pair->key, "get") == 0)
   {
@@ -931,7 +945,10 @@ static int handle_set_msg
 (prw_msg_data_t* prwmd, const bano_msg_t* msg, bano_node_t* node)
 {
   const uint16_t key = le_to_uint16(msg->u.set.key);
-  const uint32_t val = le_to_uint32(msg->u.set.val);
+  bano_node_val_t val;
+
+  val.val = le_to_uint32(msg->u.set.val);
+  clock_gettime(CLOCK_REALTIME, &val.mtime);
 
   /* add to node pairs before possibly completing (generating html ...) */
 
@@ -966,7 +983,7 @@ static int handle_set_msg
 	if ((msg->hdr.flags & BANO_MSG_FLAG_ERR) == 0)
 	{
 	  io->compl_err = 0;
-	  io->compl_val = val;
+	  io->compl_val = val.val;
 	}
 	else
 	{
@@ -1100,15 +1117,16 @@ static int gen_pair_html(bano_list_item_t* it, void* p)
   const char* name = kv->name;
   const uint16_t key = kv->key;
   const unsigned int is_dec = (kv->flags & BANO_NODL_FLAG_BASE_DEC) ? 1 : 0;
+  const unsigned int is_mtime = (kv->flags & BANO_NODL_FLAG_MTIME) ? 1 : 0;
   const unsigned int is_ack = (kv->flags & BANO_NODL_FLAG_ACK) ? 1 : 0;
   const unsigned int is_set = (kv->flags & BANO_NODL_FLAG_SET) ? 1 : 0;
   const unsigned int is_get = (kv->flags & BANO_NODL_FLAG_GET) ? 1 : 0;
   const unsigned int is_rst = (kv->flags & BANO_NODL_FLAG_RST) ? 1 : 0;
-  void* valp;
+  bano_node_val_t* valp;
   uint32_t val;
 
-  if (bano_dict_get(&node->keyval_pairs, key, &valp)) val = 0xffffffff;
-  else val = *(uint32_t*)valp;
+  if (bano_dict_get(&node->keyval_pairs, key, (void**)&valp)) val = 0xffffffff;
+  else val = valp->val;
 
   if (is_set || is_get || is_rst)
   {
@@ -1121,6 +1139,8 @@ static int gen_pair_html(bano_list_item_t* it, void* p)
     if (is_dec) bano_html_printf(html, "%u", val);
     else bano_html_printf(html, "0x%08x", val);
     bano_html_printf(html, "' />\n");
+
+    bano_html_printf(html, "<div class='bano_mtime'> %s </div>", "mtime_buf");
 
     if (is_set) bano_html_printf(html, "<input type='submit' name='op' value='set' />\n");
     if (is_get) bano_html_printf(html, "<input type='submit' name='op' value='get' />\n");
@@ -1137,6 +1157,8 @@ static int gen_pair_html(bano_list_item_t* it, void* p)
     if (is_dec) bano_html_printf(html, "%u", val);
     else bano_html_printf(html, "0x%08x", val);
     bano_html_printf(html, " </div>", val);
+
+    bano_html_printf(html, "<div class='bano_mtime'> %s </div>", "mtime_buf");
 
     bano_html_printf(html, "<br/>\n");
   }
@@ -1363,6 +1385,7 @@ static int handle_httpd_msg
     {
       const uint32_t naddr = msg->naddr;
       const uint16_t key = msg->key;
+      bano_node_val_t val;
       bano_node_t* node;
 
       if (bano_find_node_by_addr(prwmd->base, naddr, &node))
@@ -1371,7 +1394,10 @@ static int handle_httpd_msg
 	goto on_invalid_op;
       }
 
-      if (bano_dict_set_or_add(&node->keyval_pairs, key, 0))
+      val.val = 0;
+      clock_gettime(CLOCK_REALTIME, &val.mtime);
+
+      if (bano_dict_set_or_add(&node->keyval_pairs, key, &val))
       {
 	BANO_PERROR();
 	goto on_invalid_op;

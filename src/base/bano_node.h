@@ -3,12 +3,22 @@
 
 
 #include <stdint.h>
+#include <time.h>
 #include "bano_list.h"
 #include "bano_dict.h"
 
 
 struct bano_socket;
 struct bano_nodl;
+
+
+typedef struct bano_node_val
+{
+  /* actual value */
+  uint32_t val;
+  /* last modification time */
+  struct timespec mtime;
+} bano_node_val_t;
 
 
 typedef struct bano_node
@@ -26,6 +36,7 @@ typedef struct bano_node
   bano_list_t posted_ios;
   bano_list_t pending_ios;
 
+  /* {key, bano_node_val_t} dict */
   bano_dict_t keyval_pairs;
 
 } bano_node_t;

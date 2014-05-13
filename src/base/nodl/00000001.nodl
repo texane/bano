@@ -10,6 +10,7 @@ name = reed_status
 key = 0x002a
 fmt = uint32
 rst = yes
+mtime = yes
 }
 
 # voltage
@@ -19,4 +20,5 @@ name = reed_voltage
 key = 0x002b
 fmt = uint32
 base = dec
+mtime = yes
 }

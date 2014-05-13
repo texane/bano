@@ -53,6 +53,14 @@ input[type=submit]
  margin: 0;
 }
 
+.bano_mtime
+{
+ display: inline-block;
+ width: 120px;
+ float: left;
+ margin: 0;
+}
+
 .bano_refresh
 {
  display: inline-block;
