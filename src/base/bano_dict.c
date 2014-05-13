@@ -46,7 +46,8 @@ static int find_pair_item(bano_list_item_t* it, void* p)
   return -1;
 }
 
-static bano_list_item_t* find_pair(bano_dict_t* d, uint32_t k)
+static int find_pair
+(bano_dict_t* d, uint32_t k, bano_list_t** li, bano_list_item_t** it)
 {
   const uint32_t h = get_hash(d, k);
   uintptr_t args[2];
@@ -55,7 +56,12 @@ static bano_list_item_t* find_pair(bano_dict_t* d, uint32_t k)
   args[1] = (uintptr_t)NULL;
   bano_list_foreach(&d->lists[h], find_pair_item, (void*)args);
 
-  return (bano_list_item_t*)args[1];
+  if (args[1] == (uintptr_t)NULL) return -1;
+
+  *li = &d->lists[h];
+  *it = (void*)args[1];
+
+  return 0;
 }
 
 
@@ -119,7 +125,7 @@ int bano_dict_fini(bano_dict_t* d, bano_list_fn_t fn, void* p)
   return 0;
 }
 
-int bano_dict_add(bano_dict_t* d, uint32_t k, const void* v)
+int bano_dict_add(bano_dict_t* d, uint32_t k, void** v)
 {
   const size_t pair_size = offsetof(bano_dict_pair_t, val) + d->val_size;
   const uint32_t h = get_hash(d, k);
@@ -134,13 +140,13 @@ int bano_dict_add(bano_dict_t* d, uint32_t k, const void* v)
 
   p->key = k;
 
-  memcpy(p->val, v, d->val_size);
-
   if (bano_list_add_tail(&d->lists[h], p))
   {
     BANO_PERROR();
     goto on_error_1;
   }
+
+  *v = (void*)&p->val[0];
 
   return 0;
 
@@ -154,9 +160,10 @@ int bano_dict_set(bano_dict_t* d, uint32_t k, const void* v)
 {
   /* assume the key already exists */
 
-  bano_list_item_t* const it = find_pair(d, k);
+  bano_list_t* li;
+  bano_list_item_t* it;
 
-  if (it == NULL) return -1;
+  if (find_pair(d, k, &li, &it)) return -1;
 
   memcpy(((bano_dict_pair_t*)it->data)->val, v, d->val_size);
 
@@ -165,17 +172,24 @@ int bano_dict_set(bano_dict_t* d, uint32_t k, const void* v)
 
 int bano_dict_set_or_add(bano_dict_t* d, uint32_t k, const void* v)
 {
-  if (bano_dict_set(d, k, v)) return bano_dict_add(d, k, v);
+  void* p;
+
+  if (bano_dict_set(d, k, v) == 0) return 0;
+
+  if (bano_dict_add(d, k, &p)) return -1;
+  memcpy(p, v, d->val_size);
+
   return 0;
 }
 
 int bano_dict_get(bano_dict_t* d, uint32_t k, void** v)
 {
-  bano_list_item_t* const it = find_pair(d, k);
+  bano_list_t* li;
+  bano_list_item_t* it;
 
-  if (it == NULL) return -1;
+  if (find_pair(d, k, &li, &it)) return -1;
 
-  *v = (void*)((bano_dict_pair_t*)it->data)->val;
+  *v = (void*)&((bano_dict_pair_t*)it->data)->val;
 
   return 0;
 }
@@ -189,6 +203,19 @@ int bano_dict_foreach(bano_dict_t* d, bano_list_fn_t f, void* p)
   {
     if (bano_list_foreach(&d->lists[i], f, p)) return -1;
   }
+
+  return 0;
+}
+
+int bano_dict_del(bano_dict_t* d, uint32_t k, bano_list_fn_t f, void* p)
+{
+  bano_list_t* li;
+  bano_list_item_t* it;
+
+  if (find_pair(d, k, &li, &it)) return -1;
+
+  if (f != NULL) f(it, p);
+  bano_list_del(li, it);
 
   return 0;
 }

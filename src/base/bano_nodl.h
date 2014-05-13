@@ -30,11 +30,10 @@ typedef struct bano_nodl
 } bano_nodl_t;
 
 
-int bano_nodl_alloc(bano_nodl_t**);
-int bano_nodl_free(bano_nodl_t*);
+void bano_nodl_init(bano_nodl_t*);
+void bano_nodl_fini(bano_nodl_t*);
 unsigned int bano_nodl_has_key(bano_nodl_t*, uint16_t);
-int bano_nodl_keyval_alloc(bano_nodl_keyval_t**);
-int bano_nodl_keyval_free(bano_nodl_keyval_t*);
+void bano_nodl_keyval_init(bano_nodl_keyval_t*);
 
 
 #endif /* BANO_NODL_H_INCLUDED */

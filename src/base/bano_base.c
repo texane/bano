@@ -47,13 +47,6 @@ static inline uint32_t le_to_uint32(uint32_t x)
 
 /* list item freeing routines */
 
-static int free_nodl_item(bano_list_item_t* li, void* p)
-{
-  bano_dict_pair_t* const pair = li->data;
-  bano_nodl_free((bano_nodl_t*)pair->val);
-  return 0;
-}
-
 static int free_node_item(bano_list_item_t* li, void* p)
 {
   bano_node_t* const node = li->data;
@@ -240,12 +233,13 @@ static int apply_nodl_struct(bano_list_item_t* it, void* p)
   {
     struct apply_data kv_ad;
 
-    if (bano_nodl_keyval_alloc(&kv))
+    if (bano_dict_add(&nodl->keyvals, kv->key, (void*)&kv))
     {
       BANO_PERROR();
-      ad->err = -1;
       goto on_error;
     }
+
+    bano_nodl_keyval_init(kv);
 
     kv_ad.u.kv = kv;
     kv_ad.err = 0;
@@ -253,14 +247,12 @@ static int apply_nodl_struct(bano_list_item_t* it, void* p)
     if (kv_ad.err)
     {
       BANO_PERROR();
-      bano_nodl_keyval_free(kv);
+      bano_dict_del(&nodl->keyvals, kv->key, NULL, NULL);
       ad->err = -1;
       goto on_error;
     }
 
     if (*kv->name == 0) sprintf(kv->name, "0x%08x", kv->key);
-
-    bano_dict_add(&nodl->keyvals, kv->key, (void*)kv);
   }
 
  on_error:
@@ -340,25 +332,20 @@ static int load_nodl_dir(bano_dict_t* nodls, const bano_string_t* dirname)
     if (strcmp(dirent->d_name + 8, NODL_SUFFIX_STR)) goto next_dirent;
     strcpy(filename + dirname->size + 1 + 8, NODL_SUFFIX_STR);
 
-    if (bano_nodl_alloc(&nodl))
+    nodl_id = (uint32_t)strtoul(dirent->d_name, NULL, 16);
+    if (bano_dict_add(nodls, nodl_id, (void*)&nodl))
     {
       BANO_PERROR();
       goto on_error_1;
     }
+
+    bano_nodl_init(nodl);
 
     if (load_nodl_file(nodl, filename))
     {
       BANO_PERROR();
-      bano_nodl_free(nodl);
+      bano_dict_del(nodls, nodl_id, NULL, NULL);
       goto next_dirent;
-    }
-
-    nodl_id = (uint32_t)strtoul(dirent->d_name, NULL, 16);
-    if (bano_dict_add(nodls, nodl_id, (void*)nodl))
-    {
-      BANO_PERROR();
-      bano_nodl_free(nodl);
-      goto on_error_1;
     }
   }
 
@@ -701,7 +688,7 @@ int bano_open(bano_base_t* base, const bano_base_info_t* info)
   bano_list_init(&base->nodes);
   bano_list_init(&base->sockets);
   bano_timer_init(&base->timers);
-  bano_dict_init(&base->nodls, sizeof(void*));
+  bano_dict_init(&base->nodls, sizeof(bano_nodl_t));
 
   bano_cipher_init(&base->cipher, &bano_cipher_info_none);
 
@@ -723,7 +710,7 @@ int bano_open(bano_base_t* base, const bano_base_info_t* info)
 #ifdef BANO_CONFIG_HTTPD
   if (base->is_httpd) bano_httpd_fini(&base->httpd);
 #endif /* BANO_CONFIG_HTTPD */
-  bano_dict_fini(&base->nodls, free_nodl_item, NULL);
+  bano_dict_fini(&base->nodls, NULL, NULL);
   bano_list_fini(&base->nodes, free_node_item, NULL);
   bano_list_fini(&base->sockets, free_socket_item, NULL);
   bano_timer_fini(&base->timers);
@@ -735,7 +722,7 @@ int bano_close(bano_base_t* base)
 #ifdef BANO_CONFIG_HTTPD
   if (base->is_httpd) bano_httpd_fini(&base->httpd);
 #endif /* BANO_CONFIG_HTTPD */
-  bano_dict_fini(&base->nodls, free_nodl_item, NULL);
+  bano_dict_fini(&base->nodls, NULL, NULL);
   bano_timer_fini(&base->timers);
   bano_list_fini(&base->nodes, free_node_item, NULL);
   bano_list_fini(&base->sockets, free_socket_item, base);
@@ -1143,11 +1130,14 @@ static int gen_pair_html(bano_list_item_t* it, void* p)
   uint32_t val;
   char mtime_buf[TIME_BUF_SIZE];
 
-  if (bano_dict_get(&node->keyval_pairs, key, (void**)&valp)) val = 0xffffffff;
-  else val = valp->val;
+  val = 0xffffffff;
+  mtime_buf[0] = 0;
 
-  if (is_mtime) format_time(&valp->mtime, mtime_buf);
-  else mtime_buf[0] = 0;
+  if (bano_dict_get(&node->keyval_pairs, key, (void**)&valp) == 0)
+  {
+    val = valp->val;
+    if (is_mtime) format_time(&valp->mtime, mtime_buf);
+  }
 
   if (is_set || is_get || is_rst)
   {
