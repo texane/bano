@@ -12,10 +12,11 @@ typedef struct bano_nodl_keyval
 #define BANO_NODL_FLAG_FMT_UINT8 (1 << 1)
 #define BANO_NODL_FLAG_FMT_UINT16 (1 << 2)
 #define BANO_NODL_FLAG_FMT_UINT32 (1 << 3)
-#define BANO_NODL_FLAG_GET (1 << 4)
-#define BANO_NODL_FLAG_SET (1 << 5)
-#define BANO_NODL_FLAG_RST (1 << 6)
-#define BANO_NODL_FLAG_ACK (1 << 7)
+#define BANO_NODL_FLAG_FMT_DEC (1 << 4)
+#define BANO_NODL_FLAG_GET (1 << 5)
+#define BANO_NODL_FLAG_SET (1 << 6)
+#define BANO_NODL_FLAG_RST (1 << 7)
+#define BANO_NODL_FLAG_ACK (1 << 8)
   uint32_t flags;
   char name[32];
   uint16_t key;

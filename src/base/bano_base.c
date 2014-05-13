@@ -152,6 +152,18 @@ static int apply_nodl_keyval_pair(bano_list_item_t* it, void* p)
       goto on_error;
     }
   }
+  else if (bano_string_cmp_cstr(&pair->key, "base") == 0)
+  {
+    if (bano_string_cmp_cstr(&pair->val, "dec") == 0)
+    {
+      kv->flags |= BANO_NODL_FLAG_FMT_DEC;
+    }
+    else
+    {
+      BANO_PERROR();
+      goto on_error;
+    }
+  }
   else if (bano_string_cmp_cstr(&pair->key, "get") == 0)
   {
     if (bano_string_to_bool(&pair->val, &is_true))
@@ -1087,6 +1099,7 @@ static int gen_pair_html(bano_list_item_t* it, void* p)
   const uint32_t naddr = bano_node_get_addr(node);
   const char* name = kv->name;
   const uint16_t key = kv->key;
+  const unsigned int is_dec = (kv->flags & BANO_NODL_FLAG_FMT_DEC) ? 1 : 0;
   const unsigned int is_ack = (kv->flags & BANO_NODL_FLAG_ACK) ? 1 : 0;
   const unsigned int is_set = (kv->flags & BANO_NODL_FLAG_SET) ? 1 : 0;
   const unsigned int is_get = (kv->flags & BANO_NODL_FLAG_GET) ? 1 : 0;
@@ -1103,7 +1116,8 @@ static int gen_pair_html(bano_list_item_t* it, void* p)
 
     bano_html_printf(html, "<form action='/?naddr=0x%08x&key=0x%04x&is_ack=%u' method='post'>\n", naddr, key, is_ack);
     bano_html_printf(html, "<div class='bano_key'> %s </div>", name);
-    bano_html_printf(html, "<input type='text' name='val' value='0x%08x' />\n", val);
+    if (is_dec) bano_html_printf(html, "<input type='text' name='val' value='%u' />\n", val);
+    else bano_html_printf(html, "<input type='text' name='val' value='0x%08x' />\n", val);
     if (is_set) bano_html_printf(html, "<input type='submit' name='op' value='set' />\n");
     if (is_get) bano_html_printf(html, "<input type='submit' name='op' value='get' />\n");
     if (is_rst) bano_html_printf(html, "<input type='submit' name='op' value='rst' />\n");
@@ -1113,7 +1127,8 @@ static int gen_pair_html(bano_list_item_t* it, void* p)
   {
     /* readonly variable */
     bano_html_printf(html, "<div class='bano_key'> %s </div>", name);
-    bano_html_printf(html, "<div class='bano_val'> 0x%08x </div>", val);
+    if (is_dec) bano_html_printf(html, "<div class='bano_val'> %u </div>", val);
+    else bano_html_printf(html, "<div class='bano_val'> 0x%08x </div>", val);
     bano_html_printf(html, "<br/>\n");
   }
 

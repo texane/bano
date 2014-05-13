@@ -18,4 +18,5 @@ keyval
 name = reed_voltage
 key = 0x002b
 fmt = uint32
+base = dec
 }
