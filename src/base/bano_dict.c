@@ -146,7 +146,7 @@ int bano_dict_add(bano_dict_t* d, uint32_t k, void** v)
     goto on_error_1;
   }
 
-  *v = (void*)&p->val[0];
+  *v = (void*)p->val;
 
   return 0;
 

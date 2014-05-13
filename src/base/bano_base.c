@@ -228,31 +228,33 @@ static int apply_nodl_struct(bano_list_item_t* it, void* p)
   struct apply_data* const ad = p;
   bano_nodl_t* const nodl = ad->u.nodl;
   bano_nodl_keyval_t* kv;
+  bano_nodl_keyval_t kv_tmp;
 
   if (bano_string_cmp_cstr(&strukt->name, "keyval") == 0)
   {
     struct apply_data kv_ad;
 
-    if (bano_dict_add(&nodl->keyvals, kv->key, (void*)&kv))
-    {
-      BANO_PERROR();
-      goto on_error;
-    }
+    bano_nodl_keyval_init(&kv_tmp);
 
-    bano_nodl_keyval_init(kv);
-
-    kv_ad.u.kv = kv;
+    kv_ad.u.kv = &kv_tmp;
     kv_ad.err = 0;
     bano_parser_foreach_pair(strukt, apply_nodl_keyval_pair, &kv_ad);
     if (kv_ad.err)
     {
       BANO_PERROR();
-      bano_dict_del(&nodl->keyvals, kv->key, NULL, NULL);
       ad->err = -1;
       goto on_error;
     }
 
-    if (*kv->name == 0) sprintf(kv->name, "0x%08x", kv->key);
+    if (bano_dict_add(&nodl->keyvals, kv_tmp.key, (void*)&kv))
+    {
+      BANO_PERROR();
+      goto on_error;
+    }
+
+    if (*kv_tmp.name == 0) sprintf(kv_tmp.name, "0x%08x", kv_tmp.key);
+
+    memcpy(kv, &kv_tmp, sizeof(bano_nodl_keyval_t));
   }
 
  on_error:
@@ -333,6 +335,7 @@ static int load_nodl_dir(bano_dict_t* nodls, const bano_string_t* dirname)
     strcpy(filename + dirname->size + 1 + 8, NODL_SUFFIX_STR);
 
     nodl_id = (uint32_t)strtoul(dirent->d_name, NULL, 16);
+
     if (bano_dict_add(nodls, nodl_id, (void*)&nodl))
     {
       BANO_PERROR();
