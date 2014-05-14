@@ -23,7 +23,7 @@ input[type=submit]
 
 .bano_box
 {
- width: 480px;
+ width: 460px;
 }
 
 .bano_node
@@ -56,7 +56,7 @@ input[type=submit]
 .bano_mtime
 {
  display: inline-block;
- width: 120px;
+ width: 100px;
  float: left;
  margin: 0;
 }

@@ -936,10 +936,12 @@ static int handle_set_msg
 (prw_msg_data_t* prwmd, const bano_msg_t* msg, bano_node_t* node)
 {
   const uint16_t key = le_to_uint16(msg->u.set.key);
+  struct timeval tm;
   bano_node_val_t val;
 
   val.val = le_to_uint32(msg->u.set.val);
-  val.mtime = time(NULL);
+  gettimeofday(&tm, NULL);
+  val.mtime = tm.tv_sec;
 
   /* add to node pairs before possibly completing (generating html ...) */
 
@@ -1094,22 +1096,15 @@ struct gen_html_data
 {
   bano_node_t* node;
   bano_html_t* html;
+  time_t tm_now;
 };
 
-static void format_time(const time_t* tp, char* buf)
+static void format_time(time_t tm_now, time_t tm_mod, char buf[32])
 {
-#define TIME_BUF_SIZE 32
-
-  struct tm tm;
-
-  localtime_r(tp, &tm);
-
-  snprintf
-  (
-   buf, TIME_BUF_SIZE, "%d/%d/%d:%d-%d-%d",
-   tm.tm_mday, tm.tm_mon, tm.tm_year,
-   tm.tm_hour, tm.tm_min, tm.tm_sec
-  );
+  time_t d;
+  if (tm_now <= tm_mod) d = 0;
+  else d = tm_now - tm_mod;
+  sprintf(buf, "%lu s.", (unsigned long)d);
 }
 
 static int gen_pair_html(bano_list_item_t* it, void* p)
@@ -1131,15 +1126,14 @@ static int gen_pair_html(bano_list_item_t* it, void* p)
   const unsigned int is_rst = (kv->flags & BANO_NODL_FLAG_RST) ? 1 : 0;
   bano_node_val_t* valp;
   uint32_t val;
-  char mtime_buf[TIME_BUF_SIZE];
+  char mtime_buf[32];
 
   val = 0xffffffff;
-  mtime_buf[0] = 0;
-
+  strcpy(mtime_buf, "na");
   if (bano_dict_get(&node->keyval_pairs, key, (void**)&valp) == 0)
   {
     val = valp->val;
-    if (is_mtime) format_time(&valp->mtime, mtime_buf);
+    if (is_mtime) format_time(ghd->tm_now, valp->mtime, mtime_buf);
   }
 
   if (is_set || is_get || is_rst)
@@ -1147,6 +1141,9 @@ static int gen_pair_html(bano_list_item_t* it, void* p)
     /* generate post form */
 
     bano_html_printf(html, "<form action='/?naddr=0x%08x&key=0x%04x&is_ack=%u' method='post'>\n", naddr, key, is_ack);
+
+    bano_html_printf(html, "<div class='bano_mtime'> %s </div>\n", mtime_buf);
+
     bano_html_printf(html, "<div class='bano_key'> %s </div>", name);
 
     bano_html_printf(html, "<input type='text' name='val' value='");
@@ -1154,25 +1151,24 @@ static int gen_pair_html(bano_list_item_t* it, void* p)
     else bano_html_printf(html, "0x%08x", val);
     bano_html_printf(html, "' />\n");
 
-    bano_html_printf(html, "<div class='bano_mtime'> %s </div>", mtime_buf);
-
     if (is_set) bano_html_printf(html, "<input type='submit' name='op' value='set' />\n");
     if (is_get) bano_html_printf(html, "<input type='submit' name='op' value='get' />\n");
     if (is_rst) bano_html_printf(html, "<input type='submit' name='op' value='rst' />\n");
+
     bano_html_printf(html, "</form>\n");
   }
   else
   {
     /* readonly variable */
 
-    bano_html_printf(html, "<div class='bano_key'> %s </div>", name);
+    bano_html_printf(html, "<div class='bano_mtime'> %s </div>\n", mtime_buf);
+
+    bano_html_printf(html, "<div class='bano_key'> %s </div>\n", name);
 
     bano_html_printf(html, "<div class='bano_val'> ");
     if (is_dec) bano_html_printf(html, "%u", val);
     else bano_html_printf(html, "0x%08x", val);
-    bano_html_printf(html, " </div>", val);
-
-    bano_html_printf(html, "<div class='bano_mtime'> %s </div>", mtime_buf);
+    bano_html_printf(html, " </div>\n");
 
     bano_html_printf(html, "<br/>\n");
   }
@@ -1191,11 +1187,13 @@ static int gen_node_html(bano_list_item_t* it, void* p)
   bano_html_printf(html, "<div class='bano_box bano_node'>\n");
 
   /* name */
+  bano_html_printf(html, "<div class='bano_mtime'> na </div>");
   bano_html_printf(html, "<div class='bano_key'> name </div>");
   bano_html_printf(html, "<div class='bano_val'> %s </div>", name);
   bano_html_printf(html, "<br/>\n");
 
   /* address */
+  bano_html_printf(html, "<div class='bano_mtime'> na </div>");
   bano_html_printf(html, "<div class='bano_key'> address </div>");
   bano_html_printf(html, "<div class='bano_val'> 0x%08x </div>", naddr);
   bano_html_printf(html, "<br/>\n");
@@ -1220,6 +1218,7 @@ static void gen_base_html
 )
 {
   struct gen_html_data ghd;
+  struct timeval tm;
   const char* const s = compl_err ? "error" : "success";
 
   bano_html_init(html);
@@ -1231,6 +1230,8 @@ static void gen_base_html
   bano_html_printf(html, "</style>\n");
 
   /* nodes html */
+  gettimeofday(&tm, NULL);
+  ghd.tm_now = tm.tv_sec;
   ghd.html = html;
   bano_list_foreach(&base->nodes, gen_node_html, &ghd);
 
@@ -1401,6 +1402,7 @@ static int handle_httpd_msg
       const uint16_t key = msg->key;
       bano_node_val_t val;
       bano_node_t* node;
+      struct timeval tm;
 
       if (bano_find_node_by_addr(prwmd->base, naddr, &node))
       {
@@ -1409,7 +1411,8 @@ static int handle_httpd_msg
       }
 
       val.val = 0;
-      val.mtime = time(NULL);
+      gettimeofday(&tm, NULL);
+      val.mtime = tm.tv_sec;
 
       if (bano_dict_set_or_add(&node->keyval_pairs, key, &val))
       {
