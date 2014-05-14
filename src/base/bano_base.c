@@ -1102,9 +1102,32 @@ struct gen_html_data
 static void format_time(time_t tm_now, time_t tm_mod, char buf[32])
 {
   time_t d;
+  char u;
+
   if (tm_now <= tm_mod) d = 0;
   else d = tm_now - tm_mod;
-  sprintf(buf, "%lu s.", (unsigned long)d);
+
+  if (d > (60 * 60 * 24))
+  {
+    u = 'd';
+    d /= 60 * 60 * 24;
+  }
+  else if (d > (60 * 60))
+  {
+    u = 'h';
+    d /= 60 * 60;
+  }
+  else if (d > 60)
+  {
+    u = 'm';
+    d /= 60;
+  }
+  else
+  {
+    u = 's';
+  }
+
+  sprintf(buf, "%lu %c", (unsigned long)d, u);
 }
 
 static int gen_pair_html(bano_list_item_t* it, void* p)
