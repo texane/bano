@@ -60,6 +60,7 @@ tar: a.out
 	@cp a.out bano > /dev/null
 	@cp -rf conf bano > /dev/null
 	@cp -rf nodl bano > /dev/null
+	@cp -rf sh bano > /dev/null
 	@tar czvf bano.tar.gz bano > /dev/null
 
 clean:
