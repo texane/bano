@@ -789,10 +789,13 @@ int bano_open(bano_base_t* base, const bano_base_info_t* info)
 #ifdef BANO_CONFIG_HTTPD
   if (base->is_httpd) bano_httpd_fini(&base->httpd);
 #endif /* BANO_CONFIG_HTTPD */
+#ifdef BANO_CONFIG_CAM
+  if (base->is_cam) bano_cam_close(&base->cam);
+#endif /* BANO_CONFIG_CAM */
   bano_dict_fini(&base->nodls, NULL, NULL);
-  bano_list_fini(&base->nodes, free_node_item, NULL);
-  bano_list_fini(&base->sockets, free_socket_item, NULL);
   bano_timer_fini(&base->timers);
+  bano_list_fini(&base->nodes, free_node_item, NULL);
+  bano_list_fini(&base->sockets, free_socket_item, base);
   return -1;
 }
 
