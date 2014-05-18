@@ -48,6 +48,7 @@ static int on_event(struct mg_connection* conn, enum mg_event ev)
       if (strcmp(buf, "get") == 0) msg.op = BANO_HTTPD_MSG_OP_GET;
       else if (strcmp(buf, "set") == 0) msg.op = BANO_HTTPD_MSG_OP_SET;
       else if (strcmp(buf, "rst") == 0) msg.op = BANO_HTTPD_MSG_OP_RST;
+      else if (strcmp(buf, "cam") == 0) msg.op = BANO_HTTPD_MSG_OP_CAM;
       else msg.op = BANO_HTTPD_MSG_OP_INVALID;
 
       mg_get_var(conn, "fmt", buf, sizeof(buf));

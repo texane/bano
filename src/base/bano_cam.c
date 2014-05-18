@@ -378,6 +378,13 @@ int bano_cam_open(bano_cam_handle_t* cam, const bano_cam_info_t* info)
   int id;
   int err;
 
+  cam->is_dummy = 0;
+  if (info->flags & BANO_CAM_FLAG_DUMMY)
+  {
+    cam->is_dummy = 1;
+    return 0;
+  }
+
   if ((info->flags & BANO_CAM_FLAG_ID) == 0) id = 0;
   else id = (int)info->id;
 
@@ -446,6 +453,8 @@ int bano_cam_open(bano_cam_handle_t* cam, const bano_cam_info_t* info)
 
 int bano_cam_close(bano_cam_handle_t* cam)
 {
+  if (cam->is_dummy) return 0;
+
   if (cam->is_mmap_enabled) stop_mmap_enabled(cam);
   else stop_mmap_disabled(cam);
   close(cam->fd);
@@ -455,6 +464,9 @@ int bano_cam_close(bano_cam_handle_t* cam)
 int bano_cam_capture(bano_cam_handle_t* cam, bano_cam_fn_t fn, void* data)
 {
   int err;
+
+  if (cam->is_dummy) return 0;
+
   if (cam->is_mmap_enabled) err = capture_mmap_enabled(cam, fn, data);
   else err = capture_mmap_disabled(cam, fn, data);
   return err;

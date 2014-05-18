@@ -42,6 +42,7 @@ typedef struct bano_httpd_msg
     BANO_HTTPD_MSG_OP_GET = 0,
     BANO_HTTPD_MSG_OP_SET,
     BANO_HTTPD_MSG_OP_RST,
+    BANO_HTTPD_MSG_OP_CAM,
     BANO_HTTPD_MSG_OP_INVALID
   } op;
 

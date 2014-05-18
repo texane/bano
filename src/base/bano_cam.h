@@ -26,6 +26,7 @@ typedef struct bano_cam_info
 {
 #define BANO_CAM_FLAG_ID (1 << 0)
 #define BANO_CAM_FLAG_FMT (1 << 1)
+#define BANO_CAM_FLAG_DUMMY (1 << 2)
   uint32_t flags;
   unsigned int id;
   bano_cam_fmt_t fmt;
@@ -37,6 +38,7 @@ typedef struct bano_cam_handle
   int fd;
   bano_cam_fmt_t fmt;
   int is_mmap_enabled;
+  int is_dummy;
 
   /* frame buffers */
 #define BANO_CAM_FB_COUNT 2

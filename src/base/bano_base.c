@@ -622,6 +622,17 @@ static int apply_cam_pair(bano_list_item_t* it, void* p)
       goto on_error;
     }
   }
+  else if (bano_string_cmp_cstr(&pair->key, "dummy") == 0)
+  {
+    unsigned int x;
+    if (bano_string_to_bool(&pair->val, &x))
+    {
+      BANO_PERROR();
+      goto on_error;
+    }
+    if (x) info->flags |= BANO_CAM_FLAG_DUMMY;
+    else info->flags &= ~BANO_CAM_FLAG_DUMMY;
+  }
   else
   {
     BANO_PERROR();
@@ -1533,6 +1544,12 @@ static int handle_httpd_msg
       }
 
       complete_httpd_msg(msg, prwmd->base, 0, 0);
+      break ;
+    }
+
+  case BANO_HTTPD_MSG_OP_CAM:
+    {
+      complete_httpd_msg(msg, prwmd->base, -42, 0);
       break ;
     }
 
