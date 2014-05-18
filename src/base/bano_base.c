@@ -1356,7 +1356,7 @@ static void gen_base_html
   if (base->is_cam)
   {
     bano_html_printf(html, "<div class='bano_box bano_cam'>\n");
-    bano_html_printf(html, "<img src='/?ob=cam' height='320' width='240' />\n");
+    bano_html_printf(html, "<img src='/?ob=cam' width='320' height='240' />\n");
     bano_html_printf(html, "</div>\n");
     bano_html_printf(html, "<br/>\n");
   }
@@ -1565,7 +1565,7 @@ static int handle_httpd_msg
 #ifdef BANO_CONFIG_CAM
       if (prwmd->base->is_cam)
       {
-	err = bano_cam_capture(&prwmd->base->cam, NULL, NULL);
+	err = bano_cam_capture(&prwmd->base->cam);
       }
 #endif /* BANO_CONFIG_CAM */
 

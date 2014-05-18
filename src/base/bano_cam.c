@@ -531,8 +531,12 @@ static int stop_mmap_enabled(bano_cam_handle_t* cam)
 static int capture_mmap_enabled(bano_cam_handle_t* cam)
 {
   struct v4l2_buffer buffer;
-  unsigned int bug_count = 0;
+  unsigned int bug_count;
+  unsigned int cap_count;
 
+  cap_count = 0;
+ redo_cap:
+  bug_count = 0;
  redo_select:
   {
     /* this fix is required due to some hardware */
@@ -563,15 +567,25 @@ static int capture_mmap_enabled(bano_cam_handle_t* cam)
   buffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
   buffer.memory = V4L2_MEMORY_MMAP;
 
-  if (ioctl(cam->fd, VIDIOC_DQBUF, &buffer) == -1)
+  if (ioctl(cam->fd, VIDIOC_DQBUF, &buffer))
   {
     BANO_PERROR();
     goto on_error;
   }
 
+  /* FIXME: DQBUF retrieves the previous image. */
+  /* seems like a bug to me. we renqueue and */
+  /* recapture to get the actual current image. */
+  if (cap_count == 0)
+  {
+    cap_count = 1;
+    ioctl(cam->fd, VIDIOC_QBUF, &buffer);
+    goto redo_cap;
+  }
+
   trans_frame(cam, cam->fb_data[buffer.index], cam->fb_size[buffer.index]);
 
-  if (ioctl(cam->fd, VIDIOC_QBUF, &buffer) == -1)
+  if (ioctl(cam->fd, VIDIOC_QBUF, &buffer))
   {
     BANO_PERROR();
     goto on_error;
@@ -615,12 +629,13 @@ int bano_cam_open(bano_cam_handle_t* cam, const bano_cam_info_t* info)
     goto on_error_0;
   }
 
-  cam->is_dummy = 0;
   if (info->flags & BANO_CAM_FLAG_DUMMY)
   {
     cam->is_dummy = 1;
     return 0;
   }
+
+  cam->is_dummy = 0;
 
   if ((info->flags & BANO_CAM_FLAG_ID) == 0) id = 0;
   else id = (int)info->id;
