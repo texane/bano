@@ -41,6 +41,7 @@ LIBS += -lpthread
 
 # camera support
 SRCS += $(REPO_DIR)/bano/src/base/bano_cam.c
+SRCS += $(REPO_DIR)/bano/src/base/bano_bmp.c
 CFLAGS += -DBANO_CONFIG_CAM
 
 OBJS := $(SRCS:.c=.o)

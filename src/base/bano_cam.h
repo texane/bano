@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <sys/types.h>
 #include <linux/videodev2.h>
+#include "bano_bmp.h"
 
 
 typedef enum
@@ -47,21 +48,16 @@ typedef struct bano_cam_handle
   struct v4l2_buffer fb_v4l2[BANO_CAM_FB_COUNT];
   size_t fb_count;
 
-  /* dummy */
-  uint8_t* im_buf;
-  size_t im_size;
-  /* dummy */
+  /* output bmp file */
+  bano_bmp_handle_t bmp;
 
 } bano_cam_handle_t;
 
 
-typedef void (*bano_cam_fn_t)
-(bano_cam_handle_t*, const uint8_t*, size_t, void*);
-
 int bano_cam_open(bano_cam_handle_t*, const bano_cam_info_t*);
 int bano_cam_close(bano_cam_handle_t*);
-int bano_cam_capture(bano_cam_handle_t*, bano_cam_fn_t, void*);
-int bano_cam_get_buf(bano_cam_handle_t*, const uint8_t**, size_t*);
+int bano_cam_capture(bano_cam_handle_t*);
+void bano_cam_get_bmp(bano_cam_handle_t*, const uint8_t**, size_t*);
 
 
 #endif /* BANO_CAM_H_INCLUDED */

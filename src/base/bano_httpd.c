@@ -55,10 +55,7 @@ static int on_event(struct mg_connection* conn, enum mg_event ev)
 #ifdef BANO_CONFIG_CAM
 	if (httpd->base->is_cam)
 	{
-	  if (bano_cam_get_buf(&httpd->base->cam, &im_data, &im_size))
-	  {
-	    BANO_PERROR();
-	  }
+	  bano_cam_get_bmp(&httpd->base->cam, &im_data, &im_size);
 	}
 #endif /* BANO_CONFIG_CAM */
 
