@@ -31,7 +31,7 @@ LIBS += -lsnrf
 
 # httpd server
 # use mongoose version 35bd2b603251b40d7dce606b565d39f6a6b6d8f2
-MG_DIR ?= $(REPO_DIR)/mongoose
+MG_DIR ?= ./third/mongoose
 SRCS += $(MG_DIR)/mongoose.c
 SRCS += $(REPO_DIR)/bano/src/base/bano_httpd.c
 SRCS += $(REPO_DIR)/bano/src/base/bano_socket_httpd.c
