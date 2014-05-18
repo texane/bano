@@ -61,6 +61,15 @@ input[type=submit]
  margin: 0;
 }
 
+.bano_cam
+{
+ display: inline-block;
+ border-style: solid;
+ border-width: 1px;
+ padding: 15px;
+ margin: 4px;
+}
+
 .bano_refresh
 {
  display: inline-block;

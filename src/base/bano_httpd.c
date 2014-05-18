@@ -44,6 +44,34 @@ static int on_event(struct mg_connection* conn, enum mg_event ev)
       bano_httpd_msg_t msg;
       char buf[32];
 
+      /* check if a specific object is requested */
+
+      mg_get_var(conn, "ob", buf, sizeof(buf));
+      if (strcmp(buf, "cam") == 0)
+      {
+	const uint8_t* im_data = NULL;
+	size_t im_size = 0;
+
+#ifdef BANO_CONFIG_CAM
+	if (httpd->base->is_cam)
+	{
+	  if (bano_cam_get_buf(&httpd->base->cam, &im_data, &im_size))
+	  {
+	    BANO_PERROR();
+	  }
+	}
+#endif /* BANO_CONFIG_CAM */
+
+	mg_send_header(conn, "Content-Type", "image/bmp");
+	sprintf(buf, "%zu", im_size);
+	mg_send_header(conn, "Content-Length", buf);
+	mg_send_data(conn, im_data, im_size);
+
+	break ;
+      }
+
+      /* no specific object, bano targeted request */
+
       mg_get_var(conn, "op", buf, sizeof(buf));
       if (strcmp(buf, "get") == 0) msg.op = BANO_HTTPD_MSG_OP_GET;
       else if (strcmp(buf, "set") == 0) msg.op = BANO_HTTPD_MSG_OP_SET;

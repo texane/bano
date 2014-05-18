@@ -1351,6 +1351,17 @@ static void gen_base_html
   ghd.html = html;
   bano_list_foreach(&base->nodes, gen_node_html, &ghd);
 
+  /* cam html */
+#ifdef BANO_CONFIG_CAM
+  if (base->is_cam)
+  {
+    bano_html_printf(html, "<div class='bano_box bano_cam'>\n");
+    bano_html_printf(html, "<img src='/?ob=cam' height='320' width='240' />\n");
+    bano_html_printf(html, "</div>\n");
+    bano_html_printf(html, "<br/>\n");
+  }
+#endif /* BANO_CONFIG_CAM */
+
   /* refresh the page */
   bano_html_printf(html, "<div class='bano_box bano_refresh'>\n");
   bano_html_printf(html, "<form action='/' method='get'>\n");
@@ -1549,7 +1560,16 @@ static int handle_httpd_msg
 
   case BANO_HTTPD_MSG_OP_CAM:
     {
-      complete_httpd_msg(msg, prwmd->base, -42, 0);
+      unsigned int err = -1; 
+
+#ifdef BANO_CONFIG_CAM
+      if (prwmd->base->is_cam)
+      {
+	err = bano_cam_capture(&prwmd->base->cam, NULL, NULL);
+      }
+#endif /* BANO_CONFIG_CAM */
+
+      complete_httpd_msg(msg, prwmd->base, err, 0);
       break ;
     }
 

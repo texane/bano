@@ -381,6 +381,8 @@ int bano_cam_open(bano_cam_handle_t* cam, const bano_cam_info_t* info)
   cam->is_dummy = 0;
   if (info->flags & BANO_CAM_FLAG_DUMMY)
   {
+    cam->im_size = 0;
+    cam->im_buf = NULL;
     cam->is_dummy = 1;
     return 0;
   }
@@ -465,11 +467,37 @@ int bano_cam_capture(bano_cam_handle_t* cam, bano_cam_fn_t fn, void* data)
 {
   int err;
 
-  if (cam->is_dummy) return 0;
+  if (cam->is_dummy)
+  {
+    struct stat st;
+    int fd;
+    cam->im_buf = NULL;
+    cam->im_size = 0;
+    if (stat("./tmp/cam.bmp", &st))
+    {
+      BANO_PERROR();
+      return -1;
+    }
+    cam->im_size = st.st_size;
+    cam->im_buf = malloc(cam->im_size);
+    fd = open("./tmp/cam.bmp", O_RDONLY);
+    read(fd, cam->im_buf, cam->im_size);
+    close(fd);
+    return 0;
+  }
 
   if (cam->is_mmap_enabled) err = capture_mmap_enabled(cam, fn, data);
   else err = capture_mmap_disabled(cam, fn, data);
   return err;
+}
+
+int bano_cam_get_buf
+(bano_cam_handle_t* cam, const uint8_t** bufp, size_t* sizep)
+{
+  if (cam->im_size == 0) return -1;
+  *bufp = cam->im_buf;
+  *sizep = cam->im_size;
+  return 0;
 }
 
 #if 0 /* unused */
