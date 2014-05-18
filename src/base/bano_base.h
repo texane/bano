@@ -16,6 +16,10 @@
 #include "bano_httpd.h"
 #endif /* BANO_CONFIG_HTTPD */
 
+#ifdef BANO_CONFIG_CAM
+#include "bano_cam.h"
+#endif /* BANO_CONFIG_CAM */
+
 
 /* forward decls */
 
@@ -107,6 +111,10 @@ typedef struct bano_base
   unsigned int is_httpd;
   bano_httpd_t httpd;
 #endif /* BANO_CONFIG_HTTPD */
+#ifdef BANO_CONFIG_CAM
+  unsigned int is_cam;
+  bano_cam_handle_t cam;
+#endif /* BANO_CONFIG_CAM */
 
 } bano_base_t;
 

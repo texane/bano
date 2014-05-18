@@ -21,6 +21,9 @@
 #include "bano_parser.h"
 #include "bano_perror.h"
 #include "../common/bano_common.h"
+#ifdef BANO_CONFIG_CAM
+#include "bano_cam.h"
+#endif /* BANO_CONFIG_CAM */
 
 
 /* conversion routines */
@@ -95,6 +98,9 @@ struct apply_data
 #endif /* BANO_CONFIG_HTTPD */
     bano_nodl_t* nodl;
     bano_nodl_keyval_t* kv;
+#ifdef BANO_CONFIG_CAM
+    bano_cam_info_t cam_info;
+#endif /* BANO_CONFIG_CAM */
   } u;
 
 };
@@ -583,6 +589,53 @@ static int apply_httpd_pair(bano_list_item_t* it, void* p)
 }
 #endif /* BANO_CONFIG_HTTPD */
 
+#ifdef BANO_CONFIG_CAM
+static int apply_cam_pair(bano_list_item_t* it, void* p)
+{
+  const bano_parser_pair_t* const pair = it->data;
+  struct apply_data* const ad = p;
+  bano_cam_info_t* const info = &ad->u.cam_info;
+
+  if (bano_string_cmp_cstr(&pair->key, "id") == 0)
+  {
+    info->flags |= BANO_CAM_FLAG_ID;
+    if (bano_string_to_uint32(&pair->val, &info->id))
+    {
+      BANO_PERROR();
+      goto on_error;
+    }
+  }
+  else if (bano_string_cmp_cstr(&pair->key, "fmt") == 0)
+  {
+    info->flags |= BANO_CAM_FLAG_FMT;
+    if (bano_string_cmp_cstr(&pair->val, "yuyv_320_240") == 0)
+    {
+      info->fmt = BANO_CAM_FMT_YUYV_320_240;
+    }
+    else if (bano_string_cmp_cstr(&pair->val, "yuyv_640_480") == 0)
+    {
+      info->fmt = BANO_CAM_FMT_YUYV_640_480;
+    }
+    else
+    {
+      BANO_PERROR();
+      goto on_error;
+    }
+  }
+  else
+  {
+    BANO_PERROR();
+    goto on_error;
+  }
+
+  return 0;
+
+ on_error:
+  ad->err = -1;
+  return -1;
+}
+#endif /* BANO_CONFIG_CAM */
+
 static int apply_struct(bano_list_item_t* it, void* p)
 {
   bano_parser_struct_t* const strukt = it->data;
@@ -654,6 +707,25 @@ static int apply_struct(bano_list_item_t* it, void* p)
     ad->base->is_httpd = 1;
   }
 #endif /* BANO_CONFIG_HTTPD */
+#ifdef BANO_CONFIG_CAM
+  else if (bano_string_cmp_cstr(&strukt->name, "cam") == 0)
+  {
+    bano_cam_info_t* const info = &ad->u.cam_info;
+
+    info->flags = 0;
+    bano_parser_foreach_pair(strukt, apply_cam_pair, ad);
+
+    if (ad->err) goto on_error;
+
+    if (bano_cam_open(&ad->base->cam, info))
+    {
+      BANO_PERROR();
+      ad->err = -1;
+    }
+
+    ad->base->is_cam = 1;
+  }
+#endif /* BANO_CONFIG_CAM */
 
  on_error:
   return ad->err;
@@ -687,6 +759,10 @@ int bano_open(bano_base_t* base, const bano_base_info_t* info)
 #ifdef BANO_CONFIG_HTTPD
   base->is_httpd = 0;
 #endif /* BANO_CONFIG_HTTPD */
+
+#ifdef BANO_CONFIG_CAM
+  base->is_cam = 0;
+#endif /* BANO_CONFIG_CAM */
 
   bano_list_init(&base->nodes);
   bano_list_init(&base->sockets);
@@ -725,6 +801,9 @@ int bano_close(bano_base_t* base)
 #ifdef BANO_CONFIG_HTTPD
   if (base->is_httpd) bano_httpd_fini(&base->httpd);
 #endif /* BANO_CONFIG_HTTPD */
+#ifdef BANO_CONFIG_CAM
+  if (base->is_cam) bano_cam_close(&base->cam);
+#endif /* BANO_CONFIG_CAM */
   bano_dict_fini(&base->nodls, NULL, NULL);
   bano_timer_fini(&base->timers);
   bano_list_fini(&base->nodes, free_node_item, NULL);
@@ -1258,17 +1337,24 @@ static void gen_base_html
   ghd.html = html;
   bano_list_foreach(&base->nodes, gen_node_html, &ghd);
 
-  /* status html */
-  bano_html_printf(html, "<div class='bano_box bano_status bano_status_%s'>\n", s);
-  bano_html_printf(html, "status: %s (0x%08x, 0x%08x)\n", s, compl_err, compl_val);
-  bano_html_printf(html, "</div>\n");
-  bano_html_printf(html, "<br/>\n");
-
   /* refresh the page */
   bano_html_printf(html, "<div class='bano_box bano_refresh'>\n");
   bano_html_printf(html, "<form action='/' method='get'>\n");
   bano_html_printf(html, "<input type='submit' value='refresh' />\n");
+#ifdef BANO_CONFIG_CAM
+  /* cam html */
+  if (base->is_cam)
+  {
+    bano_html_printf(html, "<input type='submit' name='op' value='cam' />\n");
+  }
+#endif /* BANO_CONFIG_CAM */
   bano_html_printf(html, "</form>\n");
+  bano_html_printf(html, "</div>\n");
+  bano_html_printf(html, "<br/>\n");
+
+  /* status html */
+  bano_html_printf(html, "<div class='bano_box bano_status bano_status_%s'>\n", s);
+  bano_html_printf(html, "status: %s (0x%08x, 0x%08x)\n", s, compl_err, compl_val);
   bano_html_printf(html, "</div>\n");
 
   bano_html_printf(html, "</body></html>\n");

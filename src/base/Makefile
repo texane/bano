@@ -39,6 +39,10 @@ SRCS += $(REPO_DIR)/bano/src/base/bano_html.c
 CFLAGS += -DBANO_CONFIG_HTTPD -I$(MG_DIR) -pthread
 LIBS += -lpthread
 
+# camera support
+SRCS += $(REPO_DIR)/bano/src/base/bano_cam.c
+CFLAGS += -DBANO_CONFIG_CAM
+
 OBJS := $(SRCS:.c=.o)
 
 all: a.out
