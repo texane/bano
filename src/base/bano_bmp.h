@@ -37,4 +37,4 @@ int bano_bmp_open(bano_bmp_handle_t*, const bano_bmp_info_t*);
 void bano_bmp_close(bano_bmp_handle_t*);
 
 
-#endif /* ! BMP_H_INCLUDED */
+#endif /* ! BANO_BMP_H_INCLUDED */

@@ -231,7 +231,10 @@ static void trans_frame
     break ;
   }
 
+#ifndef BANO_CONFIG_PNG
+  /* do not flip if png */
   trans_vflip_rgb24(bmp->data_buf, bmp->width, bmp->height);
+#endif /* BANO_CONFIG_PNG */
 }
 
 
