@@ -1,5 +1,6 @@
 [ base: use png format for images ]
 http://lodev.org/lodepng/
+http://code.google.com/p/miniz/ (example6.c)
 
 [ base, node: invalid packet contents ]
 use checksum for wireless packets
