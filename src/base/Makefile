@@ -44,6 +44,16 @@ SRCS += $(REPO_DIR)/bano/src/base/bano_cam.c
 SRCS += $(REPO_DIR)/bano/src/base/bano_bmp.c
 CFLAGS += -DBANO_CONFIG_CAM
 
+# png support
+# use http://lodev.org/lodepng, version 20131222
+LODEPNG_DIR ?= ./third/lodepng
+SRCS += $(LODEPNG_DIR)/lodepng.c
+CFLAGS += -DBANO_CONFIG_PNG -I$(LODEPNG_DIR)
+CFLAGS += -DLODEPNG_NO_COMPILE_DECODER
+CFLAGS += -DLODEPNG_NO_COMPILE_CPP
+CFLAGS += -DLODEPNG_NO_COMPILE_DISK
+CFLAGS += -DLODEPNG_NO_COMPILE_ERROR_TEXT
+
 OBJS := $(SRCS:.c=.o)
 
 all: a.out

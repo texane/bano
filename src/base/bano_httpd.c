@@ -42,6 +42,7 @@ static int on_event(struct mg_connection* conn, enum mg_event ev)
       bano_httpd_t* const httpd = conn->server_param;
       volatile int compl_err = invalid_compl_err;
       bano_httpd_msg_t msg;
+      const char* mime = "image/bmp";
       char buf[32];
 
       /* check if a specific object is requested */
@@ -55,11 +56,11 @@ static int on_event(struct mg_connection* conn, enum mg_event ev)
 #ifdef BANO_CONFIG_CAM
 	if (httpd->base->is_cam)
 	{
-	  bano_cam_get_bmp(&httpd->base->cam, &im_data, &im_size);
+	  bano_cam_get_bmp(&httpd->base->cam, &im_data, &im_size, &mime);
 	}
 #endif /* BANO_CONFIG_CAM */
 
-	mg_send_header(conn, "Content-Type", "image/bmp");
+	mg_send_header(conn, "Content-Type", mime);
 	sprintf(buf, "%zu", im_size);
 	mg_send_header(conn, "Content-Length", buf);
 	mg_send_data(conn, im_data, im_size);

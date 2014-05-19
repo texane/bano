@@ -13,6 +13,10 @@
 #include "bano_cam.h"
 #include "bano_bmp.h"
 
+#ifdef BANO_CONFIG_PNG
+#include "lodepng.h"
+#endif /* BANO_CONFIG_PNG */
+
 
 /* transform routines */
 
@@ -610,12 +614,17 @@ int bano_cam_open(bano_cam_handle_t* cam, const bano_cam_info_t* info)
   int id;
   int err;
 
+#ifdef BANO_CONFIG_PNG
+  cam->png_buf = NULL;
+  cam->png_size = 0;
+#endif /* BANO_CONFIG_PNG */
+
   /* extract format info */
 
   if (expand_format(info->fmt, &fourcc, &width, &height))
   {
     BANO_PERROR();
-    goto on_error_1;
+    goto on_error_0;
   }
 
   /* create output bmp */
@@ -701,6 +710,10 @@ int bano_cam_open(bano_cam_handle_t* cam, const bano_cam_info_t* info)
 
 int bano_cam_close(bano_cam_handle_t* cam)
 {
+#ifdef BANO_CONFIG_PNG
+  if (cam->png_buf != NULL) free(cam->png_buf);
+#endif /* BANO_CONFIG_PNG */
+
   bano_bmp_close(&cam->bmp);
 
   if (cam->is_dummy) return 0;
@@ -721,14 +734,44 @@ int bano_cam_capture(bano_cam_handle_t* cam)
   if (cam->is_mmap_enabled) err = capture_mmap_enabled(cam);
   else err = capture_mmap_disabled(cam);
 
+#ifdef BANO_CONFIG_PNG
+  if (err == 0)
+  {
+    const unsigned int w = cam->bmp.width;
+    const unsigned int h = cam->bmp.height;
+    const unsigned char* p = cam->bmp.data_buf;
+
+    if (cam->png_buf != NULL) free(cam->png_buf);
+
+    if (lodepng_encode24(&cam->png_buf, &cam->png_size, p, w, h))
+    {
+      BANO_PERROR();
+      cam->png_buf = NULL;
+      cam->png_size = 0;
+      err = -1;
+    }
+  }
+#endif /* BANO_CONFIG_PNG */
+
   return err;
 }
 
-void bano_cam_get_bmp
-(bano_cam_handle_t* cam, const uint8_t** bufp, size_t* sizep)
+void bano_cam_get_image
+(
+ bano_cam_handle_t* cam,
+ const uint8_t** bufp, size_t* sizep,
+ const char** mimep
+)
 {
+#ifdef BANO_CONFIG_PNG
+  *bufp = cam->png_buf;
+  *sizep = cam->png_size;
+  *mimep = "image/png";
+#else /* bmp */
   *bufp = cam->bmp.mem_buf;
   *sizep = cam->bmp.mem_size;
+  *mimep = "image/bmp";
+#endif /* BANO_CONFIG_PNG */
 }
 
 #if 0 /* unused */

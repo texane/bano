@@ -51,13 +51,19 @@ typedef struct bano_cam_handle
   /* output bmp file */
   bano_bmp_handle_t bmp;
 
+#ifdef BANO_CONFIG_PNG
+  /* output png file */
+  uint8_t* png_buf;
+  size_t png_size;
+#endif /* BANO_CONFIG_PNG */
+
 } bano_cam_handle_t;
 
 
 int bano_cam_open(bano_cam_handle_t*, const bano_cam_info_t*);
 int bano_cam_close(bano_cam_handle_t*);
 int bano_cam_capture(bano_cam_handle_t*);
-void bano_cam_get_bmp(bano_cam_handle_t*, const uint8_t**, size_t*);
+void bano_cam_get_image(bano_cam_handle_t*, const uint8_t**, size_t*, const char**);
 
 
 #endif /* BANO_CAM_H_INCLUDED */
