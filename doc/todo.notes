@@ -1,3 +1,6 @@
+[ base: use png format for images ]
+http://lodev.org/lodepng/
+
 [ base, node: invalid packet contents ]
 use checksum for wireless packets
 
