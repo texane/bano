@@ -1356,7 +1356,9 @@ static void gen_base_html
   if (base->is_cam)
   {
     bano_html_printf(html, "<div class='bano_box bano_cam'>\n");
-    bano_html_printf(html, "<img src='/?ob=cam' width='320' height='240' />\n");
+    bano_html_printf(html, "<img src='/?ob=cam");
+    /* generate a unique id so that browser wont cache */
+    bano_html_printf(html, "&id=%08x%08x' />\n", tm.tv_sec, tm.tv_usec);
     bano_html_printf(html, "</div>\n");
     bano_html_printf(html, "<br/>\n");
   }

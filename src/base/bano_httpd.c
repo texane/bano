@@ -61,6 +61,7 @@ static int on_event(struct mg_connection* conn, enum mg_event ev)
 #endif /* BANO_CONFIG_CAM */
 
 	mg_send_header(conn, "Content-Type", mime);
+	mg_send_header(conn, "Cache-Control", "no-cache");
 	sprintf(buf, "%zu", im_size);
 	mg_send_header(conn, "Content-Length", buf);
 	mg_send_data(conn, im_data, im_size);
@@ -263,6 +264,7 @@ int bano_httpd_complete_msg
     break ;
   }
   mg_send_header(msg->conn, "Content-Type", s);
+  mg_send_header(msg->conn, "Cache-Control", "no-cache");
 
   sprintf(buf, "%zu", size);
   mg_send_header(msg->conn, "Content-Length", buf);
