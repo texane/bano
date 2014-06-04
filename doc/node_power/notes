@@ -1,0 +1,173 @@
+[ introduction ]
+
+this documentation characterizes the node power consumption
+profile under different operating conditions. data resuling
+from this analysis can be used to build appropriate power
+supply stages. for this purpose, the needed data are grouped
+by profiles:
+
+message transmission profile (tx profile):
+. v_rf_max, v_rf_min, the RF chipset min and max voltages,
+. t_tx, the time to send a message,
+. i_tx, the average current during message transmission,
+. v_tx_drop, the voltage drop during message transmission.
+
+message reception profile:
+
+microcontroller profile:
+. v_cpu_min, v_cpu_max, the CPU min and max operating voltages
+. t_boot, the time for a node to boot,
+. i_sleep, the current in sleep mode,
+. i_active, the current in active mode.
+
+adc profile:
+. i_adc, the current used during adc measure,
+. t_adc, time for an adc measure.
+
+power supply stage data:
+. v_supply, power supply voltage,
+. t_cload, the time it takes to the capacitor to load.
+
+solar profile:
+. i_short: the short circuit current at different voltages
+. t_load: the time it takes for a capacitor to load at constant
+voltage current
+
+
+The following section describe experiments used to measure
+the different profiles.
+
+
+[ tx profile ]
+
+[[ setup ]]
+
+the node wakes up every 5 seconds and sends a burst of 5
+consecutive messages. the node program is contained in src.
+TODO: message full size
+TODO: node power level
+
+[[ dat/0000.dat ]]
+uil command line: ./a.out -adc_freq 250000 -dac_lo 0 -dac_shape const -adc_oversampl 8 -omode time
+battery is a 3v coin cell: http://fr.farnell.com/multicomp/cr2477/coin-cell-lithium-3v-1000mah-cr2477/dp/2065175
+caps in parallel with battery 330uF + 10nF.
+
+[[ dat/0001.dat ]]
+bench power supply used to power the node at 3v. this setup
+is used to get the node profile when powered by an ideal
+current source.
+
+pic/0000.jpg shows the wiring
+
+sh/gen_0003.sh shows a burst of 5 messages
+
+sh/gen_0004.sh zooms a particular message. we can see that the
+current peak is around 25 mA for 5 ms .
+
+sh/gen_0005.sh shows the cpu boot profile.
+
+
+[ solar profile ]
+
+refer to bano_solar directory
+
+
+[ boot_adc_tx profile ]
+
+the node setups and does 4 acquisitions. it averages the sum and
+sends one message.
+sources available in src.
+the node is powered by a bench power supply.
+
+[[ dat/0000.dat ]]
+uil command line: ./a.out -adc_freq 250000 -dac_lo 0 -dac_shape const -adc_oversampl 8 -omode time > /tmp/o
+this capture is done with message encryption enabled.
+
+[[ dat/0001.dat ]]
+uil command line: ./a.out -adc_freq 250000 -dac_lo 0 -dac_shape const -adc_oversampl 128 -omode time > /tmp/o
+this capture is done with message encryption disabled, reducing
+drastically the time to send a message.
+
+from this capture, we can see that the time to boot, acquire 8
+value and send a message is 1.6 seconds. the profile is:
+. 4mA for 1.5s
+. 25mA for 5ms (refer to tx profile section)
+. 1mA for 95ms
+
+this amount to a total energy of:
+e_load = 3.1 * 4*10^-3*1.5 + 25*10^-3*5*10^-3 + 1*10^-3*95*10^-3
+e_load = 0.01882 Joules
+
+TODO: check the arduino bootloader source code. is there a timeout
+that could be reduced to shorten the boot time ?
+
+
+[ determining the capacitor size ]
+
+--
+The capacitor size is determined by measuring the energy required
+by the load. This energy must be given by the capacitor. Also, the
+capacitor voltage can not drop above a given threshold, 2V in our
+application.
+
+The capacitor energy is:
+e_cap = 1/2 * c * v^2
+
+The load energy is:
+e_load
+
+Thus, we must have:
+e_cap_ini - e_cap_fini = e_load
+1/2 * c (v_ini^2 - v_fini^2) = e_load
+c = 2 * e_load / (v_ini^2 - v_fini^2)
+
+We have:
+v_ini = 3.5
+v_fini = 2.0
+e_load = 0.01882
+
+Thus:
+c = 4.57mF
+
+Note:
+the sensormag link mentions that the ESR should be taken into
+account when sizing the cap. it gives an equation.
+
+Note:
+if we succeeded in having a DC:DC converter to pass from 9V to
+3V, and that could work from 9V to 2V, then we could largely
+reduce the capacitor. actually:
+v_ini = 9V
+and
+c = 490uF
+DC:DC converter should be investigated.
+
+
+--
+a capacitor voltage versus current and time is:
+v(t) = 1 / c * integral( i(t) ) + v(t=0)
+if i(t) is constant and equals i, then
+v(t) = 1 / c * i * t + v(t=0)
+and
+v_diff = i * t / c
+or
+t = v_diff * c / i
+with v_diff the voltage after t seconds, ie. abs(v(t=0) - v(t))
+
+for instance, if a solar cell has a short circuit current of 1mA
+and the capacitor is 2mF, then the time to charge the capacitor
+from 0V to 3.6V is:
+t = 3.6 * 2 * 10^-3 / 1 * 10^-3
+t = 7.2s
+this neglects the capacitor esr
+
+from the previous measures, we have:
+t_adc_tx = 50 ms
+i_adc_tx = 50 mA
+v_ini = 3.6 V
+v_fin = 2.0 V
+
+
+[ references ]
+http://www.sensorsmag.com/networking-communications/energy-harvesting/using-a-small-solar-cell-and-a-supercapacitor-a-wireless-sen-7310
+http://www.cap-xx.com/resources/pres_wp/pres_wp.php

@@ -1,0 +1,2056 @@
+
+main.elf:     file format elf32-avr
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000846  00000000  00000000  00000074  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .bss          00000012  00800100  00800100  000008ba  2**0
+                  ALLOC
+  2 .stab         00001f5c  00000000  00000000  000008bc  2**2
+                  CONTENTS, READONLY, DEBUGGING
+  3 .stabstr      00000e9e  00000000  00000000  00002818  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  4 .comment      00000011  00000000  00000000  000036b6  2**0
+                  CONTENTS, READONLY
+
+Disassembly of section .text:
+
+00000000 <__vectors>:
+   0:	0c 94 34 00 	jmp	0x68	; 0x68 <__ctors_end>
+   4:	0c 94 46 00 	jmp	0x8c	; 0x8c <__bad_interrupt>
+   8:	0c 94 46 00 	jmp	0x8c	; 0x8c <__bad_interrupt>
+   c:	0c 94 86 00 	jmp	0x10c	; 0x10c <__vector_3>
+  10:	0c 94 95 00 	jmp	0x12a	; 0x12a <__vector_4>
+  14:	0c 94 a4 00 	jmp	0x148	; 0x148 <__vector_5>
+  18:	0c 94 46 00 	jmp	0x8c	; 0x8c <__bad_interrupt>
+  1c:	0c 94 46 00 	jmp	0x8c	; 0x8c <__bad_interrupt>
+  20:	0c 94 46 00 	jmp	0x8c	; 0x8c <__bad_interrupt>
+  24:	0c 94 46 00 	jmp	0x8c	; 0x8c <__bad_interrupt>
+  28:	0c 94 46 00 	jmp	0x8c	; 0x8c <__bad_interrupt>
+  2c:	0c 94 6e 00 	jmp	0xdc	; 0xdc <__vector_11>
+  30:	0c 94 46 00 	jmp	0x8c	; 0x8c <__bad_interrupt>
+  34:	0c 94 46 00 	jmp	0x8c	; 0x8c <__bad_interrupt>
+  38:	0c 94 46 00 	jmp	0x8c	; 0x8c <__bad_interrupt>
+  3c:	0c 94 46 00 	jmp	0x8c	; 0x8c <__bad_interrupt>
+  40:	0c 94 46 00 	jmp	0x8c	; 0x8c <__bad_interrupt>
+  44:	0c 94 46 00 	jmp	0x8c	; 0x8c <__bad_interrupt>
+  48:	0c 94 46 00 	jmp	0x8c	; 0x8c <__bad_interrupt>
+  4c:	0c 94 46 00 	jmp	0x8c	; 0x8c <__bad_interrupt>
+  50:	0c 94 46 00 	jmp	0x8c	; 0x8c <__bad_interrupt>
+  54:	0c 94 46 00 	jmp	0x8c	; 0x8c <__bad_interrupt>
+  58:	0c 94 46 00 	jmp	0x8c	; 0x8c <__bad_interrupt>
+  5c:	0c 94 46 00 	jmp	0x8c	; 0x8c <__bad_interrupt>
+  60:	0c 94 46 00 	jmp	0x8c	; 0x8c <__bad_interrupt>
+  64:	0c 94 46 00 	jmp	0x8c	; 0x8c <__bad_interrupt>
+
+00000068 <__ctors_end>:
+  68:	11 24       	eor	r1, r1
+  6a:	1f be       	out	0x3f, r1	; 63
+  6c:	cf ef       	ldi	r28, 0xFF	; 255
+  6e:	d8 e0       	ldi	r29, 0x08	; 8
+  70:	de bf       	out	0x3e, r29	; 62
+  72:	cd bf       	out	0x3d, r28	; 61
+
+00000074 <__do_clear_bss>:
+  74:	11 e0       	ldi	r17, 0x01	; 1
+  76:	a0 e0       	ldi	r26, 0x00	; 0
+  78:	b1 e0       	ldi	r27, 0x01	; 1
+  7a:	01 c0       	rjmp	.+2      	; 0x7e <.do_clear_bss_start>
+
+0000007c <.do_clear_bss_loop>:
+  7c:	1d 92       	st	X+, r1
+
+0000007e <.do_clear_bss_start>:
+  7e:	a2 31       	cpi	r26, 0x12	; 18
+  80:	b1 07       	cpc	r27, r17
+  82:	e1 f7       	brne	.-8      	; 0x7c <.do_clear_bss_loop>
+  84:	0e 94 8a 03 	call	0x714	; 0x714 <main>
+  88:	0c 94 21 04 	jmp	0x842	; 0x842 <_exit>
+
+0000008c <__bad_interrupt>:
+  8c:	0c 94 00 00 	jmp	0	; 0x0 <__vectors>
+
+00000090 <nrf905_cmd_write>:
+  NRF905_IO_CSN_PORT &= ~NRF905_IO_CSN_MASK;
+}
+
+static inline void spi_cs_high(void)
+{
+  NRF905_IO_CSN_PORT |= NRF905_IO_CSN_MASK;
+  90:	2a 9a       	sbi	0x05, 2	; 5
+  NRF905_IO_CSN_DDR |= NRF905_IO_CSN_MASK;
+}
+
+static inline void spi_cs_low(void)
+{
+  NRF905_IO_CSN_PORT &= ~NRF905_IO_CSN_MASK;
+  92:	2a 98       	cbi	0x05, 2	; 5
+#if 0 /* FIXME: needed for sd_read_block to work */
+  __asm__ __volatile__ ("nop\n\t");
+  __asm__ __volatile__ ("nop\n\t");
+#endif
+
+  SPDR = x;
+  94:	8e bd       	out	0x2e, r24	; 46
+    goto redo;
+#endif
+  }
+#endif
+
+  while ((SPSR & (1 << SPIF)) == 0) ;
+  96:	0d b4       	in	r0, 0x2d	; 45
+  98:	07 fe       	sbrs	r0, 7
+  9a:	fd cf       	rjmp	.-6      	; 0x96 <nrf905_cmd_write+0x6>
+  spi_write_uint8((x >> 0) & 0xff);
+}
+
+static void spi_write(const uint8_t* s, uint8_t len)
+{
+  for (; len; --len, ++s) spi_write_uint8(*s);
+  9c:	44 23       	and	r20, r20
+  9e:	41 f0       	breq	.+16     	; 0xb0 <nrf905_cmd_write+0x20>
+  a0:	fb 01       	movw	r30, r22
+  a2:	81 91       	ld	r24, Z+
+#if 0 /* FIXME: needed for sd_read_block to work */
+  __asm__ __volatile__ ("nop\n\t");
+  __asm__ __volatile__ ("nop\n\t");
+#endif
+
+  SPDR = x;
+  a4:	8e bd       	out	0x2e, r24	; 46
+    goto redo;
+#endif
+  }
+#endif
+
+  while ((SPSR & (1 << SPIF)) == 0) ;
+  a6:	0d b4       	in	r0, 0x2d	; 45
+  a8:	07 fe       	sbrs	r0, 7
+  aa:	fd cf       	rjmp	.-6      	; 0xa6 <nrf905_cmd_write+0x16>
+  spi_write_uint8((x >> 0) & 0xff);
+}
+
+static void spi_write(const uint8_t* s, uint8_t len)
+{
+  for (; len; --len, ++s) spi_write_uint8(*s);
+  ac:	41 50       	subi	r20, 0x01	; 1
+  ae:	c9 f7       	brne	.-14     	; 0xa2 <nrf905_cmd_write+0x12>
+}
+
+static inline void spi_cs_high(void)
+{
+  NRF905_IO_CSN_PORT |= NRF905_IO_CSN_MASK;
+  b0:	2a 9a       	sbi	0x05, 2	; 5
+  b2:	08 95       	ret
+
+000000b4 <nrf905_cmd_wc>:
+  spi_cs_high();
+}
+
+static void nrf905_cmd_wc(void)
+{
+  nrf905_cmd_write(NRF905_CMD_WC, nrf905_config, sizeof(nrf905_config));
+  b4:	4a e0       	ldi	r20, 0x0A	; 10
+  b6:	67 e0       	ldi	r22, 0x07	; 7
+  b8:	71 e0       	ldi	r23, 0x01	; 1
+  ba:	80 e0       	ldi	r24, 0x00	; 0
+  bc:	0c 94 48 00 	jmp	0x90	; 0x90 <nrf905_cmd_write>
+
+000000c0 <nrf905_write_payload_zero>:
+  NRF905_IO_TRX_PORT |= NRF905_IO_TRX_MASK;
+}
+
+static void nrf905_clear_trx(void)
+{
+  NRF905_IO_TRX_PORT &= ~NRF905_IO_TRX_MASK;
+  c0:	5e 98       	cbi	0x0b, 6	; 11
+  NRF905_IO_TXE_DDR |= NRF905_IO_TXE_MASK;
+}
+
+static void nrf905_set_txe(void)
+{
+  NRF905_IO_TXE_PORT |= NRF905_IO_TXE_MASK;
+  c2:	5c 9a       	sbi	0x0b, 4	; 11
+  NRF905_IO_PWR_DDR |= NRF905_IO_PWR_MASK;
+}
+
+static void nrf905_set_pwr(void)
+{
+  NRF905_IO_PWR_PORT |= NRF905_IO_PWR_MASK;
+  c4:	5f 9a       	sbi	0x0b, 7	; 11
+  /* writing the payload must be done with txr_ce = 0 */
+  nrf905_clear_trx();
+  nrf905_set_txe();
+  nrf905_set_pwr();
+
+  nrf905_cmd_write(NRF905_CMD_WTP, buf, nrf905_payload_width);
+  c6:	40 91 11 01 	lds	r20, 0x0111
+  ca:	bc 01       	movw	r22, r24
+  cc:	80 e2       	ldi	r24, 0x20	; 32
+  ce:	0e 94 48 00 	call	0x90	; 0x90 <nrf905_cmd_write>
+  NRF905_IO_TRX_DDR |= NRF905_IO_TRX_MASK;
+}
+
+static void nrf905_set_trx(void)
+{
+  NRF905_IO_TRX_PORT |= NRF905_IO_TRX_MASK;
+  d2:	5e 9a       	sbi	0x0b, 6	; 11
+  nrf905_cmd_write(NRF905_CMD_WTP, buf, nrf905_payload_width);
+
+  /* send the packet */
+  nrf905_set_trx();
+
+  while (nrf905_is_dr() == 0) ;
+  d4:	4a 9b       	sbis	0x09, 2	; 9
+  d6:	fe cf       	rjmp	.-4      	; 0xd4 <nrf905_write_payload_zero+0x14>
+  NRF905_IO_TRX_PORT |= NRF905_IO_TRX_MASK;
+}
+
+static void nrf905_clear_trx(void)
+{
+  NRF905_IO_TRX_PORT &= ~NRF905_IO_TRX_MASK;
+  d8:	5e 98       	cbi	0x0b, 6	; 11
+  da:	08 95       	ret
+
+000000dc <__vector_11>:
+#define TIMER_PRESCAL (1024UL)
+
+static volatile uint8_t timer_irq = 0;
+
+ISR(TIMER1_COMPA_vect)
+{
+  dc:	1f 92       	push	r1
+  de:	0f 92       	push	r0
+  e0:	0f b6       	in	r0, 0x3f	; 63
+  e2:	0f 92       	push	r0
+  e4:	11 24       	eor	r1, r1
+  e6:	8f 93       	push	r24
+  e8:	ef 93       	push	r30
+  ea:	ff 93       	push	r31
+  /* stop the timer, signal interrupt */
+  TCCR1B &= ~((1 << 3) - 1);
+  ec:	e1 e8       	ldi	r30, 0x81	; 129
+  ee:	f0 e0       	ldi	r31, 0x00	; 0
+  f0:	80 81       	ld	r24, Z
+  f2:	88 7f       	andi	r24, 0xF8	; 248
+  f4:	80 83       	st	Z, r24
+  timer_irq = 1;
+  f6:	81 e0       	ldi	r24, 0x01	; 1
+  f8:	80 93 00 01 	sts	0x0100, r24
+}
+  fc:	ff 91       	pop	r31
+  fe:	ef 91       	pop	r30
+ 100:	8f 91       	pop	r24
+ 102:	0f 90       	pop	r0
+ 104:	0f be       	out	0x3f, r0	; 63
+ 106:	0f 90       	pop	r0
+ 108:	1f 90       	pop	r1
+ 10a:	18 95       	reti
+
+0000010c <__vector_3>:
+/* triggered due to the internal nrf logic */
+
+static uint8_t pcint_irq = 0;
+
+ISR(PCINT0_vect)
+{
+ 10c:	1f 92       	push	r1
+ 10e:	0f 92       	push	r0
+ 110:	0f b6       	in	r0, 0x3f	; 63
+ 112:	0f 92       	push	r0
+ 114:	11 24       	eor	r1, r1
+ 116:	8f 93       	push	r24
+  /* pin change 0 interrupt handler */
+  /* do nothing, processed by sequential in do_nrf */
+  pcint_irq = 1;
+ 118:	81 e0       	ldi	r24, 0x01	; 1
+ 11a:	80 93 01 01 	sts	0x0101, r24
+}
+ 11e:	8f 91       	pop	r24
+ 120:	0f 90       	pop	r0
+ 122:	0f be       	out	0x3f, r0	; 63
+ 124:	0f 90       	pop	r0
+ 126:	1f 90       	pop	r1
+ 128:	18 95       	reti
+
+0000012a <__vector_4>:
+
+ISR(PCINT1_vect)
+{
+ 12a:	1f 92       	push	r1
+ 12c:	0f 92       	push	r0
+ 12e:	0f b6       	in	r0, 0x3f	; 63
+ 130:	0f 92       	push	r0
+ 132:	11 24       	eor	r1, r1
+ 134:	8f 93       	push	r24
+  pcint_irq = 1;
+ 136:	81 e0       	ldi	r24, 0x01	; 1
+ 138:	80 93 01 01 	sts	0x0101, r24
+}
+ 13c:	8f 91       	pop	r24
+ 13e:	0f 90       	pop	r0
+ 140:	0f be       	out	0x3f, r0	; 63
+ 142:	0f 90       	pop	r0
+ 144:	1f 90       	pop	r1
+ 146:	18 95       	reti
+
+00000148 <__vector_5>:
+
+ISR(PCINT2_vect)
+{
+ 148:	1f 92       	push	r1
+ 14a:	0f 92       	push	r0
+ 14c:	0f b6       	in	r0, 0x3f	; 63
+ 14e:	0f 92       	push	r0
+ 150:	11 24       	eor	r1, r1
+ 152:	8f 93       	push	r24
+  pcint_irq = 1;
+ 154:	81 e0       	ldi	r24, 0x01	; 1
+ 156:	80 93 01 01 	sts	0x0101, r24
+}
+ 15a:	8f 91       	pop	r24
+ 15c:	0f 90       	pop	r0
+ 15e:	0f be       	out	0x3f, r0	; 63
+ 160:	0f 90       	pop	r0
+ 162:	1f 90       	pop	r1
+ 164:	18 95       	reti
+
+00000166 <bano_init>:
+
+
+/* constructors */
+
+uint8_t bano_init(const bano_info_t* info)
+{
+ 166:	cf 92       	push	r12
+ 168:	df 92       	push	r13
+ 16a:	ef 92       	push	r14
+ 16c:	ff 92       	push	r15
+ 16e:	0f 93       	push	r16
+ 170:	1f 93       	push	r17
+ 172:	cf 93       	push	r28
+ 174:	df 93       	push	r29
+ 176:	00 d0       	rcall	.+0      	; 0x178 <bano_init+0x12>
+ 178:	00 d0       	rcall	.+0      	; 0x17a <bano_init+0x14>
+ 17a:	cd b7       	in	r28, 0x3d	; 61
+ 17c:	de b7       	in	r29, 0x3e	; 62
+ 17e:	8c 01       	movw	r16, r24
+{
+  /* doc8161.pdf, ch.18 */
+
+  /* ss is used by avr spi to determine master */
+  /* set output mode even if pb2 not used by us */
+  DDRB |= (1 << 2);
+ 180:	22 9a       	sbi	0x04, 2	; 4
+
+  /* spi output pins: sck pb5, mosi pb3 */
+  DDRB |= (1 << 5) | (1 << 3);
+ 182:	84 b1       	in	r24, 0x04	; 4
+ 184:	88 62       	ori	r24, 0x28	; 40
+ 186:	84 b9       	out	0x04, r24	; 4
+
+  /* spi input pins: miso pb4 */
+  DDRB &= ~(1 << 4);
+ 188:	24 98       	cbi	0x04, 4	; 4
+  /* disable pullup (already by default) */
+  PORTB &= ~(1 << 4);
+ 18a:	2c 98       	cbi	0x05, 4	; 5
+
+  /* enable spi, msb first, master, freq / 128 (125khz), sck low idle */
+  SPCR = (1 << SPE) | (1 << MSTR) | (3 << SPR0);
+ 18c:	83 e5       	ldi	r24, 0x53	; 83
+ 18e:	8c bd       	out	0x2c, r24	; 44
+
+  /* clear double speed */
+  SPSR &= ~(1 << SPI2X);
+ 190:	8d b5       	in	r24, 0x2d	; 45
+ 192:	8e 7f       	andi	r24, 0xFE	; 254
+ 194:	8d bd       	out	0x2d, r24	; 45
+#define SPI_SCK_FREQ_FOSC16 ((0 << 2) | 1)
+#define SPI_SCK_FREQ_FOSC32 ((1 << 2) | 2)
+#define SPI_SCK_FREQ_FOSC64 ((0 << 2) | 2)
+#define SPI_SCK_FREQ_FOSC128 ((0 << 2) | 3)
+
+  SPCR &= ~(3 << SPR0);
+ 196:	8c b5       	in	r24, 0x2c	; 44
+ 198:	8c 7f       	andi	r24, 0xFC	; 252
+ 19a:	8c bd       	out	0x2c, r24	; 44
+  SPCR |= (x & 3) << SPR0;
+ 19c:	8c b5       	in	r24, 0x2c	; 44
+ 19e:	8c bd       	out	0x2c, r24	; 44
+
+  SPSR &= ~(1 << SPI2X);
+ 1a0:	8d b5       	in	r24, 0x2d	; 45
+ 1a2:	8e 7f       	andi	r24, 0xFE	; 254
+ 1a4:	8d bd       	out	0x2d, r24	; 45
+  SPSR |= (((x >> 2) & 1) << SPI2X);
+ 1a6:	8d b5       	in	r24, 0x2d	; 45
+ 1a8:	81 60       	ori	r24, 0x01	; 1
+ 1aa:	8d bd       	out	0x2d, r24	; 45
+#define NRF905_IO_CSN_PORT PORTB
+#endif /* NRF_CONFIG_SOFTSPI */
+
+static inline void spi_setup_cs(void)
+{
+  NRF905_IO_CSN_DDR |= NRF905_IO_CSN_MASK;
+ 1ac:	22 9a       	sbi	0x04, 2	; 4
+  NRF905_IO_CSN_PORT &= ~NRF905_IO_CSN_MASK;
+}
+
+static inline void spi_cs_high(void)
+{
+  NRF905_IO_CSN_PORT |= NRF905_IO_CSN_MASK;
+ 1ae:	2a 9a       	sbi	0x05, 2	; 5
+}
+
+static void nrf905_setup_txe(void)
+{
+  NRF905_IO_TXE_DDR |= NRF905_IO_TXE_MASK;
+ 1b0:	54 9a       	sbi	0x0a, 4	; 10
+  NRF905_IO_TXE_PORT &= ~NRF905_IO_TXE_MASK;
+}
+
+static void nrf905_setup_trx(void)
+{
+  NRF905_IO_TRX_DDR |= NRF905_IO_TRX_MASK;
+ 1b2:	56 9a       	sbi	0x0a, 6	; 10
+  NRF905_IO_TRX_PORT &= ~NRF905_IO_TRX_MASK;
+}
+
+static void nrf905_setup_pwr(void)
+{
+  NRF905_IO_PWR_DDR |= NRF905_IO_PWR_MASK;
+ 1b4:	57 9a       	sbi	0x0a, 7	; 10
+  NRF905_IO_PWR_PORT &= ~NRF905_IO_PWR_MASK;
+}
+
+static void nrf905_setup_cd(void)
+{
+  NRF905_IO_CD_DDR &= ~NRF905_IO_CD_MASK;
+ 1b6:	20 98       	cbi	0x04, 0	; 4
+  return NRF905_IO_DR_PIN & NRF905_IO_DR_MASK;
+}
+
+static void nrf905_setup_am(void)
+{
+  NRF905_IO_AM_DDR &= ~NRF905_IO_AM_MASK;
+ 1b8:	55 98       	cbi	0x0a, 5	; 10
+  return NRF905_IO_CD_PIN & NRF905_IO_CD_MASK;
+}
+
+static void nrf905_setup_dr(void)
+{
+  NRF905_IO_DR_DDR &= ~NRF905_IO_DR_MASK;
+ 1ba:	52 98       	cbi	0x0a, 2	; 10
+  /* j the bit offset */
+  /* w the width */
+  /* x the value */
+
+  nrf905_config[i] &= ~(((1 << w) - 1) << j);
+  nrf905_config[i] |= x << j;
+ 1bc:	8a e6       	ldi	r24, 0x6A	; 106
+ 1be:	80 93 07 01 	sts	0x0107, r24
+  /* i the byte offset */
+  /* j the bit offset */
+  /* w the width */
+  /* x the value */
+
+  nrf905_config[i] &= ~(((1 << w) - 1) << j);
+ 1c2:	80 91 08 01 	lds	r24, 0x0108
+ 1c6:	80 7c       	andi	r24, 0xC0	; 192
+ 1c8:	80 93 08 01 	sts	0x0108, r24
+ 1cc:	80 91 09 01 	lds	r24, 0x0109
+ 1d0:	88 78       	andi	r24, 0x88	; 136
+  nrf905_config[i] |= x << j;
+ 1d2:	83 63       	ori	r24, 0x33	; 51
+ 1d4:	80 93 09 01 	sts	0x0109, r24
+  /* i the byte offset */
+  /* j the bit offset */
+  /* w the width */
+  /* x the value */
+
+  nrf905_config[i] &= ~(((1 << w) - 1) << j);
+ 1d8:	80 91 0a 01 	lds	r24, 0x010A
+ 1dc:	80 7c       	andi	r24, 0xC0	; 192
+  nrf905_config[i] |= x << j;
+ 1de:	80 61       	ori	r24, 0x10	; 16
+ 1e0:	80 93 0a 01 	sts	0x010A, r24
+}
+
+static void nrf905_set_rx_pw(uint8_t x)
+{
+  nrf905_clear_set_config(3, 0, 6, x);
+  nrf905_payload_width = x;
+ 1e4:	80 e1       	ldi	r24, 0x10	; 16
+ 1e6:	80 93 11 01 	sts	0x0111, r24
+  /* i the byte offset */
+  /* j the bit offset */
+  /* w the width */
+  /* x the value */
+
+  nrf905_config[i] &= ~(((1 << w) - 1) << j);
+ 1ea:	80 91 0b 01 	lds	r24, 0x010B
+ 1ee:	80 7c       	andi	r24, 0xC0	; 192
+  nrf905_config[i] |= x << j;
+ 1f0:	80 61       	ori	r24, 0x10	; 16
+ 1f2:	80 93 0b 01 	sts	0x010B, r24
+  /* i the byte offset */
+  /* j the bit offset */
+  /* w the width */
+  /* x the value */
+
+  nrf905_config[i] &= ~(((1 << w) - 1) << j);
+ 1f6:	8b e1       	ldi	r24, 0x1B	; 27
+ 1f8:	80 93 10 01 	sts	0x0110, r24
+  NRF905_IO_TRX_PORT |= NRF905_IO_TRX_MASK;
+}
+
+static void nrf905_clear_trx(void)
+{
+  NRF905_IO_TRX_PORT &= ~NRF905_IO_TRX_MASK;
+ 1fc:	5e 98       	cbi	0x0b, 6	; 11
+  NRF905_IO_PWR_DDR |= NRF905_IO_PWR_MASK;
+}
+
+static void nrf905_set_pwr(void)
+{
+  NRF905_IO_PWR_PORT |= NRF905_IO_PWR_MASK;
+ 1fe:	5f 9a       	sbi	0x0b, 7	; 11
+
+  /* default to powerdown */
+  nrf905_set_standby();
+
+  /* commit the configuration */
+  nrf905_cmd_wc();
+ 200:	0e 94 5a 00 	call	0xb4	; 0xb4 <nrf905_cmd_wc>
+  /* i the byte offset */
+  /* j the bit offset */
+  /* w the width */
+  /* x the value */
+
+  nrf905_config[i] &= ~(((1 << w) - 1) << j);
+ 204:	80 91 0a 01 	lds	r24, 0x010A
+ 208:	80 7c       	andi	r24, 0xC0	; 192
+  nrf905_config[i] |= x << j;
+ 20a:	81 61       	ori	r24, 0x11	; 17
+ 20c:	80 93 0a 01 	sts	0x010A, r24
+}
+
+static void nrf905_set_rx_pw(uint8_t x)
+{
+  nrf905_clear_set_config(3, 0, 6, x);
+  nrf905_payload_width = x;
+ 210:	81 e1       	ldi	r24, 0x11	; 17
+ 212:	80 93 11 01 	sts	0x0111, r24
+  /* i the byte offset */
+  /* j the bit offset */
+  /* w the width */
+  /* x the value */
+
+  nrf905_config[i] &= ~(((1 << w) - 1) << j);
+ 216:	80 91 0b 01 	lds	r24, 0x010B
+ 21a:	80 7c       	andi	r24, 0xC0	; 192
+  nrf905_config[i] |= x << j;
+ 21c:	81 61       	ori	r24, 0x11	; 17
+ 21e:	80 93 0b 01 	sts	0x010B, r24
+  nrf905_cmd_wc();
+}
+
+static void nrf905_commit_config(void)
+{
+  nrf905_cmd_wc();
+ 222:	0e 94 5a 00 	call	0xb4	; 0xb4 <nrf905_cmd_wc>
+  /* i the byte offset */
+  /* j the bit offset */
+  /* w the width */
+  /* x the value */
+
+  nrf905_config[i] &= ~(((1 << w) - 1) << j);
+ 226:	80 91 09 01 	lds	r24, 0x0109
+ 22a:	88 78       	andi	r24, 0x88	; 136
+  nrf905_config[i] |= x << j;
+ 22c:	84 64       	ori	r24, 0x44	; 68
+ 22e:	80 93 09 01 	sts	0x0109, r24
+  nrf905_cmd_wc();
+}
+
+static void nrf905_commit_config(void)
+{
+  nrf905_cmd_wc();
+ 232:	0e 94 5a 00 	call	0xb4	; 0xb4 <nrf905_cmd_wc>
+  return x;
+}
+
+static inline void uint32_to_le_buf(uint32_t x, uint8_t b[4])
+{
+  b[0] = ((uint8_t*)&x)[0];
+ 236:	8a e5       	ldi	r24, 0x5A	; 90
+ 238:	89 83       	std	Y+1, r24	; 0x01
+  b[1] = ((uint8_t*)&x)[1];
+ 23a:	8a 83       	std	Y+2, r24	; 0x02
+  b[2] = ((uint8_t*)&x)[2];
+ 23c:	8b 83       	std	Y+3, r24	; 0x03
+  b[3] = ((uint8_t*)&x)[3];
+ 23e:	8c 83       	std	Y+4, r24	; 0x04
+{
+  /* i the byte offset */
+  /* j the bit offset */
+  /* w the width */
+
+  return (nrf905_config[i] >> j) & ((1 << w) - 1);
+ 240:	20 91 09 01 	lds	r18, 0x0109
+ 244:	e2 2e       	mov	r14, r18
+ 246:	f1 2c       	mov	r15, r1
+ 248:	f5 94       	asr	r15
+ 24a:	e7 94       	ror	r14
+ 24c:	f5 94       	asr	r15
+ 24e:	e7 94       	ror	r14
+ 250:	f5 94       	asr	r15
+ 252:	e7 94       	ror	r14
+ 254:	f5 94       	asr	r15
+ 256:	e7 94       	ror	r14
+ 258:	87 e0       	ldi	r24, 0x07	; 7
+ 25a:	e8 22       	and	r14, r24
+ 25c:	ff 24       	eor	r15, r15
+  /* j the bit offset */
+  /* w the width */
+  /* x the value */
+
+  nrf905_config[i] &= ~(((1 << w) - 1) << j);
+  nrf905_config[i] |= x << j;
+ 25e:	c7 01       	movw	r24, r14
+ 260:	82 95       	swap	r24
+ 262:	92 95       	swap	r25
+ 264:	90 7f       	andi	r25, 0xF0	; 240
+ 266:	98 27       	eor	r25, r24
+ 268:	80 7f       	andi	r24, 0xF0	; 240
+ 26a:	98 27       	eor	r25, r24
+  /* i the byte offset */
+  /* j the bit offset */
+  /* w the width */
+  /* x the value */
+
+  nrf905_config[i] &= ~(((1 << w) - 1) << j);
+ 26c:	92 2f       	mov	r25, r18
+ 26e:	9f 78       	andi	r25, 0x8F	; 143
+  nrf905_config[i] |= x << j;
+ 270:	98 2b       	or	r25, r24
+ 272:	90 93 09 01 	sts	0x0109, r25
+static void nrf905_set_tx_addr(const uint8_t* a, uint8_t w)
+{
+  /* a[w] the address of w bytes */
+
+  nrf905_set_tx_afw(w);
+  nrf905_cmd_wc();
+ 276:	0e 94 5a 00 	call	0xb4	; 0xb4 <nrf905_cmd_wc>
+  nrf905_cmd_read(NRF905_CMD_RTP, nrf905_payload_buf, nrf905_payload_width);
+}
+
+static void nrf905_cmd_wta(const uint8_t* a, uint8_t w)
+{
+  nrf905_cmd_write(NRF905_CMD_WTA, a, w);
+ 27a:	4e 2d       	mov	r20, r14
+ 27c:	be 01       	movw	r22, r28
+ 27e:	6f 5f       	subi	r22, 0xFF	; 255
+ 280:	7f 4f       	sbci	r23, 0xFF	; 255
+ 282:	82 e2       	ldi	r24, 0x22	; 34
+ 284:	0e 94 48 00 	call	0x90	; 0x90 <nrf905_cmd_write>
+  return x;
+}
+
+static inline void uint32_to_le_buf(uint32_t x, uint8_t b[4])
+{
+  b[0] = ((uint8_t*)&x)[0];
+ 288:	88 e4       	ldi	r24, 0x48	; 72
+ 28a:	89 83       	std	Y+1, r24	; 0x01
+  b[1] = ((uint8_t*)&x)[1];
+ 28c:	85 e8       	ldi	r24, 0x85	; 133
+ 28e:	8a 83       	std	Y+2, r24	; 0x02
+  b[2] = ((uint8_t*)&x)[2];
+ 290:	8f e5       	ldi	r24, 0x5F	; 95
+ 292:	8b 83       	std	Y+3, r24	; 0x03
+  b[3] = ((uint8_t*)&x)[3];
+ 294:	8c e5       	ldi	r24, 0x5C	; 92
+ 296:	8c 83       	std	Y+4, r24	; 0x04
+{
+  /* i the byte offset */
+  /* j the bit offset */
+  /* w the width */
+
+  return (nrf905_config[i] >> j) & ((1 << w) - 1);
+ 298:	80 91 09 01 	lds	r24, 0x0109
+ 29c:	28 2f       	mov	r18, r24
+ 29e:	27 70       	andi	r18, 0x07	; 7
+
+static void nrf905_set_rx_addr(const uint8_t* a, uint8_t w)
+{
+  /* config[32:63] */
+  uint8_t i;
+  for (i = 0; i != w; ++i)
+ 2a0:	a9 f0       	breq	.+42     	; 0x2cc <bano_init+0x166>
+ 2a2:	98 e4       	ldi	r25, 0x48	; 72
+ 2a4:	80 e0       	ldi	r24, 0x00	; 0
+ 2a6:	07 c0       	rjmp	.+14     	; 0x2b6 <bano_init+0x150>
+ 2a8:	e1 e0       	ldi	r30, 0x01	; 1
+ 2aa:	f0 e0       	ldi	r31, 0x00	; 0
+ 2ac:	ec 0f       	add	r30, r28
+ 2ae:	fd 1f       	adc	r31, r29
+ 2b0:	e8 0f       	add	r30, r24
+ 2b2:	f1 1d       	adc	r31, r1
+ 2b4:	90 81       	ld	r25, Z
+static uint16_t bano_timer_500ms = 0;
+
+
+/* constructors */
+
+uint8_t bano_init(const bano_info_t* info)
+ 2b6:	e8 2f       	mov	r30, r24
+ 2b8:	eb 5f       	subi	r30, 0xFB	; 251
+  /* i the byte offset */
+  /* j the bit offset */
+  /* w the width */
+  /* x the value */
+
+  nrf905_config[i] &= ~(((1 << w) - 1) << j);
+ 2ba:	f0 e0       	ldi	r31, 0x00	; 0
+  nrf905_config[i] |= x << j;
+ 2bc:	e9 5f       	subi	r30, 0xF9	; 249
+ 2be:	fe 4f       	sbci	r31, 0xFE	; 254
+ 2c0:	90 83       	st	Z, r25
+
+static void nrf905_set_rx_addr(const uint8_t* a, uint8_t w)
+{
+  /* config[32:63] */
+  uint8_t i;
+  for (i = 0; i != w; ++i)
+ 2c2:	8f 5f       	subi	r24, 0xFF	; 255
+ 2c4:	82 13       	cpse	r24, r18
+ 2c6:	f0 cf       	rjmp	.-32     	; 0x2a8 <bano_init+0x142>
+ 2c8:	80 91 09 01 	lds	r24, 0x0109
+  /* i the byte offset */
+  /* j the bit offset */
+  /* w the width */
+  /* x the value */
+
+  nrf905_config[i] &= ~(((1 << w) - 1) << j);
+ 2cc:	88 7f       	andi	r24, 0xF8	; 248
+  nrf905_config[i] |= x << j;
+ 2ce:	82 2b       	or	r24, r18
+ 2d0:	80 93 09 01 	sts	0x0109, r24
+  /* config[32:63] */
+  uint8_t i;
+  for (i = 0; i != w; ++i)
+    nrf905_clear_set_config(5 + i, 0, 8, a[i]);
+  nrf905_set_rx_afw(w);
+  nrf905_cmd_wc();
+ 2d4:	0e 94 5a 00 	call	0xb4	; 0xb4 <nrf905_cmd_wc>
+  NRF905_IO_TRX_PORT |= NRF905_IO_TRX_MASK;
+}
+
+static void nrf905_clear_trx(void)
+{
+  NRF905_IO_TRX_PORT &= ~NRF905_IO_TRX_MASK;
+ 2d8:	5e 98       	cbi	0x0b, 6	; 11
+  NRF905_IO_PWR_DDR |= NRF905_IO_PWR_MASK;
+}
+
+static void nrf905_set_pwr(void)
+{
+  NRF905_IO_PWR_PORT |= NRF905_IO_PWR_MASK;
+ 2da:	5f 9a       	sbi	0x0b, 7	; 11
+  nrf_set_rx_addr(addr);
+
+  nrf_set_powerdown_mode();
+
+  /* capture wake mask */
+  bano_wake_mask = info->wake_mask;
+ 2dc:	f8 01       	movw	r30, r16
+ 2de:	f2 80       	ldd	r15, Z+2	; 0x02
+ 2e0:	f0 92 02 01 	sts	0x0102, r15
+
+  /* wake on message */
+  if (info->wake_mask & BANO_WAKE_MSG)
+ 2e4:	f1 fe       	sbrs	r15, 1
+ 2e6:	0d c0       	rjmp	.+26     	; 0x302 <bano_init+0x19c>
+  PCICR |= NRF24L01P_IO_IRQ_PCICR_MASK;
+  NRF24L01P_IO_IRQ_PCMSK |= NRF24L01P_IO_IRQ_MASK;
+
+#elif (NRF_CONFIG_NRF905 == 1)
+
+  NRF905_IO_IRQ_DDR &= ~NRF905_IO_IRQ_MASK;
+ 2e8:	52 98       	cbi	0x0a, 2	; 10
+  NRF905_IO_IRQ_PORT &= ~NRF905_IO_IRQ_MASK;
+ 2ea:	5a 98       	cbi	0x0b, 2	; 11
+  PCICR |= NRF905_IO_IRQ_PCICR_MASK;
+ 2ec:	80 91 68 00 	lds	r24, 0x0068
+ 2f0:	84 60       	ori	r24, 0x04	; 4
+ 2f2:	80 93 68 00 	sts	0x0068, r24
+  NRF905_IO_IRQ_PCMSK |= NRF905_IO_IRQ_MASK;
+ 2f6:	80 91 6d 00 	lds	r24, 0x006D
+ 2fa:	84 60       	ori	r24, 0x04	; 4
+ 2fc:	80 93 6d 00 	sts	0x006D, r24
+ 300:	f2 80       	ldd	r15, Z+2	; 0x02
+  {
+    nrf_setup_rx_irq();
+  }
+
+  /* wake on timer */
+  if (info->wake_mask & (BANO_WAKE_TIMER | BANO_WAKE_POLL))
+ 302:	35 e0       	ldi	r19, 0x05	; 5
+ 304:	e3 2e       	mov	r14, r19
+ 306:	ef 20       	and	r14, r15
+ 308:	c9 f0       	breq	.+50     	; 0x33c <bano_init+0x1d6>
+  {
+    /* compute the timer counter to minimize the */
+    /* interrupt frequency and reduce power consumption */
+
+    static const uint32_t p = TIMER_PRESCAL * CLK_PRESCAL;
+    bano_timer_counter = (F_CPU * (uint32_t)info->timer_100ms) / (p * 10UL);
+ 30a:	f8 01       	movw	r30, r16
+ 30c:	a0 81       	ld	r26, Z
+ 30e:	b1 81       	ldd	r27, Z+1	; 0x01
+ 310:	20 e0       	ldi	r18, 0x00	; 0
+ 312:	32 e1       	ldi	r19, 0x12	; 18
+ 314:	4a e7       	ldi	r20, 0x7A	; 122
+ 316:	50 e0       	ldi	r21, 0x00	; 0
+ 318:	0e 94 e8 03 	call	0x7d0	; 0x7d0 <__muluhisi3>
+ 31c:	20 e0       	ldi	r18, 0x00	; 0
+ 31e:	30 e0       	ldi	r19, 0x00	; 0
+ 320:	48 e2       	ldi	r20, 0x28	; 40
+ 322:	50 e0       	ldi	r21, 0x00	; 0
+ 324:	0e 94 f3 03 	call	0x7e6	; 0x7e6 <__udivmodsi4>
+ 328:	30 93 04 01 	sts	0x0104, r19
+ 32c:	20 93 03 01 	sts	0x0103, r18
+    bano_timer_500ms = (F_CPU * (uint32_t)5) / (p * 10UL);
+ 330:	8f e0       	ldi	r24, 0x0F	; 15
+ 332:	90 e0       	ldi	r25, 0x00	; 0
+ 334:	90 93 06 01 	sts	0x0106, r25
+ 338:	80 93 05 01 	sts	0x0105, r24
+  }
+
+  /* wake on pcint */
+  if (info->wake_mask & BANO_WAKE_PCINT)
+ 33c:	f3 fc       	sbrc	r15, 3
+ 33e:	4a c0       	rjmp	.+148    	; 0x3d4 <bano_init+0x26e>
+    const uint8_t m2 = (info->pcint_mask >> 16UL) & 0xff;
+    pcint_setup(m0, m1, m2);
+  }
+
+  /* sleep mode */
+  if (info->wake_mask & (BANO_WAKE_TIMER | BANO_WAKE_POLL))
+ 340:	e1 10       	cpse	r14, r1
+ 342:	44 c0       	rjmp	.+136    	; 0x3cc <bano_init+0x266>
+  {
+    set_sleep_mode(SLEEP_MODE_IDLE);
+  }
+  else if (info->wake_mask & BANO_WAKE_MSG)
+ 344:	f1 fc       	sbrc	r15, 1
+ 346:	42 c0       	rjmp	.+132    	; 0x3cc <bano_init+0x266>
+
+static inline void clk_set_prescal(uint8_t x)
+{
+  /* pow2, max 8 = 256 */
+
+  CLKPR = 1 << 7;
+ 348:	80 e8       	ldi	r24, 0x80	; 128
+ 34a:	80 93 61 00 	sts	0x0061, r24
+  CLKPR = x << 0;
+ 34e:	88 e0       	ldi	r24, 0x08	; 8
+ 350:	80 93 61 00 	sts	0x0061, r24
+
+  /* wait for 4 - 2 cycles */
+  __asm__ __volatile__ ("nop\n");
+ 354:	00 00       	nop
+  __asm__ __volatile__ ("nop\n");
+ 356:	00 00       	nop
+  clk_set_prescal_max();
+
+  /* disable modules in sleep mode */
+  /* refer to ch 9.10, minimizing power consumption */
+
+  if (info->disable_mask & BANO_DISABLE_USART)
+ 358:	f8 01       	movw	r30, r16
+ 35a:	83 81       	ldd	r24, Z+3	; 0x03
+ 35c:	83 ff       	sbrs	r24, 3
+ 35e:	08 c0       	rjmp	.+16     	; 0x370 <bano_init+0x20a>
+  {
+    UCSR0B = 0;
+ 360:	10 92 c1 00 	sts	0x00C1, r1
+    PRR |= (1 << 1);
+ 364:	80 91 64 00 	lds	r24, 0x0064
+ 368:	82 60       	ori	r24, 0x02	; 2
+ 36a:	80 93 64 00 	sts	0x0064, r24
+ 36e:	83 81       	ldd	r24, Z+3	; 0x03
+  }
+
+  if (info->disable_mask & BANO_DISABLE_WDT)
+ 370:	81 ff       	sbrs	r24, 1
+ 372:	0d c0       	rjmp	.+26     	; 0x38e <bano_init+0x228>
+  {
+    wdt_reset();
+ 374:	a8 95       	wdr
+    MCUSR &= ~(1 << WDRF);
+ 376:	84 b7       	in	r24, 0x34	; 52
+ 378:	87 7f       	andi	r24, 0xF7	; 247
+ 37a:	84 bf       	out	0x34, r24	; 52
+    WDTCSR |= (1 << WDCE) | (1 << WDE);
+ 37c:	80 91 60 00 	lds	r24, 0x0060
+ 380:	88 61       	ori	r24, 0x18	; 24
+ 382:	80 93 60 00 	sts	0x0060, r24
+    WDTCSR = 0x00;
+ 386:	10 92 60 00 	sts	0x0060, r1
+ 38a:	f8 01       	movw	r30, r16
+ 38c:	83 81       	ldd	r24, Z+3	; 0x03
+  }
+
+  if (info->disable_mask & BANO_DISABLE_CMP)
+ 38e:	82 ff       	sbrs	r24, 2
+ 390:	04 c0       	rjmp	.+8      	; 0x39a <bano_init+0x234>
+  {
+    ACSR = 1 << 7;
+ 392:	80 e8       	ldi	r24, 0x80	; 128
+ 394:	80 bf       	out	0x30, r24	; 48
+ 396:	f8 01       	movw	r30, r16
+ 398:	83 81       	ldd	r24, Z+3	; 0x03
+  }
+
+  if (info->disable_mask & BANO_DISABLE_ADC)
+ 39a:	80 ff       	sbrs	r24, 0
+ 39c:	09 c0       	rjmp	.+18     	; 0x3b0 <bano_init+0x24a>
+  {
+    ADMUX = 0;
+ 39e:	10 92 7c 00 	sts	0x007C, r1
+    ADCSRA = 0;
+ 3a2:	10 92 7a 00 	sts	0x007A, r1
+    PRR |= (1 << 0);
+ 3a6:	80 91 64 00 	lds	r24, 0x0064
+ 3aa:	81 60       	ori	r24, 0x01	; 1
+ 3ac:	80 93 64 00 	sts	0x0064, r24
+  }
+
+  return 0;
+}
+ 3b0:	80 e0       	ldi	r24, 0x00	; 0
+ 3b2:	0f 90       	pop	r0
+ 3b4:	0f 90       	pop	r0
+ 3b6:	0f 90       	pop	r0
+ 3b8:	0f 90       	pop	r0
+ 3ba:	df 91       	pop	r29
+ 3bc:	cf 91       	pop	r28
+ 3be:	1f 91       	pop	r17
+ 3c0:	0f 91       	pop	r16
+ 3c2:	ff 90       	pop	r15
+ 3c4:	ef 90       	pop	r14
+ 3c6:	df 90       	pop	r13
+ 3c8:	cf 90       	pop	r12
+ 3ca:	08 95       	ret
+    set_sleep_mode(SLEEP_MODE_IDLE);
+  }
+  else if (info->wake_mask & BANO_WAKE_MSG)
+  {
+    /* TODO: set_sleep_mode(SLEEP_MODE_PWR_DOWN); */
+    set_sleep_mode(SLEEP_MODE_IDLE);
+ 3cc:	83 b7       	in	r24, 0x33	; 51
+ 3ce:	81 7f       	andi	r24, 0xF1	; 241
+ 3d0:	83 bf       	out	0x33, r24	; 51
+ 3d2:	ba cf       	rjmp	.-140    	; 0x348 <bano_init+0x1e2>
+  }
+
+  /* wake on pcint */
+  if (info->wake_mask & BANO_WAKE_PCINT)
+  {
+    const uint8_t m0 = (info->pcint_mask >> 0UL) & 0xff;
+ 3d4:	f8 01       	movw	r30, r16
+ 3d6:	44 81       	ldd	r20, Z+4	; 0x04
+ 3d8:	55 81       	ldd	r21, Z+5	; 0x05
+ 3da:	66 81       	ldd	r22, Z+6	; 0x06
+ 3dc:	77 81       	ldd	r23, Z+7	; 0x07
+ 3de:	e4 2f       	mov	r30, r20
+    const uint8_t m1 = (info->pcint_mask >> 8UL) & 0xff;
+ 3e0:	c5 2e       	mov	r12, r21
+ 3e2:	d6 2e       	mov	r13, r22
+ 3e4:	e7 2e       	mov	r14, r23
+ 3e6:	ff 24       	eor	r15, r15
+ 3e8:	3c 2d       	mov	r19, r12
+    const uint8_t m2 = (info->pcint_mask >> 16UL) & 0xff;
+ 3ea:	cb 01       	movw	r24, r22
+ 3ec:	aa 27       	eor	r26, r26
+ 3ee:	bb 27       	eor	r27, r27
+ 3f0:	28 2f       	mov	r18, r24
+  pcint_irq = 1;
+}
+
+static inline void pcint_setup(uint8_t m0, uint8_t m1, uint8_t m2)
+{
+  pcint_irq = 0;
+ 3f2:	10 92 01 01 	sts	0x0101, r1
+
+  if (m0)
+ 3f6:	44 23       	and	r20, r20
+ 3f8:	89 f0       	breq	.+34     	; 0x41c <bano_init+0x2b6>
+  {
+    /* portb, mask0, pcint0 to pcint7 */
+    /* disable pullups, set as input pin */
+    PORTB &= ~m0;
+ 3fa:	f5 b1       	in	r31, 0x05	; 5
+ 3fc:	40 95       	com	r20
+ 3fe:	f4 23       	and	r31, r20
+ 400:	f5 b9       	out	0x05, r31	; 5
+    DDRB &= ~m0;
+ 402:	54 b1       	in	r21, 0x04	; 4
+ 404:	54 23       	and	r21, r20
+ 406:	54 b9       	out	0x04, r21	; 4
+    PCICR |= 1 << 0;
+ 408:	40 91 68 00 	lds	r20, 0x0068
+ 40c:	41 60       	ori	r20, 0x01	; 1
+ 40e:	40 93 68 00 	sts	0x0068, r20
+    PCMSK0 |= m0;
+ 412:	40 91 6b 00 	lds	r20, 0x006B
+ 416:	4e 2b       	or	r20, r30
+ 418:	40 93 6b 00 	sts	0x006B, r20
+  }
+
+  if (m1)
+ 41c:	33 23       	and	r19, r19
+ 41e:	89 f0       	breq	.+34     	; 0x442 <bano_init+0x2dc>
+  {
+    /* portc, mask1, pcint8 to pcint15 */
+    PORTC &= ~m1;
+ 420:	48 b1       	in	r20, 0x08	; 8
+ 422:	c0 94       	com	r12
+ 424:	4c 21       	and	r20, r12
+ 426:	48 b9       	out	0x08, r20	; 8
+    DDRC &= ~m1;
+ 428:	47 b1       	in	r20, 0x07	; 7
+ 42a:	4c 21       	and	r20, r12
+ 42c:	47 b9       	out	0x07, r20	; 7
+    PCICR |= 1 << 1;
+ 42e:	40 91 68 00 	lds	r20, 0x0068
+ 432:	42 60       	ori	r20, 0x02	; 2
+ 434:	40 93 68 00 	sts	0x0068, r20
+    PCMSK1 |= m1;
+ 438:	40 91 6c 00 	lds	r20, 0x006C
+ 43c:	43 2b       	or	r20, r19
+ 43e:	40 93 6c 00 	sts	0x006C, r20
+  }
+
+  if (m2)
+ 442:	22 23       	and	r18, r18
+ 444:	89 f0       	breq	.+34     	; 0x468 <bano_init+0x302>
+  {
+    /* portd, mask2, pcint16 to pcint23 */
+    PORTD &= ~m2;
+ 446:	3b b1       	in	r19, 0x0b	; 11
+ 448:	80 95       	com	r24
+ 44a:	38 23       	and	r19, r24
+ 44c:	3b b9       	out	0x0b, r19	; 11
+    DDRD &= ~m2;
+ 44e:	9a b1       	in	r25, 0x0a	; 10
+ 450:	98 23       	and	r25, r24
+ 452:	9a b9       	out	0x0a, r25	; 10
+    PCICR |= 1 << 2;
+ 454:	80 91 68 00 	lds	r24, 0x0068
+ 458:	84 60       	ori	r24, 0x04	; 4
+ 45a:	80 93 68 00 	sts	0x0068, r24
+    PCMSK2 |= m2;
+ 45e:	80 91 6d 00 	lds	r24, 0x006D
+ 462:	82 2b       	or	r24, r18
+ 464:	80 93 6d 00 	sts	0x006D, r24
+ 468:	f8 01       	movw	r30, r16
+ 46a:	f2 80       	ldd	r15, Z+2	; 0x02
+ 46c:	85 e0       	ldi	r24, 0x05	; 5
+ 46e:	e8 2e       	mov	r14, r24
+ 470:	ef 20       	and	r14, r15
+ 472:	66 cf       	rjmp	.-308    	; 0x340 <bano_init+0x1da>
+
+00000474 <bano_fini>:
+}
+
+uint8_t bano_fini(void)
+{
+  return 0;
+}
+ 474:	80 e0       	ldi	r24, 0x00	; 0
+ 476:	08 95       	ret
+
+00000478 <bano_send_set>:
+  msg->hdr.flags = 0;
+  msg->u.get.key = uint16_to_le(key);
+}
+
+uint8_t bano_send_set(uint16_t key, uint32_t val)
+{
+ 478:	cf 93       	push	r28
+ 47a:	df 93       	push	r29
+ 47c:	cd b7       	in	r28, 0x3d	; 61
+ 47e:	de b7       	in	r29, 0x3e	; 62
+ 480:	61 97       	sbiw	r28, 0x11	; 17
+ 482:	0f b6       	in	r0, 0x3f	; 63
+ 484:	f8 94       	cli
+ 486:	de bf       	out	0x3e, r29	; 62
+ 488:	0f be       	out	0x3f, r0	; 63
+ 48a:	cd bf       	out	0x3d, r28	; 61
+}
+
+static inline void make_set_msg(bano_msg_t* msg, uint16_t key, uint32_t val)
+{
+  msg->hdr.op = BANO_MSG_OP_SET;
+  msg->hdr.flags = 0;
+ 48c:	19 82       	std	Y+1, r1	; 0x01
+  msg->u.set.key = uint16_to_le(key);
+ 48e:	9d 87       	std	Y+13, r25	; 0x0d
+ 490:	8c 87       	std	Y+12, r24	; 0x0c
+  msg->u.set.val = uint32_to_le(val);
+ 492:	4e 87       	std	Y+14, r20	; 0x0e
+ 494:	5f 87       	std	Y+15, r21	; 0x0f
+ 496:	68 8b       	std	Y+16, r22	; 0x10
+ 498:	79 8b       	std	Y+17, r23	; 0x11
+
+/* messaging */
+
+static inline void send_msg(bano_msg_t* msg)
+{
+  msg->hdr.saddr = uint32_to_le(BANO_CONFIG_NODE_ADDR);
+ 49a:	88 e4       	ldi	r24, 0x48	; 72
+ 49c:	95 e8       	ldi	r25, 0x85	; 133
+ 49e:	af e5       	ldi	r26, 0x5F	; 95
+ 4a0:	bc e5       	ldi	r27, 0x5C	; 92
+ 4a2:	8a 83       	std	Y+2, r24	; 0x02
+ 4a4:	9b 83       	std	Y+3, r25	; 0x03
+ 4a6:	ac 83       	std	Y+4, r26	; 0x04
+ 4a8:	bd 83       	std	Y+5, r27	; 0x05
+  while (nrf24l01p_is_tx_irq() == 0) ;
+  nrf24l01p_set_powerdown();
+
+#elif (NRF_CONFIG_NRF905 == 1)
+
+  nrf905_write_payload_zero(p);
+ 4aa:	ce 01       	movw	r24, r28
+ 4ac:	01 96       	adiw	r24, 0x01	; 1
+ 4ae:	0e 94 60 00 	call	0xc0	; 0xc0 <nrf905_write_payload_zero>
+{
+  bano_msg_t msg;
+  make_set_msg(&msg, key, val);
+  send_msg(&msg);
+  return 0;
+}
+ 4b2:	80 e0       	ldi	r24, 0x00	; 0
+ 4b4:	61 96       	adiw	r28, 0x11	; 17
+ 4b6:	0f b6       	in	r0, 0x3f	; 63
+ 4b8:	f8 94       	cli
+ 4ba:	de bf       	out	0x3e, r29	; 62
+ 4bc:	0f be       	out	0x3f, r0	; 63
+ 4be:	cd bf       	out	0x3d, r28	; 61
+ 4c0:	df 91       	pop	r29
+ 4c2:	cf 91       	pop	r28
+ 4c4:	08 95       	ret
+
+000004c6 <bano_wait_event>:
+  /* return (uint8_t)-1 if no msg received */
+  return (uint8_t)-1;
+}
+
+uint8_t bano_wait_event(bano_msg_t* msg)
+{
+ 4c6:	7f 92       	push	r7
+ 4c8:	8f 92       	push	r8
+ 4ca:	9f 92       	push	r9
+ 4cc:	af 92       	push	r10
+ 4ce:	bf 92       	push	r11
+ 4d0:	cf 92       	push	r12
+ 4d2:	df 92       	push	r13
+ 4d4:	ef 92       	push	r14
+ 4d6:	ff 92       	push	r15
+ 4d8:	0f 93       	push	r16
+ 4da:	1f 93       	push	r17
+ 4dc:	cf 93       	push	r28
+ 4de:	df 93       	push	r29
+ 4e0:	ec 01       	movw	r28, r24
+  OCR1A = n;
+  TCNT1 = 0;
+  TCCR1C = 0;
+
+  /* interrupt on OCIE0A match */
+  TIMSK1 = 1 << 1;
+ 4e2:	f2 e0       	ldi	r31, 0x02	; 2
+ 4e4:	af 2e       	mov	r10, r31
+
+  /* clear soft irq flag */
+  timer_irq = 0;
+
+  /* set mode high bits, 1024 prescal */
+  TCCR1B = (1 << 3) | (5 << 0);
+ 4e6:	ad e0       	ldi	r26, 0x0D	; 13
+ 4e8:	ba 2e       	mov	r11, r26
+#if 0 /* FIXME: needed for sd_read_block to work */
+  __asm__ __volatile__ ("nop\n\t");
+  __asm__ __volatile__ ("nop\n\t");
+#endif
+
+  SPDR = x;
+ 4ea:	b4 e2       	ldi	r27, 0x24	; 36
+ 4ec:	9b 2e       	mov	r9, r27
+ 4ee:	88 24       	eor	r8, r8
+ 4f0:	8a 94       	dec	r8
+
+static inline void make_get_msg(bano_msg_t* msg, uint16_t key)
+{
+  msg->hdr.op = BANO_MSG_OP_GET;
+  msg->hdr.flags = 0;
+  msg->u.get.key = uint16_to_le(key);
+ 4f2:	03 e0       	ldi	r16, 0x03	; 3
+ 4f4:	10 e8       	ldi	r17, 0x80	; 128
+
+/* messaging */
+
+static inline void send_msg(bano_msg_t* msg)
+{
+  msg->hdr.saddr = uint32_to_le(BANO_CONFIG_NODE_ADDR);
+ 4f6:	88 e4       	ldi	r24, 0x48	; 72
+ 4f8:	c8 2e       	mov	r12, r24
+ 4fa:	85 e8       	ldi	r24, 0x85	; 133
+ 4fc:	d8 2e       	mov	r13, r24
+ 4fe:	8f e5       	ldi	r24, 0x5F	; 95
+ 500:	e8 2e       	mov	r14, r24
+ 502:	8c e5       	ldi	r24, 0x5C	; 92
+ 504:	f8 2e       	mov	r15, r24
+ redo_wait:
+  /* wait for the next event */
+  ev = 0;
+
+  /* enable interrupts before looping */
+  sei();
+ 506:	78 94       	sei
+
+  if (bano_wake_mask & (BANO_WAKE_TIMER | BANO_WAKE_POLL))
+ 508:	20 91 02 01 	lds	r18, 0x0102
+ 50c:	82 2f       	mov	r24, r18
+ 50e:	85 70       	andi	r24, 0x05	; 5
+ 510:	c1 f0       	breq	.+48     	; 0x542 <bano_wait_event+0x7c>
+  {
+    timer_setup(bano_timer_counter);
+ 512:	80 91 03 01 	lds	r24, 0x0103
+ 516:	90 91 04 01 	lds	r25, 0x0104
+static void timer_setup(uint16_t n)
+{
+  /* n the counter */
+  
+  /* stop timer */
+  TCCR1B = 0;
+ 51a:	10 92 81 00 	sts	0x0081, r1
+
+  /* CTC mode, overflow when OCR1A reached */
+  TCCR1A = 0;
+ 51e:	10 92 80 00 	sts	0x0080, r1
+  OCR1A = n;
+ 522:	90 93 89 00 	sts	0x0089, r25
+ 526:	80 93 88 00 	sts	0x0088, r24
+  TCNT1 = 0;
+ 52a:	10 92 85 00 	sts	0x0085, r1
+ 52e:	10 92 84 00 	sts	0x0084, r1
+  TCCR1C = 0;
+ 532:	10 92 82 00 	sts	0x0082, r1
+
+  /* interrupt on OCIE0A match */
+  TIMSK1 = 1 << 1;
+ 536:	a0 92 6f 00 	sts	0x006F, r10
+
+  /* clear soft irq flag */
+  timer_irq = 0;
+ 53a:	10 92 00 01 	sts	0x0100, r1
+
+  /* set mode high bits, 1024 prescal */
+  TCCR1B = (1 << 3) | (5 << 0);
+ 53e:	b0 92 81 00 	sts	0x0081, r11
+  {
+    timer_setup(bano_timer_counter);
+  }
+
+  /* TODO: move at init time ? */
+  if (bano_wake_mask & BANO_WAKE_MSG)
+ 542:	21 ff       	sbrs	r18, 1
+ 544:	03 c0       	rjmp	.+6      	; 0x54c <bano_wait_event+0x86>
+  NRF905_IO_TXE_PORT |= NRF905_IO_TXE_MASK;
+}
+
+static void nrf905_clear_txe(void)
+{
+  NRF905_IO_TXE_PORT &= ~NRF905_IO_TXE_MASK;
+ 546:	5c 98       	cbi	0x0b, 4	; 11
+  NRF905_IO_TRX_DDR |= NRF905_IO_TRX_MASK;
+}
+
+static void nrf905_set_trx(void)
+{
+  NRF905_IO_TRX_PORT |= NRF905_IO_TRX_MASK;
+ 548:	5e 9a       	sbi	0x0b, 6	; 11
+  NRF905_IO_PWR_DDR |= NRF905_IO_PWR_MASK;
+}
+
+static void nrf905_set_pwr(void)
+{
+  NRF905_IO_PWR_PORT |= NRF905_IO_PWR_MASK;
+ 54a:	5f 9a       	sbi	0x0b, 7	; 11
+    nrf_set_rx_mode();
+  }
+
+  while (1)
+  {
+    sleep_disable();
+ 54c:	83 b7       	in	r24, 0x33	; 51
+ 54e:	8e 7f       	andi	r24, 0xFE	; 254
+ 550:	83 bf       	out	0x33, r24	; 51
+
+    /* handle timer first */
+    if ((bano_wake_mask & (BANO_WAKE_TIMER | BANO_WAKE_POLL)) && timer_irq)
+ 552:	82 2f       	mov	r24, r18
+ 554:	85 70       	andi	r24, 0x05	; 5
+ 556:	21 f0       	breq	.+8      	; 0x560 <bano_wait_event+0x9a>
+ 558:	80 91 00 01 	lds	r24, 0x0100
+ 55c:	81 11       	cpse	r24, r1
+ 55e:	2d c0       	rjmp	.+90     	; 0x5ba <bano_wait_event+0xf4>
+      timer_irq = 0;
+      ev |= BANO_EV_TIMER;
+      goto on_event;
+    }
+
+    if ((bano_wake_mask & BANO_WAKE_MSG) && nrf_get_rx_irq())
+ 560:	92 2f       	mov	r25, r18
+ 562:	92 70       	andi	r25, 0x02	; 2
+ 564:	21 ff       	sbrs	r18, 1
+ 566:	02 c0       	rjmp	.+4      	; 0x56c <bano_wait_event+0xa6>
+ 568:	4a 99       	sbic	0x09, 2	; 9
+ 56a:	7a c0       	rjmp	.+244    	; 0x660 <bano_wait_event+0x19a>
+      ev |= BANO_EV_MSG;
+
+      goto on_event;
+    }
+
+    if ((bano_wake_mask & BANO_WAKE_PCINT) && pcint_irq)
+ 56c:	23 ff       	sbrs	r18, 3
+ 56e:	04 c0       	rjmp	.+8      	; 0x578 <bano_wait_event+0xb2>
+ 570:	80 91 01 01 	lds	r24, 0x0101
+ 574:	81 11       	cpse	r24, r1
+ 576:	97 c0       	rjmp	.+302    	; 0x6a6 <bano_wait_event+0x1e0>
+    /* the following procedure is used to not miss interrupts */
+    /* disable interrupts, check if something available */
+    /* otherwise, enable interrupt and sleep (sei, sleep) */
+    /* the later ensures now interrupt is missed */
+
+    sleep_enable();
+ 578:	83 b7       	in	r24, 0x33	; 51
+ 57a:	81 60       	ori	r24, 0x01	; 1
+ 57c:	83 bf       	out	0x33, r24	; 51
+    sleep_bod_disable();
+ 57e:	85 b7       	in	r24, 0x35	; 53
+ 580:	80 66       	ori	r24, 0x60	; 96
+ 582:	85 bf       	out	0x35, r24	; 53
+ 584:	8f 7d       	andi	r24, 0xDF	; 223
+ 586:	85 bf       	out	0x35, r24	; 53
+
+    cli();
+ 588:	f8 94       	cli
+
+    if ((bano_wake_mask & (BANO_WAKE_TIMER | BANO_WAKE_POLL)) && timer_irq)
+ 58a:	80 91 02 01 	lds	r24, 0x0102
+ 58e:	98 2f       	mov	r25, r24
+ 590:	95 70       	andi	r25, 0x05	; 5
+ 592:	09 f4       	brne	.+2      	; 0x596 <bano_wait_event+0xd0>
+ 594:	56 c0       	rjmp	.+172    	; 0x642 <bano_wait_event+0x17c>
+ 596:	90 91 00 01 	lds	r25, 0x0100
+ 59a:	99 23       	and	r25, r25
+ 59c:	09 f4       	brne	.+2      	; 0x5a0 <bano_wait_event+0xda>
+ 59e:	51 c0       	rjmp	.+162    	; 0x642 <bano_wait_event+0x17c>
+      sei();
+    }
+    else if ((bano_wake_mask & BANO_WAKE_PCINT) && pcint_irq)
+    {
+      /* continue, do not sleep */
+      sei();
+ 5a0:	78 94       	sei
+ 5a2:	20 91 02 01 	lds	r18, 0x0102
+    nrf_set_rx_mode();
+  }
+
+  while (1)
+  {
+    sleep_disable();
+ 5a6:	83 b7       	in	r24, 0x33	; 51
+ 5a8:	8e 7f       	andi	r24, 0xFE	; 254
+ 5aa:	83 bf       	out	0x33, r24	; 51
+
+    /* handle timer first */
+    if ((bano_wake_mask & (BANO_WAKE_TIMER | BANO_WAKE_POLL)) && timer_irq)
+ 5ac:	82 2f       	mov	r24, r18
+ 5ae:	85 70       	andi	r24, 0x05	; 5
+ 5b0:	b9 f2       	breq	.-82     	; 0x560 <bano_wait_event+0x9a>
+ 5b2:	80 91 00 01 	lds	r24, 0x0100
+ 5b6:	88 23       	and	r24, r24
+ 5b8:	99 f2       	breq	.-90     	; 0x560 <bano_wait_event+0x9a>
+    {
+      timer_irq = 0;
+ 5ba:	10 92 00 01 	sts	0x0100, r1
+ 5be:	92 2f       	mov	r25, r18
+ 5c0:	92 70       	andi	r25, 0x02	; 2
+      ev |= BANO_EV_TIMER;
+ 5c2:	e2 e0       	ldi	r30, 0x02	; 2
+ 5c4:	7e 2e       	mov	r7, r30
+    }
+  }
+
+ on_event:
+  /* TODO: move in at init time ? */
+  if (bano_wake_mask & BANO_WAKE_MSG)
+ 5c6:	99 23       	and	r25, r25
+ 5c8:	11 f0       	breq	.+4      	; 0x5ce <bano_wait_event+0x108>
+  NRF905_IO_TRX_PORT |= NRF905_IO_TRX_MASK;
+}
+
+static void nrf905_clear_trx(void)
+{
+  NRF905_IO_TRX_PORT &= ~NRF905_IO_TRX_MASK;
+ 5ca:	5e 98       	cbi	0x0b, 6	; 11
+  NRF905_IO_PWR_DDR |= NRF905_IO_PWR_MASK;
+}
+
+static void nrf905_set_pwr(void)
+{
+  NRF905_IO_PWR_PORT |= NRF905_IO_PWR_MASK;
+ 5cc:	5f 9a       	sbi	0x0b, 7	; 11
+  {
+    nrf_set_powerdown_mode();
+  }
+
+  if ((bano_wake_mask & BANO_WAKE_POLL) && (ev & BANO_EV_TIMER))
+ 5ce:	22 ff       	sbrs	r18, 2
+ 5d0:	29 c0       	rjmp	.+82     	; 0x624 <bano_wait_event+0x15e>
+ 5d2:	71 fe       	sbrs	r7, 1
+ 5d4:	27 c0       	rjmp	.+78     	; 0x624 <bano_wait_event+0x15e>
+}
+
+static inline void make_get_msg(bano_msg_t* msg, uint16_t key)
+{
+  msg->hdr.op = BANO_MSG_OP_GET;
+  msg->hdr.flags = 0;
+ 5d6:	81 e0       	ldi	r24, 0x01	; 1
+ 5d8:	88 83       	st	Y, r24
+  msg->u.get.key = uint16_to_le(key);
+ 5da:	1c 87       	std	Y+12, r17	; 0x0c
+ 5dc:	0b 87       	std	Y+11, r16	; 0x0b
+
+/* messaging */
+
+static inline void send_msg(bano_msg_t* msg)
+{
+  msg->hdr.saddr = uint32_to_le(BANO_CONFIG_NODE_ADDR);
+ 5de:	c9 82       	std	Y+1, r12	; 0x01
+ 5e0:	da 82       	std	Y+2, r13	; 0x02
+ 5e2:	eb 82       	std	Y+3, r14	; 0x03
+ 5e4:	fc 82       	std	Y+4, r15	; 0x04
+ 5e6:	ce 01       	movw	r24, r28
+ 5e8:	0e 94 60 00 	call	0xc0	; 0xc0 <nrf905_write_payload_zero>
+  if ((bano_wake_mask & BANO_WAKE_POLL) && (ev & BANO_EV_TIMER))
+  {
+    /* ask and wait for next message */
+    make_get_msg(msg, BANO_KEY_NEXT_MSG);
+    send_msg(msg);
+    timer_setup(bano_timer_500ms);
+ 5ec:	20 91 05 01 	lds	r18, 0x0105
+ 5f0:	30 91 06 01 	lds	r19, 0x0106
+static void timer_setup(uint16_t n)
+{
+  /* n the counter */
+  
+  /* stop timer */
+  TCCR1B = 0;
+ 5f4:	10 92 81 00 	sts	0x0081, r1
+
+  /* CTC mode, overflow when OCR1A reached */
+  TCCR1A = 0;
+ 5f8:	10 92 80 00 	sts	0x0080, r1
+  OCR1A = n;
+ 5fc:	30 93 89 00 	sts	0x0089, r19
+ 600:	20 93 88 00 	sts	0x0088, r18
+  TCNT1 = 0;
+ 604:	10 92 85 00 	sts	0x0085, r1
+ 608:	10 92 84 00 	sts	0x0084, r1
+  TCCR1C = 0;
+ 60c:	10 92 82 00 	sts	0x0082, r1
+
+  /* interrupt on OCIE0A match */
+  TIMSK1 = 1 << 1;
+ 610:	a0 92 6f 00 	sts	0x006F, r10
+
+  /* clear soft irq flag */
+  timer_irq = 0;
+ 614:	10 92 00 01 	sts	0x0100, r1
+
+  /* set mode high bits, 1024 prescal */
+  TCCR1B = (1 << 3) | (5 << 0);
+ 618:	b0 92 81 00 	sts	0x0081, r11
+    timer_setup(bano_timer_500ms);
+
+    if (wait_msg_or_timer(msg) == (uint8_t)-1)
+    {
+      /* the user wants to execute on timer */
+      if (!(bano_wake_mask & BANO_WAKE_TIMER))
+ 61c:	80 91 02 01 	lds	r24, 0x0102
+ 620:	80 ff       	sbrs	r24, 0
+ 622:	71 cf       	rjmp	.-286    	; 0x506 <bano_wait_event+0x40>
+      ev |= BANO_EV_MSG;
+    }
+  }
+
+  return ev;
+}
+ 624:	87 2d       	mov	r24, r7
+ 626:	df 91       	pop	r29
+ 628:	cf 91       	pop	r28
+ 62a:	1f 91       	pop	r17
+ 62c:	0f 91       	pop	r16
+ 62e:	ff 90       	pop	r15
+ 630:	ef 90       	pop	r14
+ 632:	df 90       	pop	r13
+ 634:	cf 90       	pop	r12
+ 636:	bf 90       	pop	r11
+ 638:	af 90       	pop	r10
+ 63a:	9f 90       	pop	r9
+ 63c:	8f 90       	pop	r8
+ 63e:	7f 90       	pop	r7
+ 640:	08 95       	ret
+    if ((bano_wake_mask & (BANO_WAKE_TIMER | BANO_WAKE_POLL)) && timer_irq)
+    {
+      /* continue, do not sleep */
+      sei();
+    }
+    else if ((bano_wake_mask & BANO_WAKE_MSG) && nrf_peek_rx_irq())
+ 642:	81 ff       	sbrs	r24, 1
+ 644:	02 c0       	rjmp	.+4      	; 0x64a <bano_wait_event+0x184>
+ 646:	4a 99       	sbic	0x09, 2	; 9
+ 648:	ab cf       	rjmp	.-170    	; 0x5a0 <bano_wait_event+0xda>
+    {
+      /* continue, do not sleep */
+      sei();
+    }
+    else if ((bano_wake_mask & BANO_WAKE_PCINT) && pcint_irq)
+ 64a:	83 ff       	sbrs	r24, 3
+ 64c:	04 c0       	rjmp	.+8      	; 0x656 <bano_wait_event+0x190>
+ 64e:	80 91 01 01 	lds	r24, 0x0101
+ 652:	81 11       	cpse	r24, r1
+ 654:	a5 cf       	rjmp	.-182    	; 0x5a0 <bano_wait_event+0xda>
+    }
+    else
+    {
+      /* warning: keep the 2 instructions in the same block */
+      /* atomic, no int schedule between sei and sleep_cpu */
+      sei();
+ 656:	78 94       	sei
+      sleep_cpu();
+ 658:	88 95       	sleep
+ 65a:	20 91 02 01 	lds	r18, 0x0102
+ 65e:	76 cf       	rjmp	.-276    	; 0x54c <bano_wait_event+0x86>
+
+  NRF24L01P_IO_IRQ_PCMSK &= ~NRF24L01P_IO_IRQ_MASK;
+
+#elif (NRF_CONFIG_NRF905 == 1)
+
+  NRF905_IO_IRQ_PCMSK &= ~NRF905_IO_IRQ_MASK;
+ 660:	80 91 6d 00 	lds	r24, 0x006D
+ 664:	8b 7f       	andi	r24, 0xFB	; 251
+ 666:	80 93 6d 00 	sts	0x006D, r24
+}
+
+static void nrf905_read_payload_zero(uint8_t* p)
+{
+  /* dr and am set low after payload read */
+  nrf905_cmd_read(NRF905_CMD_RRP, p, nrf905_payload_width);
+ 66a:	80 91 11 01 	lds	r24, 0x0111
+  NRF905_IO_CSN_PORT &= ~NRF905_IO_CSN_MASK;
+}
+
+static inline void spi_cs_high(void)
+{
+  NRF905_IO_CSN_PORT |= NRF905_IO_CSN_MASK;
+ 66e:	2a 9a       	sbi	0x05, 2	; 5
+  NRF905_IO_CSN_DDR |= NRF905_IO_CSN_MASK;
+}
+
+static inline void spi_cs_low(void)
+{
+  NRF905_IO_CSN_PORT &= ~NRF905_IO_CSN_MASK;
+ 670:	2a 98       	cbi	0x05, 2	; 5
+ 672:	9e bc       	out	0x2e, r9	; 46
+    goto redo;
+#endif
+  }
+#endif
+
+  while ((SPSR & (1 << SPIF)) == 0) ;
+ 674:	0d b4       	in	r0, 0x2d	; 45
+ 676:	07 fe       	sbrs	r0, 7
+ 678:	fd cf       	rjmp	.-6      	; 0x674 <bano_wait_event+0x1ae>
+  return SPDR;
+}
+
+static void spi_read(uint8_t* s, uint8_t len)
+{
+  for (; len; --len, ++s) *s = spi_read_uint8();
+ 67a:	88 23       	and	r24, r24
+ 67c:	49 f0       	breq	.+18     	; 0x690 <bano_wait_event+0x1ca>
+ 67e:	fe 01       	movw	r30, r28
+#if 0 /* FIXME: needed for sd_read_block to work */
+  __asm__ __volatile__ ("nop\n\t");
+  __asm__ __volatile__ ("nop\n\t");
+#endif
+
+  SPDR = x;
+ 680:	8e bc       	out	0x2e, r8	; 46
+    goto redo;
+#endif
+  }
+#endif
+
+  while ((SPSR & (1 << SPIF)) == 0) ;
+ 682:	0d b4       	in	r0, 0x2d	; 45
+ 684:	07 fe       	sbrs	r0, 7
+ 686:	fd cf       	rjmp	.-6      	; 0x682 <bano_wait_event+0x1bc>
+{
+  /* by writing to mosi, 8 clock pulses are generated
+     allowing the slave to transmit its register on miso
+   */
+  spi_write_uint8(0xff);
+  return SPDR;
+ 688:	9e b5       	in	r25, 0x2e	; 46
+}
+
+static void spi_read(uint8_t* s, uint8_t len)
+{
+  for (; len; --len, ++s) *s = spi_read_uint8();
+ 68a:	91 93       	st	Z+, r25
+ 68c:	81 50       	subi	r24, 0x01	; 1
+ 68e:	c1 f7       	brne	.-16     	; 0x680 <bano_wait_event+0x1ba>
+}
+
+static inline void spi_cs_high(void)
+{
+  NRF905_IO_CSN_PORT |= NRF905_IO_CSN_MASK;
+ 690:	2a 9a       	sbi	0x05, 2	; 5
+
+  NRF24L01P_IO_IRQ_PCMSK |= NRF24L01P_IO_IRQ_MASK;
+
+#elif (NRF_CONFIG_NRF905 == 1)
+
+  NRF905_IO_IRQ_PCMSK |= NRF905_IO_IRQ_MASK;
+ 692:	80 91 6d 00 	lds	r24, 0x006D
+ 696:	84 60       	ori	r24, 0x04	; 4
+ 698:	80 93 6d 00 	sts	0x006D, r24
+ 69c:	92 2f       	mov	r25, r18
+ 69e:	92 70       	andi	r25, 0x02	; 2
+      /* reenable interrupts */
+      nrf_enable_rx_irq();
+
+      cipher_dec(((uint8_t*)msg) + BANO_MSG_ENC_OFF);
+
+      ev |= BANO_EV_MSG;
+ 6a0:	74 e0       	ldi	r23, 0x04	; 4
+ 6a2:	77 2e       	mov	r7, r23
+
+      goto on_event;
+ 6a4:	90 cf       	rjmp	.-224    	; 0x5c6 <bano_wait_event+0x100>
+    }
+
+    if ((bano_wake_mask & BANO_WAKE_PCINT) && pcint_irq)
+    {
+      pcint_irq = 0;
+ 6a6:	10 92 01 01 	sts	0x0101, r1
+      ev |= BANO_EV_PCINT;
+ 6aa:	68 e0       	ldi	r22, 0x08	; 8
+ 6ac:	76 2e       	mov	r7, r22
+      goto on_event;
+ 6ae:	8b cf       	rjmp	.-234    	; 0x5c6 <bano_wait_event+0x100>
+
+000006b0 <bano_loop>:
+
+
+/* main loop, event scheduling */
+
+uint8_t bano_loop(void)
+{
+ 6b0:	cf 93       	push	r28
+ 6b2:	df 93       	push	r29
+ 6b4:	cd b7       	in	r28, 0x3d	; 61
+ 6b6:	de b7       	in	r29, 0x3e	; 62
+ 6b8:	61 97       	sbiw	r28, 0x11	; 17
+ 6ba:	0f b6       	in	r0, 0x3f	; 63
+ 6bc:	f8 94       	cli
+ 6be:	de bf       	out	0x3e, r29	; 62
+ 6c0:	0f be       	out	0x3f, r0	; 63
+ 6c2:	cd bf       	out	0x3d, r28	; 61
+
+	uint32_t val = 0;
+	const uint16_t key = le_to_uint16(msg.u.get.key);
+	const uint8_t flags = bano_get_handler(key, &val);
+	make_set_msg(&msg, key, val);
+	msg.hdr.flags = BANO_MSG_FLAG_REPLY | flags;
+ 6c4:	1c e0       	ldi	r17, 0x0C	; 12
+
+/* messaging */
+
+static inline void send_msg(bano_msg_t* msg)
+{
+  msg->hdr.saddr = uint32_to_le(BANO_CONFIG_NODE_ADDR);
+ 6c6:	98 e4       	ldi	r25, 0x48	; 72
+ 6c8:	c9 2e       	mov	r12, r25
+ 6ca:	95 e8       	ldi	r25, 0x85	; 133
+ 6cc:	d9 2e       	mov	r13, r25
+ 6ce:	9f e5       	ldi	r25, 0x5F	; 95
+ 6d0:	e9 2e       	mov	r14, r25
+ 6d2:	9c e5       	ldi	r25, 0x5C	; 92
+ 6d4:	f9 2e       	mov	r15, r25
+  bano_msg_t msg;
+  uint8_t ev;
+
+  while (1)
+  {
+    ev = bano_wait_event(&msg);
+ 6d6:	ce 01       	movw	r24, r28
+ 6d8:	01 96       	adiw	r24, 0x01	; 1
+ 6da:	0e 94 63 02 	call	0x4c6	; 0x4c6 <bano_wait_event>
+
+    /* do BANO_EV_MSG first as msg is lost in other handlers */
+
+    if (ev & BANO_EV_MSG)
+ 6de:	82 ff       	sbrs	r24, 2
+ 6e0:	fa cf       	rjmp	.-12     	; 0x6d6 <bano_loop+0x26>
+    {
+      const uint8_t op = msg.hdr.op;
+ 6e2:	89 81       	ldd	r24, Y+1	; 0x01
+ 6e4:	83 70       	andi	r24, 0x03	; 3
+
+      if (op == BANO_MSG_OP_SET)
+ 6e6:	b9 f3       	breq	.-18     	; 0x6d6 <bano_loop+0x26>
+	{
+	  msg.hdr.flags = flags;
+	  send_msg(&msg);
+	}
+      }
+      else if (op == BANO_MSG_OP_GET)
+ 6e8:	81 30       	cpi	r24, 0x01	; 1
+ 6ea:	a9 f7       	brne	.-22     	; 0x6d6 <bano_loop+0x26>
+static inline void make_set_msg(bano_msg_t* msg, uint16_t key, uint32_t val)
+{
+  msg->hdr.op = BANO_MSG_OP_SET;
+  msg->hdr.flags = 0;
+  msg->u.set.key = uint16_to_le(key);
+  msg->u.set.val = uint32_to_le(val);
+ 6ec:	1e 86       	std	Y+14, r1	; 0x0e
+ 6ee:	1f 86       	std	Y+15, r1	; 0x0f
+ 6f0:	18 8a       	std	Y+16, r1	; 0x10
+ 6f2:	19 8a       	std	Y+17, r1	; 0x11
+
+	uint32_t val = 0;
+	const uint16_t key = le_to_uint16(msg.u.get.key);
+	const uint8_t flags = bano_get_handler(key, &val);
+	make_set_msg(&msg, key, val);
+	msg.hdr.flags = BANO_MSG_FLAG_REPLY | flags;
+ 6f4:	19 83       	std	Y+1, r17	; 0x01
+
+/* messaging */
+
+static inline void send_msg(bano_msg_t* msg)
+{
+  msg->hdr.saddr = uint32_to_le(BANO_CONFIG_NODE_ADDR);
+ 6f6:	ca 82       	std	Y+2, r12	; 0x02
+ 6f8:	db 82       	std	Y+3, r13	; 0x03
+ 6fa:	ec 82       	std	Y+4, r14	; 0x04
+ 6fc:	fd 82       	std	Y+5, r15	; 0x05
+  while (nrf24l01p_is_tx_irq() == 0) ;
+  nrf24l01p_set_powerdown();
+
+#elif (NRF_CONFIG_NRF905 == 1)
+
+  nrf905_write_payload_zero(p);
+ 6fe:	ce 01       	movw	r24, r28
+ 700:	01 96       	adiw	r24, 0x01	; 1
+ 702:	0e 94 60 00 	call	0xc0	; 0xc0 <nrf905_write_payload_zero>
+ 706:	e7 cf       	rjmp	.-50     	; 0x6d6 <bano_loop+0x26>
+
+00000708 <bano_get_handler>:
+/* bano handlers */
+
+uint8_t bano_get_handler(uint16_t key, uint32_t* val)
+{
+  return BANO_MSG_FLAG_ERR;
+}
+ 708:	82 e0       	ldi	r24, 0x02	; 2
+ 70a:	08 95       	ret
+
+0000070c <bano_set_handler>:
+
+uint8_t bano_set_handler(uint16_t key, uint32_t val)
+{
+  return BANO_MSG_FLAG_ERR;
+}
+ 70c:	82 e0       	ldi	r24, 0x02	; 2
+ 70e:	08 95       	ret
+
+00000710 <bano_timer_handler>:
+
+void bano_timer_handler(void)
+{
+ 710:	08 95       	ret
+
+00000712 <bano_pcint_handler>:
+}
+
+void bano_pcint_handler(void)
+{
+ 712:	08 95       	ret
+
+00000714 <main>:
+}
+
+/* main */
+
+int main(void)
+{
+ 714:	cf 93       	push	r28
+ 716:	df 93       	push	r29
+ 718:	cd b7       	in	r28, 0x3d	; 61
+ 71a:	de b7       	in	r29, 0x3e	; 62
+ 71c:	28 97       	sbiw	r28, 0x08	; 8
+ 71e:	0f b6       	in	r0, 0x3f	; 63
+ 720:	f8 94       	cli
+ 722:	de bf       	out	0x3e, r29	; 62
+ 724:	0f be       	out	0x3f, r0	; 63
+ 726:	cd bf       	out	0x3d, r28	; 61
+  bano_info_t info;
+  uint8_t i;
+  uint8_t j;
+  uint16_t x;
+
+  info = bano_info_default;
+ 728:	ce 01       	movw	r24, r28
+ 72a:	01 96       	adiw	r24, 0x01	; 1
+ 72c:	28 e0       	ldi	r18, 0x08	; 8
+ 72e:	fc 01       	movw	r30, r24
+ 730:	11 92       	st	Z+, r1
+ 732:	2a 95       	dec	r18
+ 734:	e9 f7       	brne	.-6      	; 0x730 <main+0x1c>
+  info.disable_mask = BANO_DISABLE_ALL;
+  info.disable_mask &= ~BANO_DISABLE_ADC;
+ 736:	2e ef       	ldi	r18, 0xFE	; 254
+ 738:	2c 83       	std	Y+4, r18	; 0x04
+  bano_init(&info);
+ 73a:	0e 94 b3 00 	call	0x166	; 0x166 <bano_init>
+  /* i the byte offset */
+  /* j the bit offset */
+  /* w the width */
+  /* x the value */
+
+  nrf905_config[i] &= ~(((1 << w) - 1) << j);
+ 73e:	80 91 08 01 	lds	r24, 0x0108
+  nrf905_config[i] |= x << j;
+ 742:	8c 60       	ori	r24, 0x0C	; 12
+ 744:	80 93 08 01 	sts	0x0108, r24
+  nrf905_set_pa_pwr(3);
+  nrf905_cmd_wc();
+ 748:	0e 94 5a 00 	call	0xb4	; 0xb4 <nrf905_cmd_wc>
+
+static inline void adc_setup(void)
+{
+  /* this routine must be called once and before the others */
+
+  DDRC &= ~ADC_MASK;
+ 74c:	38 98       	cbi	0x07, 0	; 7
+
+  /* 16mhz / 200khz = 80. prescaler set to 128, thus fadc = 125khz */
+  /* a normal conversion takes 13 FADC cycles */
+  /* thus, actual sampling rate of 125000 / 13 = 9615 samples per second */
+
+  ADCSRA = (7 << ADPS0);
+ 74e:	87 e0       	ldi	r24, 0x07	; 7
+ 750:	80 93 7a 00 	sts	0x007A, r24
+
+  ADCSRA = (4 << ADPS0);
+
+#endif /* fadc */
+
+  ADCSRB = 0;
+ 754:	10 92 7b 00 	sts	0x007B, r1
+
+  /* aref, internal vref off, channel 0 */
+  ADMUX = 1 << REFS0;
+ 758:	80 e4       	ldi	r24, 0x40	; 64
+ 75a:	80 93 7c 00 	sts	0x007C, r24
+
+  /* disable digital input 0 to reduce power consumption, cf 23.9.5 */
+  DIDR0 = 0x1;
+ 75e:	81 e0       	ldi	r24, 0x01	; 1
+ 760:	80 93 7e 00 	sts	0x007E, r24
+}
+
+static void adc_start_free_running(void)
+{
+  /* enable adc and free running mode */
+  ADCSRB = 0;
+ 764:	10 92 7b 00 	sts	0x007B, r1
+  ADCSRA |= (1 << ADEN) | (1 << ADSC) | (1 << ADATE);
+ 768:	80 91 7a 00 	lds	r24, 0x007A
+ 76c:	80 6e       	ori	r24, 0xE0	; 224
+ 76e:	80 93 7a 00 	sts	0x007A, r24
+ 772:	8f ef       	ldi	r24, 0xFF	; 255
+static inline void adc_wait_25(void)
+{
+  /* wait for 25 adc cycles */
+  /* FADC = FCPU / 128, thus waits for 128 * 25 = 3200 cpu cycles */
+  uint8_t x = 0xff;
+  for (; x; --x) __asm__ __volatile__ ("nop\n\t");
+ 774:	00 00       	nop
+ 776:	81 50       	subi	r24, 0x01	; 1
+ 778:	e9 f7       	brne	.-6      	; 0x774 <main+0x60>
+ 77a:	34 e0       	ldi	r19, 0x04	; 4
+ 77c:	b3 2e       	mov	r11, r19
+
+static void adc_start_free_running(void)
+{
+  /* enable adc and free running mode */
+  ADCSRB = 0;
+  ADCSRA |= (1 << ADEN) | (1 << ADSC) | (1 << ADATE);
+ 77e:	28 e0       	ldi	r18, 0x08	; 8
+ 780:	c1 2c       	mov	r12, r1
+ 782:	d1 2c       	mov	r13, r1
+}
+
+static inline uint16_t adc_read(void)
+{
+  /* read adcl first */
+  const uint8_t l = ADCL;
+ 784:	80 91 78 00 	lds	r24, 0x0078
+  return ((((uint16_t)ADCH) << 8) | (uint16_t)l) & 0x3ff;
+ 788:	90 91 79 00 	lds	r25, 0x0079
+ 78c:	19 2f       	mov	r17, r25
+ 78e:	00 e0       	ldi	r16, 0x00	; 0
+ 790:	a8 01       	movw	r20, r16
+ 792:	48 2b       	or	r20, r24
+ 794:	ca 01       	movw	r24, r20
+ 796:	93 70       	andi	r25, 0x03	; 3
+  adc_start_free_running();
+
+  for (j = 0; j != 4; ++j)
+  {
+    x = 0;
+    for (i = 0; i != 8; ++i) x += adc_read();
+ 798:	c8 0e       	add	r12, r24
+ 79a:	d9 1e       	adc	r13, r25
+ 79c:	21 50       	subi	r18, 0x01	; 1
+ 79e:	91 f7       	brne	.-28     	; 0x784 <main+0x70>
+    x /= i;
+ 7a0:	d6 94       	lsr	r13
+ 7a2:	c7 94       	ror	r12
+ 7a4:	d6 94       	lsr	r13
+ 7a6:	c7 94       	ror	r12
+ 7a8:	d6 94       	lsr	r13
+ 7aa:	c7 94       	ror	r12
+    bano_send_set(0x2a2b, x);
+ 7ac:	e1 2c       	mov	r14, r1
+ 7ae:	f1 2c       	mov	r15, r1
+ 7b0:	b7 01       	movw	r22, r14
+ 7b2:	a6 01       	movw	r20, r12
+ 7b4:	8b e2       	ldi	r24, 0x2B	; 43
+ 7b6:	9a e2       	ldi	r25, 0x2A	; 42
+ 7b8:	0e 94 3c 02 	call	0x478	; 0x478 <bano_send_set>
+    bano_send_set(0x2a2b, x);
+ 7bc:	b7 01       	movw	r22, r14
+ 7be:	a6 01       	movw	r20, r12
+ 7c0:	8b e2       	ldi	r24, 0x2B	; 43
+ 7c2:	9a e2       	ldi	r25, 0x2A	; 42
+ 7c4:	0e 94 3c 02 	call	0x478	; 0x478 <bano_send_set>
+ 7c8:	ba 94       	dec	r11
+  nrf905_cmd_wc();
+
+  adc_setup();
+  adc_start_free_running();
+
+  for (j = 0; j != 4; ++j)
+ 7ca:	c9 f6       	brne	.-78     	; 0x77e <main+0x6a>
+    x /= i;
+    bano_send_set(0x2a2b, x);
+    bano_send_set(0x2a2b, x);
+  }
+
+  bano_loop();
+ 7cc:	0e 94 58 03 	call	0x6b0	; 0x6b0 <bano_loop>
+
+000007d0 <__muluhisi3>:
+ 7d0:	0e 94 15 04 	call	0x82a	; 0x82a <__umulhisi3>
+ 7d4:	a5 9f       	mul	r26, r21
+ 7d6:	90 0d       	add	r25, r0
+ 7d8:	b4 9f       	mul	r27, r20
+ 7da:	90 0d       	add	r25, r0
+ 7dc:	a4 9f       	mul	r26, r20
+ 7de:	80 0d       	add	r24, r0
+ 7e0:	91 1d       	adc	r25, r1
+ 7e2:	11 24       	eor	r1, r1
+ 7e4:	08 95       	ret
+
+000007e6 <__udivmodsi4>:
+ 7e6:	a1 e2       	ldi	r26, 0x21	; 33
+ 7e8:	1a 2e       	mov	r1, r26
+ 7ea:	aa 1b       	sub	r26, r26
+ 7ec:	bb 1b       	sub	r27, r27
+ 7ee:	fd 01       	movw	r30, r26
+ 7f0:	0d c0       	rjmp	.+26     	; 0x80c <__udivmodsi4_ep>
+
+000007f2 <__udivmodsi4_loop>:
+ 7f2:	aa 1f       	adc	r26, r26
+ 7f4:	bb 1f       	adc	r27, r27
+ 7f6:	ee 1f       	adc	r30, r30
+ 7f8:	ff 1f       	adc	r31, r31
+ 7fa:	a2 17       	cp	r26, r18
+ 7fc:	b3 07       	cpc	r27, r19
+ 7fe:	e4 07       	cpc	r30, r20
+ 800:	f5 07       	cpc	r31, r21
+ 802:	20 f0       	brcs	.+8      	; 0x80c <__udivmodsi4_ep>
+ 804:	a2 1b       	sub	r26, r18
+ 806:	b3 0b       	sbc	r27, r19
+ 808:	e4 0b       	sbc	r30, r20
+ 80a:	f5 0b       	sbc	r31, r21
+
+0000080c <__udivmodsi4_ep>:
+ 80c:	66 1f       	adc	r22, r22
+ 80e:	77 1f       	adc	r23, r23
+ 810:	88 1f       	adc	r24, r24
+ 812:	99 1f       	adc	r25, r25
+ 814:	1a 94       	dec	r1
+ 816:	69 f7       	brne	.-38     	; 0x7f2 <__udivmodsi4_loop>
+ 818:	60 95       	com	r22
+ 81a:	70 95       	com	r23
+ 81c:	80 95       	com	r24
+ 81e:	90 95       	com	r25
+ 820:	9b 01       	movw	r18, r22
+ 822:	ac 01       	movw	r20, r24
+ 824:	bd 01       	movw	r22, r26
+ 826:	cf 01       	movw	r24, r30
+ 828:	08 95       	ret
+
+0000082a <__umulhisi3>:
+ 82a:	a2 9f       	mul	r26, r18
+ 82c:	b0 01       	movw	r22, r0
+ 82e:	b3 9f       	mul	r27, r19
+ 830:	c0 01       	movw	r24, r0
+ 832:	a3 9f       	mul	r26, r19
+ 834:	01 d0       	rcall	.+2      	; 0x838 <__umulhisi3+0xe>
+ 836:	b2 9f       	mul	r27, r18
+ 838:	70 0d       	add	r23, r0
+ 83a:	81 1d       	adc	r24, r1
+ 83c:	11 24       	eor	r1, r1
+ 83e:	91 1d       	adc	r25, r1
+ 840:	08 95       	ret
+
+00000842 <_exit>:
+ 842:	f8 94       	cli
+
+00000844 <__stop_program>:
+ 844:	ff cf       	rjmp	.-2      	; 0x844 <__stop_program>
