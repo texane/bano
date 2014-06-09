@@ -1,0 +1,18 @@
+BANO is an open framework to implement to implement cheap RF
+nodes, as well as a base station that makes them connected to
+the Internet over HTTP.
+
+The node development kit documentation is in:
+doc/node_sdk
+
+It contains instruction on how to install the SDK. You can find
+examples in the SDK documentation itself, and in separate project
+repositories such as:
+https://github.com/texane/bano_reed
+
+The BANO protocol documentation is in:
+doc/protocol
+
+The base documentation is still to be written.
+
+Please contact texane@gmail.com for more info.
