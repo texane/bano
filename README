@@ -1,6 +1,10 @@
 BANO is an open framework to implement to implement cheap RF
 nodes, as well as a base station that makes them connected to
-the Internet over HTTP.
+the Internet over HTTP. While the concept is not clear to me,
+I guess it can be seen as an 'Internet of Things' platform.
+
+An introductory blog post can be found here:
+http://www.embeddedrelated.com/showarticle/605.php
 
 The node development kit documentation is in:
 doc/node_sdk
