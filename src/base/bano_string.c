@@ -65,24 +65,28 @@ int bano_string_to_uint32(const bano_string_t* s, uint32_t* x)
   return 0;
 }
 
-int bano_string_to_cipher_key(const bano_string_t* s, uint8_t* k)
+int bano_string_to_array(const bano_string_t* s, uint8_t* a, size_t n)
 {
-  static const size_t size = BANO_CIPHER_KEY_SIZE;
-
+  /* format: 0x00,0x01.. */
   size_t i;
 
-  if (s->size != (size * 5 - 1))
+  if (s->size != (n * 5 - 1))
   {
     BANO_PERROR();
     return -1;
   }
 
-  for (i = 0; i != size; ++i)
+  for (i = 0; i != n; ++i)
   {
-    k[i] = strtoul((char*)s->data + i * 5, NULL, 16);
+    a[i] = strtoul((char*)s->data + i * 5, NULL, 16);
   }
 
   return 0;
+}
+
+int bano_string_to_cipher_key(const bano_string_t* s, uint8_t* k)
+{
+  return bano_string_to_array(s, k, BANO_CIPHER_KEY_SIZE);
 }
 
 int bano_string_cmp_cstr(const bano_string_t* a, const char* b)
