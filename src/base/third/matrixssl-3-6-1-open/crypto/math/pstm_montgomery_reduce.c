@@ -34,6 +34,8 @@
 #include "../cryptoApi.h"
 #ifndef DISABLE_PSTM
 
+#undef PSTM_ARM
+
 /******************************************************************************/
 
 #if defined(PSTM_X86)

@@ -28,6 +28,7 @@ CFLAGS += -I$(REPO_DIR)/nrf/snrf/src/host
 CFLAGS += -I$(REPO_DIR)/nrf/snrf/src/common
 LFLAGS += -L$(REPO_DIR)/nrf/snrf/src/host
 LIBS += -lsnrf
+DEPS += $(SNRF_DIR)/src/host/libsnrf.a
 
 # httpd server
 # use mongoose version 35bd2b603251b40d7dce606b565d39f6a6b6d8f2
@@ -54,14 +55,27 @@ CFLAGS += -DLODEPNG_NO_COMPILE_CPP
 CFLAGS += -DLODEPNG_NO_COMPILE_DISK
 CFLAGS += -DLODEPNG_NO_COMPILE_ERROR_TEXT
 
+# sms notification support
+SRCS += $(REPO_DIR)/bano/src/base/bano_sms.c
+MATRIXSSL_DIR ?= ./third/matrixssl-3-6-1-open
+CFLAGS += -I$(MATRIXSSL_DIR)
+CFLAGS += -DBANO_CONFIG_SMS
+CFLAGS += -DLINUX
+LFLAGS += -L$(MATRIXSSL_DIR)
+LIBS += -lmatrixssl
+DEPS += $(MATRIXSSL_DIR)/libmatrixssl.a
+
 OBJS := $(SRCS:.c=.o)
 
-all: a.out
+all: $(DEPS) a.out
+
+$(MATRIXSSL_DIR)/libmatrixssl.a:
+	cd $(MATRIXSSL_DIR) && CROSS=$(CROSS_COMPILE) make
 
 $(SNRF_DIR)/src/host/libsnrf.a:
 	cd $(SNRF_DIR)/src/host && make
 
-a.out:	$(SNRF_DIR)/src/host/libsnrf.a $(OBJS)
+a.out:	$(SNRF_DIR)/src/host/libsnrf.a $(DEPS) $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $(OBJS) $(LFLAGS) $(LIBS)
 	$(STRIP) $@
 	sudo chown root a.out
