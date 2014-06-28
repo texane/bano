@@ -3,6 +3,8 @@
 
 
 #include <stdint.h>
+#include <sys/types.h>
+#include <arpa/inet.h>
 #include "core/coreApi.h"
 #include "matrixssl/matrixsslApi.h"
 
@@ -26,14 +28,25 @@ typedef struct bano_sms_info
 
 typedef struct bano_sms_handle
 {
+  /* used for creds ciphering */
   psAesKey_t aes_key;
-  /* struct sockaddr_in addr; */
+
+  /* plain creds */
+  char login[BANO_SMS_LOGIN_SIZE + 1];
+  char pass[BANO_SMS_PASS_SIZE + 1];
+
+  /* server address */
+  struct sockaddr addr;
+
+  /* toremove: ipv4 address string */
+  char addr_string[16];
+
 } bano_sms_handle_t;
 
 
 int bano_sms_open(bano_sms_handle_t*, const bano_sms_info_t*);
 int bano_sms_close(bano_sms_handle_t*);
-int bano_sms_send(bano_sms_handle_t*, const char*, unsigned int);
+int bano_sms_send(bano_sms_handle_t*, const char*);
 
 /* helper routines */
 int bano_sms_encrypt_creds

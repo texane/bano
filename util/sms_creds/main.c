@@ -5,8 +5,6 @@
 #include <sys/types.h>
 #include "bano_sms.h"
 #include "bano_string.h"
-#include "core/coreApi.h"
-#include "matrixssl/matrixsslApi.h"
 
 
 int main(int ac, char** av)
@@ -20,8 +18,9 @@ int main(int ac, char** av)
   size_t i;
   int err = -1;
 
-  if (bano_sms_open(&sms, &info))
-    goto on_error_0;
+  info.u.https.addr = NULL;
+  info.u.https.port = NULL;
+  if (bano_sms_open(&sms, &info)) goto on_error_0;
 
   if (strcmp(av[1], "-d") == 0)
   {

@@ -18,7 +18,7 @@ OBJS := $(SRCS:.c=.o)
 all: a.out
 
 a.out:	$(OBJS)
-	$(CC) $(CFLAGS) -o $@ $(OBJS) $(LFLAGS) $(LIBS)
+	$(CC) $(CFLAGS) -static -o $@ $(OBJS) $(LFLAGS) $(LIBS)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<

@@ -11,6 +11,7 @@ key = 0x002a
 fmt = uint32
 rst = yes
 mtime = yes
+notif = yes
 }
 
 # voltage
