@@ -29,8 +29,10 @@ static int find_keyval_item(bano_list_item_t* li, void* p)
   return -1;
 }
 
-unsigned int bano_nodl_has_key(bano_nodl_t* nodl, uint16_t key)
+bano_nodl_keyval_t* bano_nodl_find_key(bano_nodl_t* nodl, uint16_t key)
 {
+  bano_list_item_t* li;
+  bano_dict_pair_t* pair;
   uintptr_t args[2];
 
   args[0] = (uintptr_t)key;
@@ -38,7 +40,16 @@ unsigned int bano_nodl_has_key(bano_nodl_t* nodl, uint16_t key)
 
   bano_dict_foreach(&nodl->keyvals, find_keyval_item, args);
 
-  return (args[1] == (uintptr_t)NULL) ? 0 : 1;
+  if (args[1] == NULL) return NULL;
+
+  li = (bano_list_item_t*)args[1];
+  pair = li->data;
+  return (bano_nodl_keyval_t*)pair->val;
+}
+
+unsigned int bano_nodl_has_key(bano_nodl_t* nodl, uint16_t key)
+{
+  return (bano_nodl_find_key(nodl, key) == NULL) ? 0 : 1;
 }
 
 void bano_nodl_keyval_init(bano_nodl_keyval_t* kv)

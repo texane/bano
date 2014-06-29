@@ -19,6 +19,7 @@ typedef struct bano_nodl_keyval
 #define BANO_NODL_FLAG_SET (1 << 8)
 #define BANO_NODL_FLAG_RST (1 << 9)
 #define BANO_NODL_FLAG_ACK (1 << 10)
+#define BANO_NODL_FLAG_NOTIF (1 << 11)
   uint32_t flags;
   char name[32];
   uint16_t key;
@@ -33,6 +34,7 @@ typedef struct bano_nodl
 void bano_nodl_init(bano_nodl_t*);
 void bano_nodl_fini(bano_nodl_t*);
 unsigned int bano_nodl_has_key(bano_nodl_t*, uint16_t);
+bano_nodl_keyval_t* bano_nodl_find_key(bano_nodl_t*, uint16_t);
 void bano_nodl_keyval_init(bano_nodl_keyval_t*);
 
 

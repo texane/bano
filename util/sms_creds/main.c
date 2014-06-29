@@ -18,8 +18,7 @@ int main(int ac, char** av)
   size_t i;
   int err = -1;
 
-  info.u.https.addr = NULL;
-  info.u.https.port = NULL;
+  bano_sms_init_info(&info);
   if (bano_sms_open(&sms, &info)) goto on_error_0;
 
   if (strcmp(av[1], "-d") == 0)

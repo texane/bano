@@ -44,9 +44,11 @@ typedef struct bano_sms_handle
 } bano_sms_handle_t;
 
 
+void bano_sms_init_info(bano_sms_info_t*);
 int bano_sms_open(bano_sms_handle_t*, const bano_sms_info_t*);
 int bano_sms_close(bano_sms_handle_t*);
 int bano_sms_send(bano_sms_handle_t*, const char*);
+int bano_sms_send_uint32(bano_sms_handle_t*, uint32_t);
 
 /* helper routines */
 int bano_sms_encrypt_creds

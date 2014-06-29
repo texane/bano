@@ -24,6 +24,9 @@
 #ifdef BANO_CONFIG_CAM
 #include "bano_cam.h"
 #endif /* BANO_CONFIG_CAM */
+#ifdef BANO_CONFIG_SMS
+#include "bano_sms.h"
+#endif /* BANO_CONFIG_SMS */
 
 
 /* conversion routines */
@@ -101,6 +104,9 @@ struct apply_data
 #ifdef BANO_CONFIG_CAM
     bano_cam_info_t cam_info;
 #endif /* BANO_CONFIG_CAM */
+#ifdef BANO_CONFIG_SMS
+    bano_sms_info_t sms_info;
+#endif /* BANO_CONFIG_SMS */
   } u;
 
 };
@@ -217,6 +223,16 @@ static int apply_nodl_keyval_pair(bano_list_item_t* it, void* p)
     }
     if (is_true) kv->flags |= BANO_NODL_FLAG_RST;
     else kv->flags &= ~BANO_NODL_FLAG_RST;
+  }
+  else if (bano_string_cmp_cstr(&pair->key, "notif") == 0)
+  {
+    if (bano_string_to_bool(&pair->val, &is_true))
+    {
+      BANO_PERROR();
+      goto on_error;
+    }
+    if (is_true) kv->flags |= BANO_NODL_FLAG_NOTIF;
+    else kv->flags &= ~BANO_NODL_FLAG_NOTIF;
   }
   else
   {
@@ -647,6 +663,53 @@ static int apply_cam_pair(bano_list_item_t* it, void* p)
 }
 #endif /* BANO_CONFIG_CAM */
 
+#ifdef BANO_CONFIG_SMS
+static int apply_sms_pair(bano_list_item_t* it, void* p)
+{
+  const bano_parser_pair_t* const pair = it->data;
+  struct apply_data* const ad = p;
+  bano_sms_info_t* const info = &ad->u.sms_info;
+
+  if (bano_string_cmp_cstr(&pair->key, "https_addr") == 0)
+  {
+    if (bano_string_to_cstr(&pair->val, &info->u.https.addr))
+    {
+      BANO_PERROR();
+      goto on_error;
+    }
+  }
+  else if (bano_string_cmp_cstr(&pair->key, "https_port") == 0)
+  {
+    if (bano_string_to_cstr(&pair->val, &info->u.https.port))
+    {
+      BANO_PERROR();
+      goto on_error;
+    }
+  }
+  else if (bano_string_cmp_cstr(&pair->key, "https_creds") == 0)
+  {
+    static const size_t size = BANO_SMS_CREDS_SIZE;
+    uint8_t* const creds = info->u.https.creds;
+    if (bano_string_to_array(&pair->val, creds, size))
+    {
+      BANO_PERROR();
+      goto on_error;
+    }
+  }
+  else
+  {
+    BANO_PERROR();
+    goto on_error;
+  }
+
+  return 0;
+
+ on_error:
+  ad->err = -1;
+  return -1;
+}
+#endif /* BANO_CONFIG_SMS */
+
 static int apply_struct(bano_list_item_t* it, void* p)
 {
   bano_parser_struct_t* const strukt = it->data;
@@ -733,10 +796,36 @@ static int apply_struct(bano_list_item_t* it, void* p)
       BANO_PERROR();
       ad->err = -1;
     }
-
-    ad->base->is_cam = 1;
+    else
+    {
+      ad->base->is_cam = 1;
+    }
   }
 #endif /* BANO_CONFIG_CAM */
+#ifdef BANO_CONFIG_SMS
+  else if (bano_string_cmp_cstr(&strukt->name, "sms") == 0)
+  {
+    bano_sms_info_t* const info = &ad->u.sms_info;
+
+    bano_sms_init_info(info);
+    bano_parser_foreach_pair(strukt, apply_sms_pair, ad);
+
+    if (ad->err) goto on_error;
+
+    if (bano_sms_open(&ad->base->sms, info))
+    {
+      BANO_PERROR();
+      ad->err = -1;
+    }
+    else
+    {
+      ad->base->is_sms = 1;
+    }
+
+    if (info->u.https.addr != NULL) free((void*)info->u.https.addr);
+    if (info->u.https.port != NULL) free((void*)info->u.https.port);
+  }
+#endif /* BANO_CONFIG_SMS */
 
  on_error:
   return ad->err;
@@ -775,6 +864,10 @@ int bano_open(bano_base_t* base, const bano_base_info_t* info)
   base->is_cam = 0;
 #endif /* BANO_CONFIG_CAM */
 
+#ifdef BANO_CONFIG_SMS
+  base->is_sms = 0;
+#endif /* BANO_CONFIG_SMS */
+
   bano_list_init(&base->nodes);
   bano_list_init(&base->sockets);
   bano_timer_init(&base->timers);
@@ -803,6 +896,9 @@ int bano_open(bano_base_t* base, const bano_base_info_t* info)
 #ifdef BANO_CONFIG_CAM
   if (base->is_cam) bano_cam_close(&base->cam);
 #endif /* BANO_CONFIG_CAM */
+#ifdef BANO_CONFIG_SMS
+  if (base->is_sms) bano_sms_close(&base->sms);
+#endif /* BANO_CONFIG_SMS */
   bano_dict_fini(&base->nodls, NULL, NULL);
   bano_timer_fini(&base->timers);
   bano_list_fini(&base->nodes, free_node_item, NULL);
@@ -818,6 +914,9 @@ int bano_close(bano_base_t* base)
 #ifdef BANO_CONFIG_CAM
   if (base->is_cam) bano_cam_close(&base->cam);
 #endif /* BANO_CONFIG_CAM */
+#ifdef BANO_CONFIG_SMS
+  if (base->is_sms) bano_sms_close(&base->sms);
+#endif /* BANO_CONFIG_SMS */
   bano_dict_fini(&base->nodls, NULL, NULL);
   bano_timer_fini(&base->timers);
   bano_list_fini(&base->nodes, free_node_item, NULL);
@@ -1043,11 +1142,25 @@ static int handle_set_msg
     /* if there is a nodl, check the key actually exists */
     if (node->nodl != NULL)
     {
-      if (bano_nodl_has_key(node->nodl, key) == 0)
+      bano_nodl_keyval_t* const kv = bano_nodl_find_key(node->nodl, key);
+
+      if (kv == NULL)
       {
 	BANO_PERROR();
 	goto on_invalid_key;
       }
+
+#ifdef BANO_CONFIG_SMS
+      /* notify a set operation */
+      if (kv->flags & BANO_NODL_FLAG_NOTIF)
+      {
+	if (bano_sms_send_uint32(&prwmd->base->sms, val.val))
+	{
+	  BANO_PERROR();
+	}
+      }
+#endif /* BANO_CONFIG_SMS */
+
     }
 
     if (bano_dict_set_or_add(&node->keyval_pairs, key, (void*)&val))

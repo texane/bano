@@ -17,6 +17,7 @@ int main(int ac, char** av)
   bano_sms_info_t info;
   int err = -1;
 
+  bano_sms_init_info(&info);
   info.u.https.addr = "212.27.40.200";
   info.u.https.port = "443";
   memcpy(info.u.https.creds, sms_creds, BANO_SMS_CREDS_SIZE);

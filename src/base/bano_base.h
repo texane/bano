@@ -20,6 +20,10 @@
 #include "bano_cam.h"
 #endif /* BANO_CONFIG_CAM */
 
+#ifdef BANO_CONFIG_SMS
+#include "bano_sms.h"
+#endif /* BANO_CONFIG_SMS */
+
 
 /* forward decls */
 
@@ -115,6 +119,10 @@ typedef struct bano_base
   unsigned int is_cam;
   bano_cam_handle_t cam;
 #endif /* BANO_CONFIG_CAM */
+#ifdef BANO_CONFIG_SMS
+  unsigned int is_sms;
+  bano_sms_handle_t sms;
+#endif /* BANO_CONFIG_SMS */
 
 } bano_base_t;
 

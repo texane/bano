@@ -18,6 +18,12 @@
 #include "matrixssl/matrixsslApi.h"
 
 
+void bano_sms_init_info(bano_sms_info_t* info)
+{
+  info->u.https.addr = NULL;
+  info->u.https.port = NULL;
+}
+
 int bano_sms_open
 (bano_sms_handle_t* sms, const bano_sms_info_t* info)
 {
@@ -532,4 +538,12 @@ int bano_sms_send
 
  on_error_0:
   return err;
+}
+
+int bano_sms_send_uint32
+(bano_sms_handle_t* sms, uint32_t x)
+{
+  char buf[32];
+  sprintf(buf, "0x%08x", x);
+  return bano_sms_send(sms, buf);
 }
