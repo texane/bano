@@ -240,9 +240,9 @@ Symetric block ciphers can be used to hide message contents. The cipher
 block size should comply with the BANO message size, ie. 16 bytes. Thus,
 a 128 bits cipher is chosen (AES 128). Also, encryption is enabled for
 all the messages of a given node. If this is a limitation, a node key
-can allow the node to switch switch the encryption mode. In this case,
-and because of statelessness, the encryption mode toggling should be
-sent in 2 encrypted and clear versions.
+can allow the node to switch the encryption mode. In this case, and
+because of statelessness, the encryption mode toggling should be sent
+in 2 encrypted and clear versions.
 \paragraph{}
 Ciphers rely on a secret key shared between the base and the node. There
 is no support for sharing the key built in the protocol. In a typical
